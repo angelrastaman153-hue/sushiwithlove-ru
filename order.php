@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ВСТАВЬТЕ СЮДА ВАШ СЕКРЕТНЫЙ КЛЮЧ FRONTPAD
 // (скопировать из integracia-vk-fp/callback.php → FP_SECRET)
 // ======================================================
-define('FP_SECRET', 'ВСТАВЬТЕ_СЕКРЕТНЫЙ_КЛЮЧ_FRONTPAD');
+define('FP_SECRET', '2kBSSKdHKKff5fEE743RS2dTtfdD5KfS2GAEeDbSah25srzkfi5298GseNY8i5R8BbDFEFkFRaz7sThA6bk5aYiey7dG2TEkZ7TnB7Td7ean3iNTk3NnH2t6TABGf6T53Dfrz4yt7zGZGhFY9e8H5sDNS4f2Y4RKt24RQi9KHGydS32R7Zk3dQBYFGGrAk3S9SzQ5ynB5HEHAsktdBffbH4HdA2ENQhNtFni4DKYadsBzFTD64H7ABFE3s');
 define('FP_API',    'https://app.frontpad.ru/api/index.php?new_order');
 
 // ======================================================

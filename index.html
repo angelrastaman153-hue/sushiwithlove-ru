@@ -830,7 +830,20 @@
     [data-name="Пицца «Маргарита»"] .dish-img,
     [data-name="Пицца «Морская»"] .dish-img,
     [data-name="Пицца «Грибная»"] .dish-img,
-    [data-name="Пицца «Гавайская»"] .dish-img {
+    [data-name="Пицца «Гавайская»"] .dish-img,
+    [data-name="Соевый от шефа (100 мл)"] .dish-img,
+    [data-name="Имбирь 30г"] .dish-img,
+    [data-name="Имбирь 50г"] .dish-img,
+    [data-name="Имбирь 100г"] .dish-img,
+    [data-name="Васаби 20г"] .dish-img,
+    [data-name="Васаби 40г"] .dish-img,
+    [data-name="Васаби 60г"] .dish-img,
+    [data-name="Картофель фри"] .dish-img,
+    [data-name="Комбо фри + наггетсы"] .dish-img,
+    [data-name="Тигровые креветки с соусом"] .dish-img,
+    [data-name="Моти в ассортименте"] .dish-img,
+    [data-name="Кола бутылка 0.5"] .dish-img,
+    [data-name="Сок Добрый 1л"] .dish-img {
       background-size: cover;
       background-position: center;
     }
@@ -894,6 +907,37 @@
     [data-name="Пицца «Морская»"]           .dish-img { background-image: url('photos/pizza/pizza-morskaya.jpg'); }
     [data-name="Пицца «Грибная»"]           .dish-img { background-image: url('photos/pizza/pizza-gribnaya.jpg'); }
     [data-name="Пицца «Гавайская»"]         .dish-img { background-image: url('photos/pizza/pizza-gavayskaya.jpg'); }
+
+    /* Допы и напитки */
+    [data-name="Соевый от шефа (100 мл)"]  .dish-img { background-image: url('photos/extras/soevyy.jpg'); }
+    [data-name="Имбирь 30г"]               .dish-img { background-image: url('photos/extras/imbir.jpg'); }
+    [data-name="Имбирь 50г"]               .dish-img { background-image: url('photos/extras/imbir.jpg'); }
+    [data-name="Имбирь 100г"]              .dish-img { background-image: url('photos/extras/imbir.jpg'); }
+    [data-name="Васаби 20г"]               .dish-img { background-image: url('photos/extras/vasabi.jpg'); }
+    [data-name="Васаби 40г"]               .dish-img { background-image: url('photos/extras/vasabi.jpg'); }
+    [data-name="Васаби 60г"]               .dish-img { background-image: url('photos/extras/vasabi.jpg'); }
+    [data-name="Картофель фри"]            .dish-img { background-image: url('photos/extras/fri.jpg'); }
+    [data-name="Комбо фри + наггетсы"]     .dish-img { background-image: url('photos/extras/kombo-fri.jpg'); }
+    [data-name="Тигровые креветки с соусом"] .dish-img { background-image: url('photos/extras/krevetki.jpg'); }
+    [data-name="Моти в ассортименте"]      .dish-img { background-image: url('photos/extras/moti.jpg'); }
+    [data-name="Кола бутылка 0.5"]         .dish-img { background-image: url('photos/extras/kola.jpg'); }
+    [data-name="Сок Добрый 1л"]            .dish-img { background-image: url('photos/extras/sok.jpg'); }
+
+    /* Скрываем плейсхолдер там где есть фото */
+    [data-name="Соевый от шефа (100 мл)"]  .dish-img-ph,
+    [data-name="Имбирь 30г"]               .dish-img-ph,
+    [data-name="Имбирь 50г"]               .dish-img-ph,
+    [data-name="Имбирь 100г"]              .dish-img-ph,
+    [data-name="Васаби 20г"]               .dish-img-ph,
+    [data-name="Васаби 40г"]               .dish-img-ph,
+    [data-name="Васаби 60г"]               .dish-img-ph,
+    [data-name="Картофель фри"]            .dish-img-ph,
+    [data-name="Комбо фри + наггетсы"]     .dish-img-ph,
+    [data-name="Тигровые креветки с соусом"] .dish-img-ph,
+    [data-name="Моти в ассортименте"]      .dish-img-ph,
+    [data-name="Кола бутылка 0.5"]         .dish-img-ph,
+    [data-name="Сок Добрый 1л"]            .dish-img-ph { display: none; }
+
     .dish-img-ph {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -3134,24 +3178,64 @@
           <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:121,name:'Соевый от шефа (100 мл)',price:75,emoji:'⭐'})">+ В корзину</button></div>
         </div>
 
-        <div class="dish-card reveal reveal-delay-2" data-id="173" data-name="Имбирь" data-price="49" data-emoji="🌸">
+        <div class="dish-card reveal reveal-delay-2" data-id="173" data-name="Имбирь 30г" data-price="30" data-emoji="🌸">
+          <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🌸</div></div>
+          <div class="dish-body">
+            <div class="dish-name">Имбирь маринованный</div>
+            <div class="dish-composition">Освежает вкус между роллами — традиционный японский маринованный имбирь</div>
+            <div class="dish-meta"><span class="dish-weight">30 г</span><span class="dish-price">30 ₽</span></div>
+          </div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:123,name:'Имбирь 30г',price:30,emoji:'🌸'})">+ В корзину</button></div>
+        </div>
+
+        <div class="dish-card reveal reveal-delay-3" data-id="173b" data-name="Имбирь 50г" data-price="50" data-emoji="🌸">
           <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🌸</div></div>
           <div class="dish-body">
             <div class="dish-name">Имбирь маринованный</div>
             <div class="dish-composition">Освежает вкус между роллами — традиционный японский маринованный имбирь</div>
             <div class="dish-meta"><span class="dish-weight">50 г</span><span class="dish-price">50 ₽</span></div>
           </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:123,name:'Имбирь',price:50,emoji:'🌸'})">+ В корзину</button></div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:124,name:'Имбирь 50г',price:50,emoji:'🌸'})">+ В корзину</button></div>
         </div>
 
-        <div class="dish-card reveal reveal-delay-3" data-id="174" data-name="Васаби" data-price="49" data-emoji="🌿">
+        <div class="dish-card reveal" data-id="173c" data-name="Имбирь 100г" data-price="65" data-emoji="🌸">
+          <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🌸</div></div>
+          <div class="dish-body">
+            <div class="dish-name">Имбирь маринованный</div>
+            <div class="dish-composition">Освежает вкус между роллами — традиционный японский маринованный имбирь</div>
+            <div class="dish-meta"><span class="dish-weight">100 г</span><span class="dish-price">65 ₽</span></div>
+          </div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:125,name:'Имбирь 100г',price:65,emoji:'🌸'})">+ В корзину</button></div>
+        </div>
+
+        <div class="dish-card reveal reveal-delay-1" data-id="174" data-name="Васаби 20г" data-price="25" data-emoji="🌿">
           <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🌿</div></div>
           <div class="dish-body">
             <div class="dish-name">Васаби</div>
             <div class="dish-composition">Японский хрен — для тех, кто любит с огоньком</div>
             <div class="dish-meta"><span class="dish-weight">20 г</span><span class="dish-price">25 ₽</span></div>
           </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:127,name:'Васаби',price:25,emoji:'🌿'})">+ В корзину</button></div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:127,name:'Васаби 20г',price:25,emoji:'🌿'})">+ В корзину</button></div>
+        </div>
+
+        <div class="dish-card reveal reveal-delay-2" data-id="174b" data-name="Васаби 40г" data-price="45" data-emoji="🌿">
+          <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🌿</div></div>
+          <div class="dish-body">
+            <div class="dish-name">Васаби</div>
+            <div class="dish-composition">Японский хрен — для тех, кто любит с огоньком</div>
+            <div class="dish-meta"><span class="dish-weight">40 г</span><span class="dish-price">45 ₽</span></div>
+          </div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:128,name:'Васаби 40г',price:45,emoji:'🌿'})">+ В корзину</button></div>
+        </div>
+
+        <div class="dish-card reveal reveal-delay-3" data-id="174c" data-name="Васаби 60г" data-price="65" data-emoji="🌿">
+          <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🌿</div></div>
+          <div class="dish-body">
+            <div class="dish-name">Васаби</div>
+            <div class="dish-composition">Японский хрен — для тех, кто любит с огоньком</div>
+            <div class="dish-meta"><span class="dish-weight">60 г</span><span class="dish-price">65 ₽</span></div>
+          </div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:130,name:'Васаби 60г',price:65,emoji:'🌿'})">+ В корзину</button></div>
         </div>
 
         <div class="dish-card reveal" data-id="175" data-name="Картофель фри" data-price="139" data-emoji="🍟">
@@ -3212,14 +3296,14 @@
           <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:142,name:'Кола бутылка 0.5',price:99,emoji:'🥤'})">+ В корзину</button></div>
         </div>
 
-        <div class="dish-card reveal reveal-delay-1" data-id="182" data-name="Сок 1 л" data-price="149" data-emoji="🧃">
+        <div class="dish-card reveal reveal-delay-1" data-id="182" data-name="Сок Добрый 1л" data-price="199" data-emoji="🧃">
           <div class="dish-img ph-2"><div class="dish-img-ph ph-2">🧃</div></div>
           <div class="dish-body">
-            <div class="dish-name">Сок</div>
+            <div class="dish-name">Сок Добрый</div>
             <div class="dish-composition">Яблоко, апельсин или мультифрукт — на ваш выбор</div>
-            <div class="dish-meta"><span class="dish-weight">1 л</span><span class="dish-price">139 ₽</span></div>
+            <div class="dish-meta"><span class="dish-weight">1 л</span><span class="dish-price">199 ₽</span></div>
           </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:141,name:'Сок 1 л',price:139,emoji:'🧃'})">+ В корзину</button></div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:141,name:'Сок Добрый 1л',price:199,emoji:'🧃'})">+ В корзину</button></div>
         </div>
 
         <div class="dish-card reveal reveal-delay-2" data-id="183" data-name="Вода 0.5" data-price="69" data-emoji="💧">

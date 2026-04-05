@@ -1645,6 +1645,61 @@
     .promo-card:hover::before { opacity: 1; }
     .promo-card > * { position: relative; z-index: 1; }
 
+    .promo-extra {
+      font-size: 0.8rem;
+      color: rgba(232,168,71,0.85);
+      background: rgba(232,168,71,0.08);
+      border: 1px solid rgba(232,168,71,0.18);
+      border-radius: 6px;
+      padding: 4px 10px;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    .promo-tip {
+      position: absolute;
+      inset: 0;
+      background: rgba(12,9,6,0.96);
+      backdrop-filter: blur(12px);
+      padding: 24px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      z-index: 20;
+    }
+    .promo-card:hover .promo-tip,
+    .promo-tip.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .promo-tip p {
+      font-size: 0.88rem;
+      color: var(--text-2);
+      line-height: 1.75;
+      margin: 0;
+    }
+    .promo-tip strong { color: var(--accent); -webkit-text-fill-color: var(--accent); }
+    .promo-tip-close {
+      position: absolute;
+      top: 10px; right: 12px;
+      color: var(--text-2);
+      font-size: 1rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.2s;
+      display: none;
+    }
+    .promo-tip-close:hover { color: var(--accent); }
+    @media (hover: none) {
+      .promo-card:hover .promo-tip { opacity: 0; pointer-events: none; transform: translateY(12px); }
+      .promo-tip.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+      .promo-tip-close { display: block; }
+    }
+
     /* ============================================================
        PLACEHOLDER GRADIENTS for dishes
     ============================================================ */
@@ -2200,57 +2255,64 @@
     <h2 class="section-title reveal">Популярное и <span>выгодное</span></h2>
 
     <div class="promo-grid stagger-grid">
+
+      <!-- Карточка 1: Первый заказ -->
       <div class="promo-card reveal">
         <div class="promo-img">
-          <div class="promo-img-placeholder p1">🍣</div>
+          <div class="promo-img-placeholder p1">🎁</div>
         </div>
         <div class="promo-body">
-          <div class="promo-tag">Хиты вместе</div>
-          <div class="promo-title">Хиты вдвоём</div>
-          <div class="promo-desc">Два сета на выбор — платите меньше, наслаждаетесь вдвойне</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-            <span class="badge badge-danger">−15%</span>
-            <span style="font-size:0.85rem;color:var(--text-2)">при заказе любых двух сетов</span>
-          </div>
-          <a href="#menu" class="btn btn-secondary" style="width:100%;justify-content:center">Выбрать сеты</a>
+          <div class="promo-tag">ПЕРВЫЙ ЗАКАЗ</div>
+          <div class="promo-title">Промокод 1LOVE</div>
+          <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
+          <div class="promo-extra">🍣 8 шт</div>
+          <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
+            onclick="applyPromoCode('1LOVE')">Применить промокод</button>
+        </div>
+        <div class="promo-tip">
+          <button class="promo-tip-close">✕</button>
+          <p>Промокод <strong>1LOVE</strong>. К заказу от 999 ₽ вы получаете в подарок ролл «Филадельфия лайт с огурцом», 8 шт. Оффер действует для новых клиентов.</p>
         </div>
       </div>
 
+      <!-- Карточка 2: Именинникам -->
       <div class="promo-card reveal reveal-delay-1">
         <div class="promo-img">
-          <div class="promo-img-placeholder p2">🎁</div>
+          <div class="promo-img-placeholder p2">🎂</div>
         </div>
         <div class="promo-body">
-          <div class="promo-tag">Первый заказ</div>
-          <div class="promo-title">Первый раз у нас?</div>
-          <div class="promo-desc">Скидка −15% на весь первый заказ. Просто введите промокод</div>
-          <div style="background:rgba(232,168,71,0.08);border:1px solid rgba(232,168,71,0.2);border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:0.85rem;color:var(--text-2)">Промокод:</span>
-            <span style="font-weight:700;color:var(--accent);letter-spacing:0.1em">ПЕРВЫЙ</span>
-          </div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="document.getElementById('promoInput').focus();document.getElementById('promoInput').scrollIntoView({behavior:'smooth'})">Ввести промокод</button>
+          <div class="promo-tag">ИМЕНИННИКАМ</div>
+          <div class="promo-title">BDAY1 / BDAY2</div>
+          <div class="promo-desc">Подарок к заказу в день рождения</div>
+          <div class="promo-extra">🎁 2 уровня подарка</div>
+          <button class="btn btn-secondary promo-tip-btn" style="width:100%;justify-content:center">Посмотреть условия</button>
+        </div>
+        <div class="promo-tip">
+          <button class="promo-tip-close">✕</button>
+          <p><strong>BDAY1</strong>: к заказу от 999 ₽ — ролл «Лава с шиитаке» в подарок.<br><br>
+          <strong>BDAY2</strong>: к заказу от 1 999 ₽ — набор «Праздничный»: ролл «Лава с шиитаке» + «Калифорния классическая».</p>
         </div>
       </div>
 
+      <!-- Карточка 3: Самовывоз -->
       <div class="promo-card reveal reveal-delay-2">
         <div class="promo-img">
-          <div class="promo-img-placeholder p3">🐉</div>
+          <div class="promo-img-placeholder p3">🚶</div>
         </div>
         <div class="promo-body">
-          <div class="promo-tag">Ролл дня</div>
-          <div class="promo-title">«Дракон»</div>
-          <div class="promo-desc">Угорь, авокадо, огурец, икра тобико — только сегодня по специальной цене</div>
-          <div class="promo-timer">
-            ⏱ Акция заканчивается через:
-            <span class="promo-timer-value" id="promoTimer">–</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-            <span class="promo-old">390 ₽</span>
-            <span class="promo-new">290 ₽</span>
-          </div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="addToCart({id:99,name:'Дракон (акция)',price:290,emoji:'🐉'})">Добавить в корзину</button>
+          <div class="promo-tag">САМОВЫВОЗ</div>
+          <div class="promo-title">−10% по промокоду СВ10</div>
+          <div class="promo-desc">Заберите заказ выгоднее</div>
+          <div class="promo-extra">💰 Скидка на самовывоз</div>
+          <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
+            onclick="applyPromoCode('СВ10')">Применить промокод</button>
+        </div>
+        <div class="promo-tip">
+          <button class="promo-tip-close">✕</button>
+          <p>Промокод <strong>СВ10</strong>. Скидка 10% на самовывоз. Подходит для тех, кто хочет забрать заказ самостоятельно и получить более выгодную цену.</p>
         </div>
       </div>
+
     </div>
 
     <div class="promo-code-block reveal">
@@ -4163,6 +4225,37 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   })();
+
+  // Promo cards tip (mobile click)
+  document.querySelectorAll('.promo-card').forEach(function(card) {
+    var tip = card.querySelector('.promo-tip');
+    var closeBtn = card.querySelector('.promo-tip-close');
+    var actionBtn = card.querySelector('.promo-tip-btn');
+    if (!tip) return;
+    if (actionBtn) {
+      actionBtn.addEventListener('click', function(e) {
+        if (window.matchMedia('(hover: none)').matches) {
+          e.preventDefault();
+          e.stopPropagation();
+          tip.classList.toggle('open');
+        }
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        tip.classList.remove('open');
+      });
+    }
+  });
+
+  function applyPromoCode(code) {
+    var input = document.getElementById('promoInput');
+    if (!input) return;
+    input.value = code;
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input.focus();
+  }
 
   // Header clock
   (function() {

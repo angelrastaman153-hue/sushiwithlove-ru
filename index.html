@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
   <style>
     /* ============================================================
@@ -3478,61 +3477,15 @@
       </div>
 
       <div class="reveal" style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">
-        <div id="delivery-map" style="height:460px;width:100%;"></div>
+        <iframe
+          src="https://yandex.ru/map-widget/v1/?ll=65.3314%2C55.4406&z=13&pt=65.3314%2C55.4406%2Cpm2rdm&l=map&from=api-maps"
+          width="100%"
+          height="460"
+          frameborder="0"
+          allowfullscreen="true"
+          style="display:block;"
+        ></iframe>
       </div>
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-      <script>
-      (function() {
-        var restaurantLat = 55.4406, restaurantLng = 65.3314;
-        var map = L.map('delivery-map', { scrollWheelZoom: false, zoomControl: true })
-                   .setView([restaurantLat, restaurantLng], 13);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-          maxZoom: 19
-        }).addTo(map);
-
-        /* Зона доставки — примерные границы города Кургана */
-        var zone = L.polygon([
-          [55.490, 65.235],
-          [55.495, 65.305],
-          [55.490, 65.390],
-          [55.475, 65.460],
-          [55.453, 65.500],
-          [55.425, 65.505],
-          [55.400, 65.470],
-          [55.390, 65.390],
-          [55.390, 65.295],
-          [55.405, 65.230],
-          [55.435, 65.205],
-          [55.465, 65.215]
-        ], {
-          color: '#e63946',
-          weight: 2,
-          dashArray: '8,5',
-          fillColor: '#e63946',
-          fillOpacity: 0.12
-        }).addTo(map);
-        zone.bindTooltip('Зона доставки', { sticky: true, className: 'map-zone-tip' });
-
-        /* Маркер ресторана */
-        var pin = L.divIcon({
-          className: '',
-          html: '<div style="width:36px;height:36px;background:#e63946;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.4)"></div>',
-          iconSize: [36, 36],
-          iconAnchor: [18, 36],
-          popupAnchor: [0, -38]
-        });
-        L.marker([restaurantLat, restaurantLng], { icon: pin })
-          .addTo(map)
-          .bindPopup('<b style="font-size:14px">🍱 Суши с Любовью</b><br>ул. Гоголя, д. 7<br><span style="color:#888;font-size:12px">Ежедневно 10:00–22:00</span>')
-          .openPopup();
-
-        /* Скролл колесом — только после клика по карте */
-        map.on('click', function() { map.scrollWheelZoom.enable(); });
-        map.getContainer().addEventListener('mouseleave', function() { map.scrollWheelZoom.disable(); });
-      })();
-      </script>
     </div>
   </div>
 </section>

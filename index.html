@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
 
   <style>
     /* ============================================================
@@ -1501,6 +1502,12 @@
         repeating-linear-gradient(90deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 60px);
     }
     .map-placeholder-icon { font-size: 48px; position: relative; }
+    .variant-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .var-btn { padding: 3px 11px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-2); font-size: 0.78rem; cursor: pointer; font-family: var(--font-body); transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    .var-btn.active, .var-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .map-zone-tip { background: var(--accent) !important; color: #fff !important; border: none !important; font-family: var(--font-body); font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; }
+    .leaflet-popup-content-wrapper { border-radius: 12px !important; font-family: var(--font-body) !important; }
+    .leaflet-popup-tip-container { display: none; }
     .map-placeholder p { color: var(--text-2); font-size: 0.9rem; position: relative; }
     .map-dot {
       position: absolute;
@@ -3183,29 +3190,14 @@
           <div class="dish-body">
             <div class="dish-name">Имбирь маринованный</div>
             <div class="dish-composition">Освежает вкус между роллами — традиционный японский маринованный имбирь</div>
+            <div class="variant-btns" data-variants='[{"w":"30 г","n":"Имбирь 30г","p":30,"id":123},{"w":"50 г","n":"Имбирь 50г","p":50,"id":124},{"w":"100 г","n":"Имбирь 100г","p":65,"id":125}]'>
+              <button class="var-btn active" onclick="selectVariant(this)">30 г</button>
+              <button class="var-btn" onclick="selectVariant(this)">50 г</button>
+              <button class="var-btn" onclick="selectVariant(this)">100 г</button>
+            </div>
             <div class="dish-meta"><span class="dish-weight">30 г</span><span class="dish-price">30 ₽</span></div>
           </div>
           <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:123,name:'Имбирь 30г',price:30,emoji:'🌸'})">+ В корзину</button></div>
-        </div>
-
-        <div class="dish-card reveal reveal-delay-3" data-id="173b" data-name="Имбирь 50г" data-price="50" data-emoji="🌸">
-          <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🌸</div></div>
-          <div class="dish-body">
-            <div class="dish-name">Имбирь маринованный</div>
-            <div class="dish-composition">Освежает вкус между роллами — традиционный японский маринованный имбирь</div>
-            <div class="dish-meta"><span class="dish-weight">50 г</span><span class="dish-price">50 ₽</span></div>
-          </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:124,name:'Имбирь 50г',price:50,emoji:'🌸'})">+ В корзину</button></div>
-        </div>
-
-        <div class="dish-card reveal" data-id="173c" data-name="Имбирь 100г" data-price="65" data-emoji="🌸">
-          <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🌸</div></div>
-          <div class="dish-body">
-            <div class="dish-name">Имбирь маринованный</div>
-            <div class="dish-composition">Освежает вкус между роллами — традиционный японский маринованный имбирь</div>
-            <div class="dish-meta"><span class="dish-weight">100 г</span><span class="dish-price">65 ₽</span></div>
-          </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:125,name:'Имбирь 100г',price:65,emoji:'🌸'})">+ В корзину</button></div>
         </div>
 
         <div class="dish-card reveal reveal-delay-1" data-id="174" data-name="Васаби 20г" data-price="25" data-emoji="🌿">
@@ -3213,29 +3205,14 @@
           <div class="dish-body">
             <div class="dish-name">Васаби</div>
             <div class="dish-composition">Японский хрен — для тех, кто любит с огоньком</div>
+            <div class="variant-btns" data-variants='[{"w":"20 г","n":"Васаби 20г","p":25,"id":127},{"w":"40 г","n":"Васаби 40г","p":45,"id":128},{"w":"60 г","n":"Васаби 60г","p":65,"id":130}]'>
+              <button class="var-btn active" onclick="selectVariant(this)">20 г</button>
+              <button class="var-btn" onclick="selectVariant(this)">40 г</button>
+              <button class="var-btn" onclick="selectVariant(this)">60 г</button>
+            </div>
             <div class="dish-meta"><span class="dish-weight">20 г</span><span class="dish-price">25 ₽</span></div>
           </div>
           <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:127,name:'Васаби 20г',price:25,emoji:'🌿'})">+ В корзину</button></div>
-        </div>
-
-        <div class="dish-card reveal reveal-delay-2" data-id="174b" data-name="Васаби 40г" data-price="45" data-emoji="🌿">
-          <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🌿</div></div>
-          <div class="dish-body">
-            <div class="dish-name">Васаби</div>
-            <div class="dish-composition">Японский хрен — для тех, кто любит с огоньком</div>
-            <div class="dish-meta"><span class="dish-weight">40 г</span><span class="dish-price">45 ₽</span></div>
-          </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:128,name:'Васаби 40г',price:45,emoji:'🌿'})">+ В корзину</button></div>
-        </div>
-
-        <div class="dish-card reveal reveal-delay-3" data-id="174c" data-name="Васаби 60г" data-price="65" data-emoji="🌿">
-          <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🌿</div></div>
-          <div class="dish-body">
-            <div class="dish-name">Васаби</div>
-            <div class="dish-composition">Японский хрен — для тех, кто любит с огоньком</div>
-            <div class="dish-meta"><span class="dish-weight">60 г</span><span class="dish-price">65 ₽</span></div>
-          </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:130,name:'Васаби 60г',price:65,emoji:'🌿'})">+ В корзину</button></div>
         </div>
 
         <div class="dish-card reveal" data-id="175" data-name="Картофель фри" data-price="139" data-emoji="🍟">
@@ -3409,15 +3386,62 @@
         </div>
       </div>
 
-      <div class="reveal" style="min-height:400px">
-        <script type="text/javascript" charset="utf-8" async src="https://api-maps.yandex.ru/services/constructor/1.0/js/?um=constructor%3A1697ff035df586144735d456b0d65df70d3ef0e25bf15b39714b513381fcb8d1&amp;width=100%25&amp;height=460&amp;lang=ru_RU&amp;scroll=false"></script>
-        <noscript>
-          <div class="map-placeholder" style="height:460px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
-            <div style="font-size:2.5rem">📍</div>
-            <p>Карта доступна в браузере с включённым JavaScript</p>
-          </div>
-        </noscript>
+      <div class="reveal" style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">
+        <div id="delivery-map" style="height:460px;width:100%;"></div>
       </div>
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+      <script>
+      (function() {
+        var restaurantLat = 55.4406, restaurantLng = 65.3314;
+        var map = L.map('delivery-map', { scrollWheelZoom: false, zoomControl: true })
+                   .setView([restaurantLat, restaurantLng], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 19
+        }).addTo(map);
+
+        /* Зона доставки — примерные границы города Кургана */
+        var zone = L.polygon([
+          [55.490, 65.235],
+          [55.495, 65.305],
+          [55.490, 65.390],
+          [55.475, 65.460],
+          [55.453, 65.500],
+          [55.425, 65.505],
+          [55.400, 65.470],
+          [55.390, 65.390],
+          [55.390, 65.295],
+          [55.405, 65.230],
+          [55.435, 65.205],
+          [55.465, 65.215]
+        ], {
+          color: '#e63946',
+          weight: 2,
+          dashArray: '8,5',
+          fillColor: '#e63946',
+          fillOpacity: 0.12
+        }).addTo(map);
+        zone.bindTooltip('Зона доставки', { sticky: true, className: 'map-zone-tip' });
+
+        /* Маркер ресторана */
+        var pin = L.divIcon({
+          className: '',
+          html: '<div style="width:36px;height:36px;background:#e63946;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.4)"></div>',
+          iconSize: [36, 36],
+          iconAnchor: [18, 36],
+          popupAnchor: [0, -38]
+        });
+        L.marker([restaurantLat, restaurantLng], { icon: pin })
+          .addTo(map)
+          .bindPopup('<b style="font-size:14px">🍱 Суши с Любовью</b><br>ул. Гоголя, д. 7<br><span style="color:#888;font-size:12px">Ежедневно 10:00–22:00</span>')
+          .openPopup();
+
+        /* Скролл колесом — только после клика по карте */
+        map.on('click', function() { map.scrollWheelZoom.enable(); });
+        map.getContainer().addEventListener('mouseleave', function() { map.scrollWheelZoom.disable(); });
+      })();
+      </script>
     </div>
   </div>
 </section>
@@ -3850,6 +3874,24 @@
     const total = getCartTotal();
     if (total === 0) return 0;
     return total >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_COST;
+  }
+
+  function selectVariant(btn) {
+    const container = btn.closest('[data-variants]');
+    const card = btn.closest('.dish-card');
+    const variants = JSON.parse(container.dataset.variants);
+    const label = btn.textContent.trim();
+    const v = variants.find(x => x.w === label);
+    if (!v) return;
+    container.querySelectorAll('.var-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    card.dataset.name = v.n;
+    card.dataset.price = v.p;
+    card.querySelector('.dish-weight').textContent = v.w;
+    card.querySelector('.dish-price').textContent = v.p + ' ₽';
+    const emoji = card.dataset.emoji;
+    card.querySelector('.add-btn').setAttribute('onclick',
+      `addToCart({id:${v.id},name:'${v.n}',price:${v.p},emoji:'${emoji}'})`);
   }
 
   function addToCart(item) {

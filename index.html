@@ -1725,6 +1725,74 @@
     }
 
     /* ============================================================
+       GUARANTEE POPUP
+    ============================================================ */
+    .guarantee-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .guarantee-popup {
+      position: absolute;
+      left: 0; top: calc(100% + 12px);
+      z-index: 200;
+      width: 380px;
+      background: rgba(20, 16, 10, 0.97);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(232,168,71,0.25);
+      border-radius: 16px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,168,71,0.08);
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .guarantee-wrap:hover .guarantee-popup,
+    .guarantee-wrap.open .guarantee-popup {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .guarantee-popup h3 {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      background: linear-gradient(270deg,#E8A847 0%,#f0c060 20%,#C84B31 40%,#E8A847 60%,#ffe0a0 80%,#E8A847 100%);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: grad-shift 5s linear infinite;
+    }
+    .guarantee-popup p {
+      font-size: 0.88rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+    .guarantee-popup ul {
+      margin: 0 0 12px 0;
+      padding-left: 18px;
+    }
+    .guarantee-popup ul li {
+      font-size: 0.88rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      margin-bottom: 4px;
+    }
+    .guarantee-popup .gp-important {
+      font-size: 0.82rem;
+      color: rgba(232,168,71,0.7);
+      border-top: 1px solid rgba(232,168,71,0.12);
+      padding-top: 12px;
+      margin-bottom: 0;
+    }
+    @media (max-width: 480px) {
+      .guarantee-popup { width: calc(100vw - 48px); left: 0; }
+    }
+
+    /* ============================================================
        SCROLL TO TOP
     ============================================================ */
     .scroll-top {
@@ -1854,9 +1922,24 @@
   <div class="container">
     <div class="hero-content">
       <div class="hero-badge reveal">
-        <span class="badge badge-accent" style="padding:12px 24px;display:inline-flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-          <span style="font-size:1.25rem;font-weight:700;font-family:var(--font-display);font-style:italic;background:linear-gradient(270deg,#E8A847 0%,#f0c060 20%,#C84B31 40%,#E8A847 60%,#ffe0a0 80%,#E8A847 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:grad-shift 5s linear infinite">ГАРАНТИЯ КАЧЕСТВА</span><span style="font-size:0.95rem;color:var(--text-2)">или вернём деньги</span>
-        </span>
+        <div class="guarantee-wrap" id="guaranteeWrap">
+          <span class="badge badge-accent" style="padding:12px 24px;display:inline-flex;align-items:baseline;gap:10px;flex-wrap:wrap;cursor:pointer">
+            <span style="font-size:1.25rem;font-weight:700;font-family:var(--font-display);font-style:italic;background:linear-gradient(270deg,#E8A847 0%,#f0c060 20%,#C84B31 40%,#E8A847 60%,#ffe0a0 80%,#E8A847 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:grad-shift 5s linear infinite">ГАРАНТИЯ КАЧЕСТВА</span><span style="font-size:0.95rem;color:var(--text-2)">или вернём деньги</span>
+          </span>
+          <div class="guarantee-popup">
+            <h3>Гарантия качества</h3>
+            <p>Мы готовим для вас с любовью и душой. Нам очень важно, чтобы заказ принёс вам удовольствие, а вечер был вкусным, спокойным и приятным.</p>
+            <p>Если вдруг что-то в заказе вам не понравилось или пошло не так — дайте нам знать. Мы не хотим, чтобы вы оставались с плохим впечатлением: для нас важно исправить ситуацию и сохранить ваше доверие.</p>
+            <p style="font-size:0.82rem;color:var(--accent);margin-bottom:6px;font-weight:600">Условия гарантии:</p>
+            <ul>
+              <li>сообщите нам о проблеме в течение 1 часа после получения заказа;</li>
+              <li>по возможности пришлите фото;</li>
+              <li>укажите номер заказа или телефон;</li>
+              <li>мы рассмотрим обращение и предложим замену, бонус или возврат денег.</li>
+            </ul>
+            <p class="gp-important">Обращение принимается в течение часа после получения заказа и при сохранении 90% блюда.</p>
+          </div>
+        </div>
       </div>
 
       <h1 class="reveal reveal-delay-1">
@@ -3892,6 +3975,22 @@
     }, { passive: true });
     btn.addEventListener('click', function() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+
+  // Guarantee popup — toggle on touch devices
+  (function() {
+    var wrap = document.getElementById('guaranteeWrap');
+    if (!wrap) return;
+    wrap.addEventListener('click', function(e) {
+      // on hover-capable devices CSS handles it; on touch — toggle class
+      if (window.matchMedia('(hover: none)').matches) {
+        wrap.classList.toggle('open');
+        e.stopPropagation();
+      }
+    });
+    document.addEventListener('click', function() {
+      wrap.classList.remove('open');
     });
   })();
 </script>

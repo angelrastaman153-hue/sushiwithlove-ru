@@ -1728,19 +1728,19 @@
        GUARANTEE MODAL
     ============================================================ */
     .guarantee-wrap {
+      position: relative;
       display: inline-block;
       cursor: pointer;
     }
     .guarantee-badge {
-      padding: 12px 20px !important;
-      display: flex !important;
-      flex-direction: column;
+      padding: 10px 24px !important;
+      display: inline-flex !important;
+      flex-direction: row;
       align-items: center;
-      gap: 4px !important;
-      text-align: center;
+      gap: 10px !important;
     }
     .guarantee-badge-title {
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-weight: 700;
       font-family: var(--font-display);
       font-style: italic;
@@ -1750,25 +1750,41 @@
       background-clip: text;
       -webkit-text-fill-color: transparent;
       animation: grad-shift 5s linear infinite;
+      white-space: nowrap;
     }
     .guarantee-badge-sub {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--text-2);
+      white-space: nowrap;
     }
     .guarantee-badge-icon {
+      position: absolute;
+      top: -9px; right: -9px;
       width: 20px; height: 20px;
       border-radius: 50%;
-      border: 1.5px solid rgba(232,168,71,0.5);
-      color: rgba(232,168,71,0.8);
-      font-size: 0.72rem;
+      background: rgba(20,16,10,0.95);
+      border: 1.5px solid rgba(232,168,71,0.6);
+      color: rgba(232,168,71,0.9);
+      font-size: 0.7rem;
       font-weight: 700;
       font-style: normal;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      margin-top: 4px;
       font-family: var(--font-ui);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    @media (max-width: 768px) {
+      .guarantee-badge {
+        padding: 10px 20px !important;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px !important;
+        text-align: center;
+        width: 100%;
+      }
+      .guarantee-badge-title { white-space: normal; }
+      .guarantee-badge-sub { white-space: normal; }
     }
     .guarantee-overlay {
       position: fixed;

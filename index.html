@@ -651,7 +651,7 @@
     .promo-img-placeholder.p2 { background: linear-gradient(135deg, #1a0f0a, #2d1a12); }
     .promo-img-placeholder.p3 { background: linear-gradient(135deg, #0d1a1a, #0d2a20); }
 
-    .promo-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+    .promo-body { padding: 20px; display: flex; flex-direction: column; flex: 1; position: relative; }
     .promo-desc { flex: 1; }
     .promo-tag {
       font-size: 0.7rem;
@@ -1676,7 +1676,7 @@
       padding: 24px 20px 20px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       opacity: 0;
       transform: translateY(12px);
       transition: opacity 0.25s ease, transform 0.25s ease;
@@ -1690,12 +1690,14 @@
       pointer-events: auto;
     }
     .promo-tip p {
+      margin: auto 0;
       font-size: 0.88rem;
       color: var(--text-2);
       line-height: 1.75;
       margin: 0;
     }
     .promo-tip strong { color: var(--accent); -webkit-text-fill-color: var(--accent); }
+    .promo-tip > .btn { margin-top: auto; }
     .promo-tip-close {
       position: absolute;
       top: 10px; right: 12px;
@@ -1709,7 +1711,7 @@
     .promo-tip-close:hover { color: var(--accent); }
     .promo-hint-btn {
       position: absolute;
-      bottom: 10px; right: 10px;
+      top: 18px; right: 16px;
       width: 28px; height: 28px;
       border-radius: 50%;
       background: rgba(15,11,8,0.88);
@@ -2257,7 +2259,7 @@
     <div class="trust-item reveal reveal-delay-1">
       <div class="trust-icon">🍱</div>
       <div>
-        <div class="trust-num" data-target="78500" data-suffix="+">0</div>
+        <div class="trust-num" data-target="130000" data-suffix="+">0</div>
         <div class="trust-label">Заказов<br>выполнено</div>
       </div>
     </div>
@@ -2290,11 +2292,11 @@
       <!-- Карточка 1: Первый заказ -->
       <div class="promo-card reveal">
         <div class="promo-img">
-          <img src="promo-1love.jpg" alt="Промокод 1LOVE" onerror="this.style.display='none'">
+          <img src="promo-1love.jpg.png" alt="Промокод 1LOVE" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p1">🎁</div>
-          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         </div>
         <div class="promo-body">
+          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           <div class="promo-tag">ПЕРВЫЙ ЗАКАЗ · ПРОМОКОД</div>
           <div class="promo-title">1LOVE</div>
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
@@ -2312,11 +2314,11 @@
       <!-- Карточка 2: Именинникам -->
       <div class="promo-card reveal reveal-delay-1">
         <div class="promo-img">
-          <img src="promo-bday.jpg" alt="Промокод именинникам" onerror="this.style.display='none'">
+          <img src="promo-bday.jpg.png" alt="Промокод именинникам" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p2">🎂</div>
-          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         </div>
         <div class="promo-body">
+          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           <div class="promo-tag">ИМЕНИННИКАМ · ПРОМОКОД</div>
           <div class="promo-title">BDAY1 / BDAY2</div>
           <div class="promo-desc">Подарок к заказу в день рождения</div>
@@ -2327,7 +2329,7 @@
           <button class="promo-tip-close">✕</button>
           <p><strong>BDAY1</strong>: к заказу от 999 ₽ — ролл «Лава с шиитаке» в подарок.<br><br>
           <strong>BDAY2</strong>: к заказу от 1 999 ₽ — набор «Праздничный»: «Лава с шиитаке» + «Калифорния классическая».</p>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;margin-top:auto">
             <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY1')">Вставить BDAY1</button>
             <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY2')">Вставить BDAY2</button>
           </div>
@@ -2337,11 +2339,11 @@
       <!-- Карточка 3: Самовывоз -->
       <div class="promo-card reveal reveal-delay-2">
         <div class="promo-img">
-          <img src="promo-sv10.jpg" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
+          <img src="promo-sv10.jpg.png" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p3">🚶</div>
-          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         </div>
         <div class="promo-body">
+          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           <div class="promo-tag">САМОВЫВОЗ · ПРОМОКОД</div>
           <div class="promo-title">СВ10</div>
           <div class="promo-desc">Заберите заказ выгоднее</div>

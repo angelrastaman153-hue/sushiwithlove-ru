@@ -4188,15 +4188,6 @@
         if (isOpen) { d.classList.remove('closed'); }
         else { d.classList.add('closed'); }
       });
-      if (hoursEl) {
-        if (isOpen) {
-          hoursEl.classList.remove('closed');
-          hoursEl.textContent = 'Открыто · ежедневно 10:00–22:00';
-        } else {
-          hoursEl.classList.add('closed');
-          hoursEl.textContent = 'Закрыто · откроемся в 10:00';
-        }
-      }
       // Час пик
       var isPeak = h >= 16 && h < 19;
       if (isPeak) {

@@ -1852,7 +1852,7 @@
 
       <h1 class="reveal reveal-delay-1">
         Суши и роллы
-        <em>по Кургану и&nbsp;в&nbsp;пригород</em>
+        <em>по Кургану и&nbsp;пригороду</em>
       </h1>
       <p class="reveal reveal-delay-1" style="font-size:1.1rem;color:var(--text-2);margin-top:-8px">
         ✱ от 30 минут <span style="font-size:0.95rem;opacity:0.7">— зависит от загруженности кухни и удалённости заказа</span>
@@ -3869,24 +3869,22 @@
   }`;
   document.head.appendChild(styleEl);
 
-  // ============================================================
-  // SCROLL TO TOP
-  // ============================================================
-  const scrollTopBtn = document.getElementById('scrollTopBtn');
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 400) {
-      scrollTopBtn.classList.add('visible');
-    } else {
-      scrollTopBtn.classList.remove('visible');
-    }
-  }, { passive: true });
-  scrollTopBtn.addEventListener('click', function() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
 </script>
 
 <button class="scroll-top" id="scrollTopBtn" aria-label="Наверх">
   <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
 </button>
+<script>
+  (function() {
+    var btn = document.getElementById('scrollTopBtn');
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 400) { btn.classList.add('visible'); }
+      else { btn.classList.remove('visible'); }
+    }, { passive: true });
+    btn.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+</script>
 </body>
 </html>

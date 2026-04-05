@@ -778,9 +778,15 @@
     /* tilt управляется JS через style.transform */
 
     .dish-img {
-      height: 160px;
+      aspect-ratio: 1 / 1;
+      height: auto;
       position: relative;
       overflow: hidden;
+    }
+    .dish-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .dish-img-ph {
       width: 100%; height: 100%;

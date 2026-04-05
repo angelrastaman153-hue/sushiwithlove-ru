@@ -216,7 +216,7 @@
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 1000;
-      height: 80px;
+      height: 96px;
       display: flex;
       align-items: center;
       transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s;
@@ -241,7 +241,7 @@
       flex-shrink: 0;
     }
     .logo-icon {
-      width: 44px; height: 44px;
+      width: 56px; height: 56px;
       border-radius: 50%;
       overflow: hidden;
       flex-shrink: 0;
@@ -251,7 +251,7 @@
     .logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .logo-text {
       font-family: var(--font-display);
-      font-size: 1.15rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: var(--text);
       line-height: 1.2;
@@ -266,8 +266,8 @@
       flex: 1;
     }
     .nav a {
-      padding: 6px 14px;
-      font-size: 0.9rem;
+      padding: 8px 18px;
+      font-size: 1.05rem;
       font-weight: 500;
       color: var(--text-2);
       border-radius: 6px;
@@ -457,12 +457,18 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 40px;
-      align-items: center;
+      align-items: stretch;
       min-height: 100vh;
-      padding-top: 80px;
+      padding-top: 96px;
     }
 
-    .hero-content { max-width: 560px; }
+    .hero-content {
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-bottom: 48px;
+    }
 
     .hero-badge {
       margin-bottom: 24px;
@@ -514,15 +520,16 @@
     }
 
     .hero-promo {
-      position: absolute;
-      right: 24px; bottom: 48px;
+      align-self: end;
+      justify-self: end;
+      margin-bottom: 48px;
       background: rgba(30, 24, 16, 0.85);
       backdrop-filter: blur(16px);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 20px 24px;
-      max-width: 240px;
-      z-index: 3;
+      max-width: 260px;
+      width: 100%;
     }
     .hero-promo-label {
       font-size: 0.75rem;
@@ -1854,14 +1861,14 @@
         Суши и роллы
         <em>по Кургану и&nbsp;пригороду</em>
       </h1>
-      <p class="reveal reveal-delay-1" style="font-size:1.1rem;color:var(--text-2);margin-top:-8px">
+      <p class="reveal reveal-delay-1" style="font-size:1.1rem;color:var(--text-2);margin-top:12px;margin-bottom:32px">
         ✱ от 30 минут <span style="font-size:0.95rem;opacity:0.7">— зависит от загруженности кухни и удалённости заказа</span>
       </p>
 
 
       <div class="hero-actions reveal reveal-delay-3">
         <a href="#menu" class="btn btn-primary">Смотреть меню →</a>
-        <a href="tel:+73526620070" class="btn btn-ghost">📞 Позвонить</a>
+        <a href="tel:+79225782070" class="btn btn-ghost">📞 Позвонить</a>
       </div>
 
       <div class="hero-scroll reveal reveal-delay-4">

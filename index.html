@@ -306,7 +306,9 @@
       border-radius: 50%;
       background: #4ade80;
       animation: pulse-dot 2s infinite;
+      transition: background 0.4s;
     }
+    .header-phone .dot.closed { background: #888; animation: none; }
     @keyframes pulse-dot {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.6; transform: scale(0.8); }
@@ -315,6 +317,7 @@
       font-size: 0.75rem;
       color: var(--text-2);
     }
+    .header-hours.closed { color: var(--danger); }
 
     .cart-btn {
       position: relative;
@@ -2067,7 +2070,7 @@
           <span class="dot"></span>
           8-922-578-2070
         </a>
-        <div class="header-hours">Ежедневно 10:00–22:00</div>
+        <div class="header-hours" id="headerHours">Ежедневно 10:00–22:00</div>
       </div>
       <button class="cart-btn" id="cartBtn" aria-label="Корзина">
         🛒
@@ -4156,6 +4159,8 @@
     var ttText   = document.getElementById('clockTooltipText');
     var peakArc  = document.getElementById('clockPeakArc');
     if (!hourEl) return;
+    var dots = document.querySelectorAll('.header-phone .dot');
+    var hoursEl = document.getElementById('headerHours');
     function updateClock() {
       var now = new Date();
       var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
@@ -4163,6 +4168,22 @@
       var mAngle = (m + s / 60) * 6;
       hourEl.setAttribute('transform', 'rotate(' + hAngle + ' 18 18)');
       minEl.setAttribute('transform',  'rotate(' + mAngle + ' 18 18)');
+      // Открыто 10:00–22:00
+      var isOpen = h >= 10 && h < 22;
+      dots.forEach(function(d) {
+        if (isOpen) { d.classList.remove('closed'); }
+        else { d.classList.add('closed'); }
+      });
+      if (hoursEl) {
+        if (isOpen) {
+          hoursEl.classList.remove('closed');
+          hoursEl.textContent = 'Открыто · ежедневно 10:00–22:00';
+        } else {
+          hoursEl.classList.add('closed');
+          hoursEl.textContent = 'Закрыто · откроемся в 10:00';
+        }
+      }
+      // Час пик
       var isPeak = h >= 16 && h < 19;
       if (isPeak) {
         tooltip.classList.add('peak');
@@ -4173,7 +4194,9 @@
         tooltip.classList.remove('peak');
         peakArc.setAttribute('stroke', 'rgba(200,75,49,0.35)');
         ttTitle.textContent = 'Час пик 16:00–19:00';
-        ttText.textContent  = 'Красная дуга — время повышенной нагрузки. Сейчас спокойно, заказ выйдет быстро.';
+        ttText.textContent  = isOpen
+          ? 'Красная дуга — время повышенной нагрузки. Сейчас спокойно, заказ выйдет быстро.'
+          : 'Сейчас мы закрыты. Работаем ежедневно с 10:00 до 22:00.';
       }
     }
     updateClock();

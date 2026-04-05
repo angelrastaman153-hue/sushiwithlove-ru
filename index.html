@@ -1725,6 +1725,47 @@
     }
 
     /* ============================================================
+       HEADER CLOCK
+    ============================================================ */
+    .clock-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .clock-svg { width: 40px; height: 40px; }
+    .clock-tooltip {
+      position: absolute;
+      top: calc(100% + 14px);
+      right: -10px;
+      width: 230px;
+      background: rgba(15,11,8,0.97);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(232,168,71,0.2);
+      border-radius: 14px;
+      padding: 16px 18px;
+      font-size: 0.82rem;
+      color: var(--text-2);
+      line-height: 1.65;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 600;
+    }
+    .clock-wrap:hover .clock-tooltip { opacity: 1; transform: translateY(0); }
+    .clock-tooltip .ct-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+    .clock-tooltip.peak .ct-title { color: var(--danger); }
+    .clock-tooltip.peak { border-color: rgba(200,75,49,0.3); }
+    @media (max-width: 1024px) { .clock-wrap { display: none; } }
+
+    /* ============================================================
        GUARANTEE MODAL
     ============================================================ */
     .guarantee-wrap {
@@ -1980,6 +2021,35 @@
       <a href="#reviews">Отзывы</a>
       <a href="#about">О нас</a>
     </nav>
+
+    <div class="clock-wrap" id="clockWrap">
+      <svg class="clock-svg" viewBox="0 0 36 36" id="clockSvg">
+        <!-- Фон -->
+        <circle cx="18" cy="18" r="17" fill="rgba(15,11,8,0.9)" stroke="rgba(232,168,71,0.18)" stroke-width="0.8"/>
+        <!-- Дуга часа пик: 16:00(=4h) → 19:00(=7h) на циферблате -->
+        <!-- 4 o'clock: угол 30° от оси X; 7 o'clock: угол 120° -->
+        <path id="clockPeakArc"
+          d="M 30.1 25 A 14 14 0 0 1 11 30.1"
+          stroke="rgba(200,75,49,0.4)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- Риски 12/3/6/9 -->
+        <line x1="18" y1="1.5" x2="18" y2="5"   stroke="rgba(232,168,71,0.35)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="34.5" y1="18" x2="31" y2="18" stroke="rgba(232,168,71,0.35)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="18" y1="34.5" x2="18" y2="31" stroke="rgba(232,168,71,0.35)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="1.5" y1="18" x2="5" y2="18"   stroke="rgba(232,168,71,0.35)" stroke-width="1.2" stroke-linecap="round"/>
+        <!-- Минутная стрелка -->
+        <line id="clockMin" x1="18" y1="18" x2="18" y2="4.5"
+          stroke="rgba(232,168,71,0.65)" stroke-width="0.9" stroke-linecap="round"/>
+        <!-- Часовая стрелка -->
+        <line id="clockHour" x1="18" y1="18" x2="18" y2="9"
+          stroke="rgba(255,255,255,0.9)" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Центр -->
+        <circle cx="18" cy="18" r="1.8" fill="#E8A847"/>
+      </svg>
+      <div class="clock-tooltip" id="clockTooltip">
+        <div class="ct-title" id="clockTooltipTitle">Час пик 16:00–19:00</div>
+        <span id="clockTooltipText">Нагрузка выше обычного — лучше оформить предзаказ заранее.</span>
+      </div>
+    </div>
 
     <div class="header-right">
       <div>
@@ -4069,6 +4139,39 @@
     btn.addEventListener('click', function() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+  })();
+
+  // Header clock
+  (function() {
+    var hourEl   = document.getElementById('clockHour');
+    var minEl    = document.getElementById('clockMin');
+    var tooltip  = document.getElementById('clockTooltip');
+    var ttTitle  = document.getElementById('clockTooltipTitle');
+    var ttText   = document.getElementById('clockTooltipText');
+    var peakArc  = document.getElementById('clockPeakArc');
+    if (!hourEl) return;
+    function updateClock() {
+      var now = new Date();
+      var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+      var hAngle = ((h % 12) + m / 60) * 30;
+      var mAngle = (m + s / 60) * 6;
+      hourEl.setAttribute('transform', 'rotate(' + hAngle + ' 18 18)');
+      minEl.setAttribute('transform',  'rotate(' + mAngle + ' 18 18)');
+      var isPeak = h >= 16 && h < 19;
+      if (isPeak) {
+        tooltip.classList.add('peak');
+        peakArc.setAttribute('stroke', 'rgba(200,75,49,0.85)');
+        ttTitle.textContent = '⚠ Час пик — сейчас!';
+        ttText.textContent  = 'Нагрузка на кухню выше обычного. Рекомендуем оформить предзаказ.';
+      } else {
+        tooltip.classList.remove('peak');
+        peakArc.setAttribute('stroke', 'rgba(200,75,49,0.35)');
+        ttTitle.textContent = 'Час пик 16:00–19:00';
+        ttText.textContent  = 'Красная дуга — время повышенной нагрузки. Сейчас спокойно, заказ выйдет быстро.';
+      }
+    }
+    updateClock();
+    setInterval(updateClock, 15000);
   })();
 
   // Guarantee modal

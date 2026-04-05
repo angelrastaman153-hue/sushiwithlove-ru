@@ -520,16 +520,16 @@
     }
 
     .hero-promo {
-      align-self: end;
-      justify-self: end;
-      margin-bottom: 48px;
+      position: absolute;
+      right: 40px;
+      bottom: calc(50vh - 220px);
       background: rgba(30, 24, 16, 0.85);
       backdrop-filter: blur(16px);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 20px 24px;
       max-width: 260px;
-      width: 100%;
+      z-index: 3;
     }
     .hero-promo-label {
       font-size: 0.75rem;

@@ -621,6 +621,8 @@
       border-radius: var(--radius-lg);
       overflow: hidden;
       transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+      display: flex;
+      flex-direction: column;
     }
     .promo-card:hover {
       transform: translateY(-6px);
@@ -649,7 +651,8 @@
     .promo-img-placeholder.p2 { background: linear-gradient(135deg, #1a0f0a, #2d1a12); }
     .promo-img-placeholder.p3 { background: linear-gradient(135deg, #0d1a1a, #0d2a20); }
 
-    .promo-body { padding: 20px; }
+    .promo-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+    .promo-desc { flex: 1; }
     .promo-tag {
       font-size: 0.7rem;
       font-weight: 700;
@@ -2278,7 +2281,7 @@
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
           <div class="promo-extra">🍣 8 шт</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
-            onclick="applyPromoCode('1LOVE')">Применить промокод</button>
+            onclick="applyPromoCode('1LOVE')" style="margin-top:auto">Применить промокод</button>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -4272,8 +4275,6 @@
     var input = document.getElementById('promoInput');
     if (!input) return;
     input.value = code;
-    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    input.focus();
   }
 
   // Header clock

@@ -1731,6 +1731,45 @@
       display: inline-block;
       cursor: pointer;
     }
+    .guarantee-badge {
+      padding: 12px 20px !important;
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px !important;
+      text-align: center;
+    }
+    .guarantee-badge-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+      font-style: italic;
+      background: linear-gradient(270deg,#E8A847 0%,#f0c060 20%,#C84B31 40%,#E8A847 60%,#ffe0a0 80%,#E8A847 100%);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: grad-shift 5s linear infinite;
+    }
+    .guarantee-badge-sub {
+      font-size: 0.9rem;
+      color: var(--text-2);
+    }
+    .guarantee-badge-icon {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(232,168,71,0.5);
+      color: rgba(232,168,71,0.8);
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-style: normal;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 4px;
+      font-family: var(--font-ui);
+    }
     .guarantee-overlay {
       position: fixed;
       inset: 0;
@@ -1972,8 +2011,10 @@
     <div class="hero-content">
       <div class="hero-badge reveal">
         <div class="guarantee-wrap" id="guaranteeWrap">
-          <span class="badge badge-accent" style="padding:12px 24px;display:inline-flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-            <span style="font-size:1.25rem;font-weight:700;font-family:var(--font-display);font-style:italic;background:linear-gradient(270deg,#E8A847 0%,#f0c060 20%,#C84B31 40%,#E8A847 60%,#ffe0a0 80%,#E8A847 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:grad-shift 5s linear infinite">ГАРАНТИЯ КАЧЕСТВА</span><span style="font-size:0.95rem;color:var(--text-2)">или вернём деньги</span>
+          <span class="badge badge-accent guarantee-badge">
+            <span class="guarantee-badge-title">ГАРАНТИЯ КАЧЕСТВА</span>
+            <span class="guarantee-badge-sub">или вернём деньги</span>
+            <span class="guarantee-badge-icon">?</span>
           </span>
         </div>
       </div>
@@ -4021,16 +4062,15 @@
     var overlay = document.getElementById('guaranteeOverlay');
     var closeBtn= document.getElementById('guaranteeClose');
     if (!wrap || !popup) return;
-    var hoverTimer;
     function open()  { popup.classList.add('open'); overlay.classList.add('open'); }
     function close() { popup.classList.remove('open'); overlay.classList.remove('open'); }
-    // Desktop hover
-    wrap.addEventListener('mouseenter', function() { clearTimeout(hoverTimer); open(); });
-    wrap.addEventListener('mouseleave', function() { hoverTimer = setTimeout(close, 220); });
-    popup.addEventListener('mouseenter', function() { clearTimeout(hoverTimer); });
-    popup.addEventListener('mouseleave', function() { hoverTimer = setTimeout(close, 220); });
-    // Touch / click
-    wrap.addEventListener('click', function(e) { e.stopPropagation(); popup.classList.contains('open') ? close() : open(); });
+    // Desktop: open on hover, close only by explicit action
+    wrap.addEventListener('mouseenter', function() { open(); });
+    // Click: toggle on mobile, close if open on desktop
+    wrap.addEventListener('click', function(e) {
+      e.stopPropagation();
+      popup.classList.contains('open') ? close() : open();
+    });
     overlay.addEventListener('click', close);
     closeBtn.addEventListener('click', close);
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close(); });

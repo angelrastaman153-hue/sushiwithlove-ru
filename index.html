@@ -1707,10 +1707,28 @@
       display: none;
     }
     .promo-tip-close:hover { color: var(--accent); }
+    .promo-hint-btn {
+      position: absolute;
+      bottom: 10px; right: 10px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(15,11,8,0.88);
+      border: 1.5px solid rgba(232,168,71,0.55);
+      color: rgba(232,168,71,0.9);
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: var(--font-ui);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      cursor: pointer;
+    }
     @media (hover: none) {
       .promo-card:hover .promo-tip { opacity: 0; pointer-events: none; transform: translateY(12px); }
       .promo-tip.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
       .promo-tip-close { display: block; }
+      .promo-hint-btn { display: flex; }
     }
 
     /* ============================================================
@@ -2274,6 +2292,7 @@
         <div class="promo-img">
           <img src="promo-1love.jpg" alt="Промокод 1LOVE" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p1">🎁</div>
+          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         </div>
         <div class="promo-body">
           <div class="promo-tag">ПЕРВЫЙ ЗАКАЗ · ПРОМОКОД</div>
@@ -2281,7 +2300,7 @@
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
           <div class="promo-extra">🍣 8 шт</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
-            onclick="applyPromoCode('1LOVE')" style="margin-top:auto">Применить промокод</button>
+            onclick="applyPromoCode('1LOVE', window.matchMedia('(hover:none)').matches)" style="margin-top:auto">Применить промокод</button>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -2295,6 +2314,7 @@
         <div class="promo-img">
           <img src="promo-bday.jpg" alt="Промокод именинникам" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p2">🎂</div>
+          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         </div>
         <div class="promo-body">
           <div class="promo-tag">ИМЕНИННИКАМ · ПРОМОКОД</div>
@@ -2319,6 +2339,7 @@
         <div class="promo-img">
           <img src="promo-sv10.jpg" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p3">🚶</div>
+          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         </div>
         <div class="promo-body">
           <div class="promo-tag">САМОВЫВОЗ · ПРОМОКОД</div>
@@ -2326,7 +2347,7 @@
           <div class="promo-desc">Заберите заказ выгоднее</div>
           <div class="promo-extra">💰 Скидка на самовывоз</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
-            onclick="applyPromoCode('СВ10')">Применить промокод</button>
+            onclick="applyPromoCode('СВ10', window.matchMedia('(hover:none)').matches)">Применить промокод</button>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -4248,19 +4269,17 @@
     });
   })();
 
-  // Promo cards tip (mobile click)
+  // Promo cards tip
   document.querySelectorAll('.promo-card').forEach(function(card) {
     var tip = card.querySelector('.promo-tip');
     var closeBtn = card.querySelector('.promo-tip-close');
-    var actionBtn = card.querySelector('.promo-tip-btn');
+    var hintBtn = card.querySelector('.promo-hint-btn');
     if (!tip) return;
-    if (actionBtn) {
-      actionBtn.addEventListener('click', function(e) {
-        if (window.matchMedia('(hover: none)').matches) {
-          e.preventDefault();
-          e.stopPropagation();
-          tip.classList.toggle('open');
-        }
+    // «?» button — opens tip on mobile
+    if (hintBtn) {
+      hintBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        tip.classList.toggle('open');
       });
     }
     if (closeBtn) {
@@ -4271,10 +4290,15 @@
     }
   });
 
-  function applyPromoCode(code) {
+  function applyPromoCode(code, withScroll) {
     var input = document.getElementById('promoInput');
     if (!input) return;
     input.value = code;
+    if (withScroll) {
+      setTimeout(function() {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 80);
+    }
   }
 
   // Header clock

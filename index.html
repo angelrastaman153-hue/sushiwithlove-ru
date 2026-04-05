@@ -1716,12 +1716,12 @@
       .toast-container { bottom: 80px; }
 
       .header { height: 72px; }
-      .header .container { justify-content: space-between; gap: 0; padding: 0 20px; }
-      .logo { gap: 12px; }
-      .logo-icon { width: 50px; height: 50px; }
-      .logo-text { font-size: 1.5rem; letter-spacing: 0.04em; }
+      .header .container { justify-content: space-between; gap: 0; padding: 0 16px; }
+      .logo { gap: 10px; flex: 1; min-width: 0; }
+      .logo-icon { width: 46px; height: 46px; flex-shrink: 0; }
+      .logo-text { font-size: 1.2rem; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .cart-btn { display: none; }
-      .burger { margin-right: 4px; }
+      .burger { flex-shrink: 0; margin-left: 12px; }
     }
 
     @media (max-width: 480px) {

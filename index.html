@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Доставка суши в Кургане — Sushi with Love · За 45 минут</title>
-  <meta name="description" content="Заказать роллы и суши с доставкой по Кургану. Охлаждённая рыба, минимальный заказ 600 ₽, бесплатная доставка от 900 ₽. Заказ онлайн или по телефону.">
+  <meta name="description" content="Суши с Любовью — доставка роллов и суши по Кургану с 2015 года. Бесплатная доставка от 1000 ₽. Заказ по телефону 66-20-70 или онлайн. Ежедневно 10:00–22:00.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -241,17 +241,21 @@
       flex-shrink: 0;
     }
     .logo-icon {
-      width: 36px; height: 36px;
-      background: var(--accent);
-      border-radius: 8px;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #fff;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
     }
+    .logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .logo-text {
       font-family: var(--font-display);
-      font-size: 1.2rem;
-      font-weight: 600;
+      font-size: 1.15rem;
+      font-weight: 700;
       color: var(--text);
+      line-height: 1.2;
+      letter-spacing: 0.03em;
     }
     .logo-text span { color: var(--accent); }
 
@@ -1727,8 +1731,8 @@
 <header class="header" id="header">
   <div class="container">
     <a href="#hero" class="logo">
-      <div class="logo-icon">🍱</div>
-      <div class="logo-text">Sushi <span>with Love</span></div>
+      <div class="logo-icon"><img src="logo.png" alt="Суши с Любовью"></div>
+      <div class="logo-text">СУШИ <span>С ЛЮБОВЬЮ</span></div>
     </a>
 
     <nav class="nav">
@@ -1741,11 +1745,15 @@
 
     <div class="header-right">
       <div>
-        <a href="tel:+73522000000" class="header-phone">
+        <a href="tel:+73526620070" class="header-phone">
           <span class="dot"></span>
-          +7 (352) 200-00-00
+          66-20-70
         </a>
-        <div class="header-hours">Пн–Вс 10:00–22:00</div>
+        <a href="tel:+79225782070" class="header-phone" style="margin-top:2px">
+          <span class="dot"></span>
+          8-922-578-2070
+        </a>
+        <div class="header-hours">Ежедневно 10:00–22:00</div>
       </div>
       <button class="cart-btn" id="cartBtn" aria-label="Корзина">
         🛒
@@ -1837,7 +1845,7 @@
     <div class="trust-item reveal reveal-delay-3">
       <div class="trust-icon">🏆</div>
       <div>
-        <div class="trust-num" data-target="2019" data-prefix="с ">0</div>
+        <div class="trust-num" data-target="2015" data-prefix="с ">0</div>
         <div class="trust-label">Года<br>в Кургане</div>
       </div>
     </div>
@@ -2653,77 +2661,79 @@
         <table class="zone-table reveal">
           <thead>
             <tr>
-              <th>Зона</th>
-              <th>Стоимость</th>
-              <th>Время</th>
-              <th>Мин. заказ</th>
+              <th>Сумма заказа</th>
+              <th>Стоимость доставки</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td class="zone-name">Центр</td>
+              <td class="zone-name">От 1 000 ₽</td>
               <td class="free">Бесплатно</td>
-              <td>30–40 мин</td>
-              <td>600 ₽</td>
             </tr>
             <tr>
-              <td class="zone-name">Заречный</td>
-              <td>100 ₽</td>
-              <td>50–60 мин</td>
-              <td>800 ₽</td>
-            </tr>
-            <tr>
-              <td class="zone-name">Рябково</td>
-              <td>100 ₽</td>
-              <td>50–60 мин</td>
-              <td>800 ₽</td>
-            </tr>
-            <tr>
-              <td class="zone-name">Восточный</td>
+              <td class="zone-name">От 700 ₽</td>
               <td>150 ₽</td>
-              <td>60–75 мин</td>
-              <td>1 000 ₽</td>
             </tr>
             <tr>
-              <td class="zone-name">За кольцевой</td>
-              <td>200 ₽</td>
-              <td>75–90 мин</td>
-              <td>1 200 ₽</td>
+              <td class="zone-name">До 700 ₽</td>
+              <td>210 ₽</td>
+            </tr>
+            <tr>
+              <td class="zone-name">16 мкр / Вороновка</td>
+              <td>+ 50 ₽ к тарифу</td>
+            </tr>
+            <tr>
+              <td class="zone-name">Кулацкий / 2-я Часовая</td>
+              <td>+ 150 ₽ к тарифу</td>
+            </tr>
+            <tr>
+              <td class="zone-name">Отдалённые районы</td>
+              <td>Уточняйте у оператора</td>
             </tr>
           </tbody>
         </table>
+
+        <div style="margin-top:16px;margin-bottom:8px;font-family:var(--font-display);font-size:1rem;color:var(--accent);letter-spacing:0.03em">Зоны бесплатной доставки по городу:</div>
+        <ul style="color:var(--text-2);font-size:0.88rem;line-height:1.9;padding-left:18px;margin-bottom:24px">
+          <li>Центр — Северный — Заозёрный</li>
+          <li>Рябково — до Перинатального центра</li>
+          <li>Энергетики — до Красного Креста</li>
+          <li>ул. Автозаводская — до конца улицы</li>
+          <li>ул. Омская — до Восточного Базара</li>
+          <li>Восточный — до Аэропорта</li>
+        </ul>
 
         <div class="delivery-info-item reveal">
           <div class="delivery-info-icon">🏪</div>
           <div class="delivery-info-text">
             <h4>Самовывоз</h4>
-            <p>ул. Ленина, 30 · Пн–Вс 10:00–22:00<br>Скидка 10% при самовывозе</p>
+            <p>ул. Гоголя, д. 7 · Ежедневно 10:00–22:00<br>Скидка 10% при самовывозе</p>
           </div>
         </div>
         <div class="delivery-info-item reveal reveal-delay-1">
           <div class="delivery-info-icon">🎁</div>
           <div class="delivery-info-text">
             <h4>Бесплатная доставка</h4>
-            <p>При заказе от 900 ₽ — доставка бесплатна во всех зонах</p>
+            <p>При заказе от 1 000 ₽ — доставка бесплатна по городу</p>
           </div>
         </div>
         <div class="delivery-info-item reveal reveal-delay-2">
           <div class="delivery-info-icon">💳</div>
           <div class="delivery-info-text">
             <h4>Оплата</h4>
-            <p>Онлайн картой, наличными или картой курьеру. Принимаем Visa, МИР, Mastercard, СБП</p>
+            <p>Наличными · Картой · Переводом · QR-код</p>
           </div>
         </div>
       </div>
 
-      <div class="reveal">
-        <div class="map-placeholder">
-          <div class="map-placeholder-bg"></div>
-          <div class="map-dot"></div>
-          <div class="map-placeholder-icon">📍</div>
-          <p>Здесь будет карта Яндекс с зонами доставки</p>
-          <a href="#delivery" class="btn btn-ghost" style="position:relative;z-index:1">Уточнить адрес</a>
-        </div>
+      <div class="reveal" style="min-height:400px">
+        <script type="text/javascript" charset="utf-8" async src="https://api-maps.yandex.ru/services/constructor/1.0/js/?um=constructor%3A1697ff035df586144735d456b0d65df70d3ef0e25bf15b39714b513381fcb8d1&amp;width=100%25&amp;height=460&amp;lang=ru_RU&amp;scroll=false"></script>
+        <noscript>
+          <div class="map-placeholder" style="height:460px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+            <div style="font-size:2.5rem">📍</div>
+            <p>Карта доступна в браузере с включённым JavaScript</p>
+          </div>
+        </noscript>
       </div>
     </div>
   </div>
@@ -2876,10 +2886,10 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="logo">
-          <div class="logo-icon">🍱</div>
-          <div class="logo-text">Sushi <span>with Love</span></div>
+          <div class="logo-icon"><img src="logo.png" alt="Суши с Любовью"></div>
+          <div class="logo-text">СУШИ <span>С ЛЮБОВЬЮ</span></div>
         </div>
-        <p>Доставка суши и роллов по Кургану. Охлаждённая рыба, быстрая доставка, удобный заказ онлайн.</p>
+        <p>Доставка суши и роллов по Кургану с 2015 года. Охлаждённая рыба, быстрая доставка, удобный заказ онлайн.</p>
         <div class="footer-socials">
           <a href="https://vk.com" class="social-btn">🐦</a>
           <a href="https://t.me" class="social-btn">✈️</a>
@@ -2900,8 +2910,10 @@
 
       <div class="footer-col">
         <h4>Контакты</h4>
-        <a href="tel:+73522000000" class="footer-phone">+7 (352) 200-00-00</a>
-        <div class="footer-hours">Доставка: Пн–Вс<br>10:00 – 22:00</div>
+        <a href="tel:+73526620070" class="footer-phone">66-20-70</a>
+        <a href="tel:+79225782070" class="footer-phone" style="margin-top:4px">8-922-578-2070</a>
+        <div class="footer-hours" style="margin-top:8px">Ежедневно 10:00–22:00</div>
+        <div style="margin-top:8px;font-size:0.82rem;color:var(--text-2)">Самовывоз: ул. Гоголя, д. 7</div>
       </div>
 
       <div class="footer-col">
@@ -2918,7 +2930,7 @@
     </div>
 
     <div class="footer-bottom">
-      <p>© 2026 Sushi with Love. Все права защищены. Сайт не является публичной офертой.</p>
+      <p>© 2015–2026 СУШИ С ЛЮБОВЬЮ. Все права защищены. Сайт не является публичной офертой.</p>
       <div class="footer-links">
         <a href="#">Конфиденциальность</a>
         <a href="#">Оферта</a>
@@ -3444,7 +3456,7 @@
     });
   }, { threshold: 0.5 });
 
-  document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+  document.querySelectorAll('.trust-num[data-target]').forEach(el => counterObserver.observe(el));
 
   // ============================================================
   // TIMERS

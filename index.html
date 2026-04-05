@@ -3366,12 +3366,18 @@
     };
 
     try {
-      const res    = await fetch('order.php', {
+      const res  = await fetch('order.php', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(payload)
       });
-      const result = await res.json();
+      const text = await res.text();
+      let result;
+      try { result = JSON.parse(text); } catch(e) {
+        console.error('Ответ сервера (не JSON):', text);
+        showToast('❌', 'Ошибка сервера. Позвоните: 66-20-70');
+        return;
+      }
 
       if (result.ok) {
         const orderNum = result.order_id ? '№' + result.order_id : 'А-' + Math.floor(100 + Math.random() * 900);

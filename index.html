@@ -801,6 +801,51 @@
       object-fit: cover;
       display: block;
     }
+
+    /* ---- Фото блюд по data-name ---- */
+    [data-name] .dish-img::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 0;
+    }
+    [data-name] .dish-img-ph,
+    [data-name] .dish-badges { position: relative; z-index: 1; }
+
+    /* Сеты */
+    [data-name="Сет ДОБРО"]              .dish-img::before { background-image: url('photos/sets/set-dobro.jpg'); }
+    [data-name="Сет ВЫГОДНЫЙ"]           .dish-img::before { background-image: url('photos/sets/set-vygodnyy.jpg'); }
+    [data-name="Сет ПЛЯЖНЫЙ"]            .dish-img::before { background-image: url('photos/sets/set-plyazhnyy.jpg'); }
+    [data-name="Сет КОМБО"]              .dish-img::before { background-image: url('photos/sets/set-kombo.jpg'); }
+    [data-name="Сет ВОСТОРГ"]            .dish-img::before { background-image: url('photos/sets/set-vostorg.jpg'); }
+    [data-name="Сет ЗАПЕЧЕННЫЙ"]         .dish-img::before { background-image: url('photos/sets/set-zapechennyy.jpg'); }
+    [data-name="Сет ТЕМПУРНЫЙ"]          .dish-img::before { background-image: url('photos/sets/set-tempurnyy.jpg'); }
+    [data-name="Сет ПОПУЛЯРНЫЙ"]         .dish-img::before { background-image: url('photos/sets/set-populyarnyy.jpg'); }
+    [data-name="Сет АМУР"]               .dish-img::before { background-image: url('photos/sets/set-amur.jpg'); }
+    [data-name="Сет БОЛЬШАЯ КОМПАНИЯ"]   .dish-img::before { background-image: url('photos/sets/set-bolshaya-kompaniya.jpg'); }
+    [data-name="Сет КОРПОРАТИВНЫЙ"]      .dish-img::before { background-image: url('photos/sets/set-korporativnyy.jpg'); }
+    [data-name="Сет ПО КАЙФУ"]           .dish-img::before { background-image: url('photos/sets/set-po-kayfu.jpg'); }
+    [data-name="Сет ТОПЧИК"]             .dish-img::before { background-image: url('photos/sets/set-topchik.jpg'); }
+    [data-name="2 сета по цене 1 (Бархатный + Темпурный)"] .dish-img::before { background-image: url('photos/sets/set-2po1.jpg'); }
+
+    /* Роллы */
+    [data-name="Зап. С ЛОСОСЕМ"]                      .dish-img::before { background-image: url('photos/rolls/roll-zap-losos.jpg'); }
+    [data-name="Зап. ЭБИ ТОМАГО"]                     .dish-img::before { background-image: url('photos/rolls/roll-ebi-tomago.jpg'); }
+    [data-name="Зап. ЭТНА"]                            .dish-img::before { background-image: url('photos/rolls/roll-etna.jpg'); }
+    [data-name="Гор. с КРЕВЕТКАМИ"]                    .dish-img::before { background-image: url('photos/rolls/roll-gor-krevetki.jpg'); }
+    [data-name="Филадельфия классическая с огурцом"]   .dish-img::before { background-image: url('photos/rolls/roll-filadelfiya.jpg'); }
+    [data-name="ЛАЙТ ФИЛАДЕЛЬФИЯ С ОГУРЦОМ"]           .dish-img::before { background-image: url('photos/rolls/roll-layt-filadelfiya.jpg'); }
+
+    /* Пицца */
+    [data-name="Пицца «Курочка с грибами»"] .dish-img::before { background-image: url('photos/pizza/pizza-kurochka.jpg'); }
+    [data-name="Пицца «Пепперони»"]         .dish-img::before { background-image: url('photos/pizza/pizza-pepperoni.jpg'); }
+    [data-name="Пицца «Мясная»"]            .dish-img::before { background-image: url('photos/pizza/pizza-myasnaya.jpg'); }
+    [data-name="Пицца «Маргарита»"]         .dish-img::before { background-image: url('photos/pizza/pizza-margarita.jpg'); }
+    [data-name="Пицца «Морская»"]           .dish-img::before { background-image: url('photos/pizza/pizza-morskaya.jpg'); }
+    [data-name="Пицца «Грибная»"]           .dish-img::before { background-image: url('photos/pizza/pizza-gribnaya.jpg'); }
+    [data-name="Пицца «Гавайская»"]         .dish-img::before { background-image: url('photos/pizza/pizza-gavayskaya.jpg'); }
     .dish-img-ph {
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;

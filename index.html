@@ -2623,13 +2623,13 @@
 
     <div class="hero-promo reveal reveal-delay-2">
       <div class="hero-promo-label">⏱ Акция до конца дня</div>
-      <div class="hero-promo-offer">Сет ВЫГОДНЫЙ −20%</div>
+      <div class="hero-promo-offer" id="heroDealName">–</div>
       <div class="hero-timer" id="heroTimer">–</div>
       <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px">
-        <span style="text-decoration:line-through;color:var(--text-2);font-size:1rem">1 499 ₽</span>
-        <span style="color:var(--accent);font-size:1.35rem;font-weight:700">1 199 ₽</span>
+        <span id="heroDealOldPrice" style="text-decoration:line-through;color:var(--text-2);font-size:1rem">–</span>
+        <span id="heroDealNewPrice" style="color:var(--accent);font-size:1.35rem;font-weight:700">–</span>
       </div>
-      <button onclick="addToCart({id:111,name:'Сет ВЫГОДНЫЙ (акция −20%)',price:1199,emoji:'💰'})"
+      <button id="heroDealBtn"
         style="margin-top:10px;width:100%;padding:10px 0;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:background 0.2s"
         onmouseenter="this.style.background='#D4923A'" onmouseleave="this.style.background='var(--accent)'">
         + В корзину
@@ -5139,6 +5139,34 @@
   }, { threshold: 0.5 });
 
   document.querySelectorAll('.trust-num[data-target]').forEach(el => counterObserver.observe(el));
+
+  // ============================================================
+  // АКЦИЯ ДНЯ — ротация по дням недели
+  // ============================================================
+  var DAILY_DEALS = [
+    { name: 'Сет КОРПОРАТИВНЫЙ',    id: 285, oldPrice: 1999, price: 1799, emoji: '👔' }, // Вс
+    { name: 'Сет ВЫГОДНЫЙ',         id: 111, oldPrice: 1499, price: 1349, emoji: '💰' }, // Пн
+    { name: 'Сет ДОБРО',            id: 198, oldPrice: 1999, price: 1799, emoji: '🎁' }, // Вт
+    { name: 'Сет ПОПУЛЯРНЫЙ',       id: 12,  oldPrice: 1299, price: 1169, emoji: '💝' }, // Ср
+    { name: 'Сет КОМБО',            id: 115, oldPrice: 1609, price: 1449, emoji: '🎯' }, // Чт
+    { name: 'Сет БОЛЬШАЯ КОМПАНИЯ', id: 406, oldPrice: 2099, price: 1889, emoji: '🎉' }, // Пт
+    { name: 'Сет ВОСТОРГ',          id: 10,  oldPrice: 1299, price: 1169, emoji: '🌟' }, // Сб
+  ];
+
+  (function() {
+    var day  = new Date().getDay();
+    var deal = DAILY_DEALS[day];
+    var nameEl   = document.getElementById('heroDealName');
+    var oldEl    = document.getElementById('heroDealOldPrice');
+    var newEl    = document.getElementById('heroDealNewPrice');
+    var btn      = document.getElementById('heroDealBtn');
+    if (nameEl) nameEl.textContent = deal.name + ' −10%';
+    if (oldEl)  oldEl.textContent  = deal.oldPrice + ' ₽';
+    if (newEl)  newEl.textContent  = deal.price + ' ₽';
+    if (btn) btn.onclick = function() {
+      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, emoji: deal.emoji });
+    };
+  })();
 
   // ============================================================
   // TIMERS

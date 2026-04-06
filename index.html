@@ -2088,6 +2088,7 @@
         pointer-events: none;
       }
       .cart-btn { display: none; }
+      .search-btn { display: none; }
       .burger { flex-shrink: 0; }
     }
 
@@ -2447,6 +2448,7 @@
 </header>
 
 <nav class="mobile-nav" id="mobileNav">
+  <a href="#" class="mobile-nav-link" onclick="event.preventDefault();document.getElementById('burger').classList.remove('open');document.getElementById('mobileNav').classList.remove('open');document.getElementById('searchBtn').click()">🔍 Поиск по меню</a>
   <a href="#menu" class="mobile-nav-link">🍱 Меню</a>
   <a href="#promos" class="mobile-nav-link">🔥 Акции</a>
   <a href="#delivery" class="mobile-nav-link">🚗 Доставка</a>
@@ -4585,13 +4587,19 @@
   // CATEGORY NAV
   // ============================================================
   const catBtns = document.querySelectorAll('.cat-btn');
+
+  function scrollCatIntoView(btn) {
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
   catBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       catBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      scrollCatIntoView(btn);
       const target = document.getElementById(btn.dataset.target);
       if (target) {
-        const offset = 80 + 56; // header + category nav
+        const offset = 80 + 56;
         const top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top, behavior: 'smooth' });
       }
@@ -4606,7 +4614,9 @@
       if (entry.isIntersecting) {
         const id = entry.target.id;
         catBtns.forEach(b => {
-          b.classList.toggle('active', b.dataset.target === id);
+          const isActive = b.dataset.target === id;
+          b.classList.toggle('active', isActive);
+          if (isActive) scrollCatIntoView(b);
         });
       }
     });

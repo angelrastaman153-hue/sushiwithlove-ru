@@ -478,7 +478,7 @@
     .mobile-nav {
       display: none;
       position: fixed;
-      top: 56px; left: 0; right: 0;
+      top: 72px; left: 0; right: 0;
       background: rgba(15,11,8,0.97);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
@@ -4704,7 +4704,10 @@
   const catBtns = document.querySelectorAll('.cat-btn');
 
   function scrollCatIntoView(btn) {
-    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    var container = btn.closest('.category-nav .container');
+    if (!container) return;
+    var target = btn.offsetLeft - (container.offsetWidth / 2) + (btn.offsetWidth / 2);
+    container.scrollTo({ left: target, behavior: 'smooth' });
   }
 
   catBtns.forEach(btn => {

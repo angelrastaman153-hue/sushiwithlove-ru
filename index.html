@@ -4389,7 +4389,7 @@
           </div>
           <div id="coSubmitErr" style="display:none;color:#e05a5a;font-size:0.82rem;margin-bottom:10px;text-align:center"></div>
           <button class="btn btn-primary co-submit-btn" id="coSubmitBtn" onclick="coSubmitOrder()">Оформить заказ →</button>
-          <div style="margin-top:10px;font-size:0.75rem;color:var(--text-2);text-align:center">Оператор свяжется в течение 5 минут</div>
+          <div id="coSummaryTimeHint" style="margin-top:10px;font-size:0.75rem;color:var(--text-2);text-align:center">Оператор свяжется в течение 5 минут</div>
         </div>
       </div><!-- /right -->
 
@@ -4399,7 +4399,7 @@
     <div id="coSuccessScreen" style="display:none;text-align:center;padding:80px 24px">
       <div style="font-size:72px;margin-bottom:24px">✅</div>
       <h2 style="font-family:var(--font-display);font-size:2.4rem;margin-bottom:12px">Заказ принят!</h2>
-      <p style="color:var(--text-2);margin-bottom:24px">Оператор свяжется с вами в течение 5 минут</p>
+      <p id="coSuccessMsg" style="color:var(--text-2);margin-bottom:24px">Оператор свяжется с вами в течение 5 минут</p>
       <div id="coOrderNum" class="order-number" style="margin-bottom:32px"></div>
       <button class="btn btn-primary" onclick="closeCheckoutPage();clearCart()">Отлично!</button>
     </div>
@@ -6309,6 +6309,11 @@
     document.getElementById('coConsent').checked = true;
     document.getElementById('coConsentWarn').style.display = 'none';
     document.getElementById('coSubmitBtn').disabled = false;
+    var _h = new Date().getHours();
+    var _hint = document.getElementById('coSummaryTimeHint');
+    if (_hint) _hint.textContent = (_h >= 10 && _h < 22)
+      ? 'Оператор свяжется в течение 5 минут'
+      : 'Работаем с 10:00 до 22:00 — перезвоним как откроемся';
     document.getElementById('coPromoMsg').style.display = 'none';
     document.getElementById('coSubmitErr').style.display = 'none';
     if (coActivePromo) {
@@ -6598,6 +6603,17 @@
         document.getElementById('coLayout').style.display = 'none';
         document.getElementById('coSuccessScreen').style.display = 'block';
         document.getElementById('coOrderNum').textContent = res.order_id ? '№ ' + res.order_id : '';
+        var h = new Date().getHours();
+        var msgEl = document.getElementById('coSuccessMsg');
+        if (msgEl) {
+          if (h >= 10 && h < 22) {
+            msgEl.textContent = 'Оператор свяжется с вами в течение 5 минут';
+          } else if (h < 10) {
+            msgEl.textContent = 'Мы получили ваш заказ. Оператор перезвонит в 10:00, как только откроемся.';
+          } else {
+            msgEl.textContent = 'Мы получили ваш заказ. Оператор перезвонит завтра в 10:00.';
+          }
+        }
       } else {
         errEl.textContent = 'Ошибка. Позвоните нам: 8-922-578-2070'; errEl.style.display = 'block';
         btn.disabled = false; btn.textContent = 'Оформить заказ →';

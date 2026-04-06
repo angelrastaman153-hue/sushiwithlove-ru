@@ -57,6 +57,7 @@ $post = array(
     'apart'  => trim(fp_get($data, 'flat', '')),
     'descr'  => trim(fp_get($data, 'comment', '')),
     'pay'    => fp_get($data, 'pay', '2'),
+    'point'  => 746,
 );
 
 foreach (array_values($items) as $i => $item) {

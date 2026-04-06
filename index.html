@@ -5143,11 +5143,13 @@
   // ============================================================
   // TIMERS
   // ============================================================
-  function getMidnightMs() {
+  function getPromoMs() {
     const now = new Date();
+    const h = now.getHours();
+    if (h < 10) return null;          // акция ещё не началась
     const end = new Date(now);
     end.setHours(22, 0, 0, 0);
-    return end - now;
+    return end - now;                 // <= 0 если уже после 22:00
   }
 
   function formatTimer(ms) {
@@ -5159,8 +5161,8 @@
   }
 
   function updateTimers() {
-    const ms = getMidnightMs();
-    const str = formatTimer(ms);
+    const ms = getPromoMs();
+    const str = ms === null ? 'с 10:00 до 22:00' : formatTimer(ms);
     const ht = document.getElementById('heroTimer');
     const pt = document.getElementById('promoTimer');
     if (ht) ht.textContent = str;
@@ -5776,14 +5778,14 @@
     inp.addEventListener('input', function(e) {
       var digits = e.target.value.replace(/\D/g, '');
       if (digits.length === 0) { e.target.value = ''; return; }
-      // первая цифра всегда 8
       if (digits[0] === '7' || digits[0] === '8') digits = digits.slice(1);
       if (digits.length > 10) digits = digits.slice(0, 10);
       var r = '8';
-      if (digits.length > 0) r += ' (' + digits.slice(0, Math.min(3, digits.length));
-      if (digits.length >= 3) r += ') ' + digits.slice(3, Math.min(6, digits.length));
-      if (digits.length >= 6) r += '-' + digits.slice(6, Math.min(8, digits.length));
-      if (digits.length >= 8) r += '-' + digits.slice(8, 10);
+      if (digits.length === 0) { e.target.value = r; return; }
+      r += ' (' + digits.slice(0, Math.min(3, digits.length));
+      if (digits.length > 3) r += ') ' + digits.slice(3, Math.min(6, digits.length));
+      if (digits.length > 6) r += '-' + digits.slice(6, Math.min(8, digits.length));
+      if (digits.length > 8) r += '-' + digits.slice(8, 10);
       e.target.value = r;
     });
     inp.addEventListener('keydown', function(e) {

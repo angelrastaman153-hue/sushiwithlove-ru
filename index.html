@@ -1408,6 +1408,10 @@
 
     .form-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .req-star { color: var(--danger); font-size: 0.85em; margin-left: 1px; }
+
+    /* Убираем иконки LastPass / 1Password / Bitwarden из всех полей */
+    div[id^="__lpform_"] { display: none !important; }
+    input { background-image: none !important; }
     .form-label { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
     .form-input {
       background: var(--surface-2);
@@ -4713,6 +4717,13 @@
   // INIT
   // ============================================================
   updateCartUI();
+
+  // Отключаем менеджеры паролей (LastPass, 1Password, Bitwarden) на всех полях
+  document.querySelectorAll('input, textarea').forEach(function(el) {
+    el.setAttribute('data-lpignore', 'true');
+    el.setAttribute('data-form-type', 'other');
+    el.setAttribute('data-1p-ignore', 'true');
+  });
 
   // ============================================================
   // CUSTOM CURSOR

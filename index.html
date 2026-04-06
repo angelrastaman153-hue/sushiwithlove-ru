@@ -3845,10 +3845,10 @@
               <div class="payment-opt-check"></div>
             </div>
             <div id="cashField" style="display:none;padding:12px 14px;background:rgba(232,168,71,0.06);border:1px solid rgba(232,168,71,0.2);border-radius:10px;margin-top:-4px">
-              <label class="form-label" style="margin-bottom:8px;display:block">Сдача с:</label>
+              <label class="form-label" style="margin-bottom:8px;display:block">Сдача с: <span style="color:var(--danger);font-size:0.8rem" id="cashFieldError"></span></label>
               <div style="display:flex;gap:8px;align-items:center">
-                <input type="text" class="form-input" id="cashFrom" placeholder="Например: 2000 ₽" inputmode="numeric" style="flex:1">
-                <button type="button" onclick="document.getElementById('cashFrom').value='';this.classList.add('active')" style="padding:0 14px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:8px;color:var(--text-2);font-size:0.82rem;white-space:nowrap;transition:var(--transition)" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='';this.style.color=''">Без сдачи</button>
+                <input type="text" class="form-input" id="cashFrom" placeholder="Например: 2000 ₽" inputmode="numeric" style="flex:1" oninput="setCashChange(false)">
+                <button type="button" id="noCashBtn" onclick="setCashChange(true)" style="padding:0 14px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:8px;color:var(--text-2);font-size:0.82rem;white-space:nowrap;transition:var(--transition)">Без сдачи</button>
               </div>
             </div>
             <div class="payment-opt" onclick="selectPayment(this, 3); toggleCashField(false)">
@@ -3962,6 +3962,7 @@
   // ============================================================
   let cart = JSON.parse(localStorage.getItem('swl_cart') || '[]');
   let selectedPayment = 1;
+  let noCashChange = false;
   const FREE_DELIVERY_THRESHOLD = 900;
   const DELIVERY_COST = 100;
 
@@ -4337,6 +4338,28 @@
 
   function toggleCashField(show) {
     document.getElementById('cashField').style.display = show ? '' : 'none';
+    if (!show) { noCashChange = false; setCashChange(false, true); }
+  }
+
+  function setCashChange(noChange, silent) {
+    noCashChange = noChange;
+    var btn = document.getElementById('noCashBtn');
+    var inp = document.getElementById('cashFrom');
+    var err = document.getElementById('cashFieldError');
+    if (!btn) return;
+    if (noChange) {
+      inp.value = '';
+      inp.disabled = true;
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#000';
+      btn.style.borderColor = 'var(--accent)';
+    } else {
+      inp.disabled = false;
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }
+    if (!silent && err) err.textContent = '';
   }
 
   function toggleAddressSection(show) {
@@ -4378,6 +4401,17 @@
       return;
     }
     if (cart.length === 0) { showToast('⚠️', 'Корзина пуста'); return; }
+
+    // Валидация: наличные — нужна сумма или «Без сдачи»
+    if (selectedPayment === 2) {
+      var cashVal = document.getElementById('cashFrom') ? document.getElementById('cashFrom').value.trim() : '';
+      if (!cashVal && !noCashChange) {
+        var err = document.getElementById('cashFieldError');
+        if (err) err.textContent = '— укажите сумму или нажмите «Без сдачи»';
+        document.getElementById('cashFrom').focus();
+        return;
+      }
+    }
 
     // Closed-hours check (10:00–22:00 Kurgan = UTC+5)
     var now = new Date();

@@ -2612,7 +2612,7 @@
 
       <div class="hero-actions reveal reveal-delay-3">
         <a href="#menu" class="btn btn-primary">Смотреть меню →</a>
-        <a href="tel:+79225782070" class="btn btn-ghost">📞 Позвонить</a>
+        <button class="btn btn-ghost" onclick="openCallback()">📞 Перезвоните мне</button>
       </div>
 
       <div class="hero-scroll reveal reveal-delay-4">
@@ -3934,6 +3934,34 @@
     <div class="mobile-cart-text" id="mobileCartText">0 позиций</div>
   </div>
   <div class="mobile-cart-cta" id="mobileCartSum">Оформить →</div>
+</div>
+
+<!-- ============================================================
+     CALLBACK MODAL
+============================================================ -->
+<div class="modal-overlay" id="callbackOverlay" onclick="if(event.target===this)closeCallback()" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="max-width:420px;padding:36px 32px 32px">
+    <div class="modal-header" style="margin-bottom:24px">
+      <div class="modal-header-title">📞 Перезвоните мне</div>
+      <button class="modal-close" onclick="closeCallback()">✕</button>
+    </div>
+    <p style="color:var(--text-2);font-size:0.9rem;margin-bottom:24px;line-height:1.5">Оставьте имя и номер — мы перезвоним в ближайшее время в рабочие часы.</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="form-group">
+        <label class="form-label">Ваше имя</label>
+        <input type="text" id="cbName" class="form-input" placeholder="Как вас зовут?" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Телефон</label>
+        <input type="tel" id="cbPhone" class="form-input" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+      </div>
+      <div id="cbError" style="display:none;color:#e05a5a;font-size:0.85rem"></div>
+      <div id="cbSuccess" style="display:none;background:rgba(232,168,71,0.12);border:1px solid rgba(232,168,71,0.3);border-radius:12px;padding:16px;text-align:center;color:var(--accent);font-weight:600;font-size:0.95rem">
+        Спасибо! Мы позвоним вам в ближайшее время.
+      </div>
+      <button id="cbSubmitBtn" class="btn btn-primary" style="width:100%;justify-content:center" onclick="submitCallback()">Отправить заявку</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============================================================
@@ -5736,6 +5764,81 @@
     closeBtn.addEventListener('click', close);
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close(); });
   })();
+
+  // ============================================================
+  // CALLBACK MODAL
+  // ============================================================
+  function openCallback() {
+    var overlay = document.getElementById('callbackOverlay');
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('cbError').style.display = 'none';
+    document.getElementById('cbSuccess').style.display = 'none';
+    document.getElementById('cbSubmitBtn').style.display = '';
+    setTimeout(function() { document.getElementById('cbName').focus(); }, 100);
+  }
+
+  function closeCallback() {
+    document.getElementById('callbackOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function submitCallback() {
+    var name  = document.getElementById('cbName').value.trim();
+    var phone = document.getElementById('cbPhone').value.trim();
+    var err   = document.getElementById('cbError');
+    var btn   = document.getElementById('cbSubmitBtn');
+
+    err.style.display = 'none';
+
+    if (!name) {
+      err.textContent = 'Пожалуйста, введите ваше имя.';
+      err.style.display = 'block';
+      document.getElementById('cbName').focus();
+      return;
+    }
+    var digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) {
+      err.textContent = 'Введите корректный номер телефона.';
+      err.style.display = 'block';
+      document.getElementById('cbPhone').focus();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Отправляем...';
+
+    fetch('callback.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, phone: phone })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.ok) {
+        document.getElementById('cbSuccess').style.display = 'block';
+        btn.style.display = 'none';
+        setTimeout(closeCallback, 3000);
+      } else {
+        err.textContent = 'Ошибка отправки. Позвоните нам: 8-922-578-2070';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Отправить заявку';
+      }
+    })
+    .catch(function() {
+      err.textContent = 'Нет связи с сервером. Позвоните нам: 8-922-578-2070';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Отправить заявку';
+    });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('callbackOverlay').style.display === 'flex') {
+      closeCallback();
+    }
+  });
 </script>
 </body>
 </html>

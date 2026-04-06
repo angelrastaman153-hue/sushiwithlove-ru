@@ -3953,7 +3953,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Телефон</label>
-        <input type="tel" id="cbPhone" class="form-input" placeholder="+7 (___) ___-__-__" autocomplete="tel">
+        <input type="tel" id="cbPhone" class="form-input" placeholder="8 (___) ___-__-__" maxlength="18" autocomplete="tel" inputmode="numeric">
       </div>
       <div id="cbError" style="display:none;color:#e05a5a;font-size:0.85rem"></div>
       <div id="cbSuccess" style="display:none;background:rgba(232,168,71,0.12);border:1px solid rgba(232,168,71,0.3);border-radius:12px;padding:16px;text-align:center;color:var(--accent);font-weight:600;font-size:0.95rem">
@@ -5768,6 +5768,32 @@
   // ============================================================
   // CALLBACK MODAL
   // ============================================================
+
+  // Маска телефона: 8 (XXX) XXX-XX-XX
+  (function() {
+    var inp = document.getElementById('cbPhone');
+    if (!inp) return;
+    inp.addEventListener('input', function(e) {
+      var digits = e.target.value.replace(/\D/g, '');
+      if (digits.length === 0) { e.target.value = ''; return; }
+      // первая цифра всегда 8
+      if (digits[0] === '7' || digits[0] === '8') digits = digits.slice(1);
+      if (digits.length > 10) digits = digits.slice(0, 10);
+      var r = '8';
+      if (digits.length > 0) r += ' (' + digits.slice(0, Math.min(3, digits.length));
+      if (digits.length >= 3) r += ') ' + digits.slice(3, Math.min(6, digits.length));
+      if (digits.length >= 6) r += '-' + digits.slice(6, Math.min(8, digits.length));
+      if (digits.length >= 8) r += '-' + digits.slice(8, 10);
+      e.target.value = r;
+    });
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && inp.value === '8 (') {
+        inp.value = '';
+        e.preventDefault();
+      }
+    });
+  })();
+
   function openCallback() {
     var overlay = document.getElementById('callbackOverlay');
     overlay.style.display = 'flex';
@@ -5777,6 +5803,8 @@
     document.getElementById('cbError').style.display = 'none';
     document.getElementById('cbSuccess').style.display = 'none';
     document.getElementById('cbSubmitBtn').style.display = '';
+    document.getElementById('cbPhone').value = '';
+    document.getElementById('cbName').value = '';
     setTimeout(function() { document.getElementById('cbName').focus(); }, 100);
   }
 
@@ -5803,8 +5831,8 @@
       return;
     }
     var digits = phone.replace(/\D/g, '');
-    if (digits.length < 10) {
-      err.textContent = 'Введите корректный номер телефона.';
+    if (digits.length < 11) {
+      err.textContent = 'Введите номер полностью: 8 (XXX) XXX-XX-XX';
       err.style.display = 'block';
       document.getElementById('cbPhone').focus();
       return;

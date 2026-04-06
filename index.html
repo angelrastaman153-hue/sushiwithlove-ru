@@ -2064,18 +2064,18 @@
     .promo-hint-btn {
       position: absolute;
       top: 18px; right: 16px;
-      width: 28px; height: 28px;
+      width: 32px; height: 32px;
       border-radius: 50%;
       background: rgba(15,11,8,0.88);
       border: 1.5px solid rgba(232,168,71,0.55);
       color: rgba(232,168,71,0.9);
-      font-size: 0.72rem;
+      font-size: 0.8rem;
       font-weight: 700;
       font-family: var(--font-ui);
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 5;
+      z-index: 30; /* выше promo-tip (20) и promo-body (1) */
       cursor: pointer;
     }
     @media (hover: none) {
@@ -2083,6 +2083,28 @@
       .promo-tip.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
       .promo-tip-close { display: block; }
       .promo-hint-btn { display: flex; }
+    }
+
+    /* Кнопка просмотра состава блюда на мобиле */
+    .dish-info-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(15,11,8,0.75);
+      border: 1.5px solid rgba(232,168,71,0.5);
+      color: rgba(232,168,71,0.95);
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 6;
+      cursor: pointer;
+    }
+    @media (hover: none) {
+      .dish-info-btn { display: flex; }
+      .dish-card.desc-open .dish-hover-overlay { opacity: 1; }
     }
 
     /* ============================================================
@@ -2656,8 +2678,8 @@
           <img src="photos/promo/promo-1love.jpg.png" alt="Промокод 1LOVE" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p1">🎁</div>
         </div>
+        <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         <div class="promo-body">
-          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           <div class="promo-tag">ПЕРВЫЙ ЗАКАЗ · ПРОМОКОД</div>
           <div class="promo-title">1LOVE</div>
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
@@ -2679,8 +2701,8 @@
           <img src="photos/promo/promo-bday.jpg.png" alt="Промокод именинникам" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p2">🎂</div>
         </div>
+        <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         <div class="promo-body">
-          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           <div class="promo-tag">ИМЕНИННИКАМ · ПРОМОКОД</div>
           <div class="promo-title">BDAY1 / BDAY2</div>
           <div class="promo-desc">Подарок к заказу в день рождения</div>
@@ -2705,8 +2727,8 @@
           <img src="photos/promo/promo-sv10.jpg.png" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p3">🚶</div>
         </div>
+        <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         <div class="promo-body">
-          <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           <div class="promo-tag">САМОВЫВОЗ · ПРОМОКОД</div>
           <div class="promo-title">СВ10</div>
           <div class="promo-desc">Заберите заказ выгоднее</div>
@@ -4991,6 +5013,31 @@
       }
 
       card.appendChild(overlay);
+
+      // Кнопка «ℹ» для мобиле — показывает overlay по тапу
+      var infoBtn = document.createElement('button');
+      infoBtn.className = 'dish-info-btn';
+      infoBtn.setAttribute('aria-label', 'Состав блюда');
+      infoBtn.textContent = 'ℹ';
+      infoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isOpen = card.classList.contains('desc-open');
+        // Закрыть все остальные
+        document.querySelectorAll('.dish-card.desc-open').forEach(function(c) {
+          c.classList.remove('desc-open');
+        });
+        if (!isOpen) card.classList.add('desc-open');
+      });
+      // Вставляем в dish-img (если есть)
+      var dishImg = card.querySelector('.dish-img');
+      if (dishImg) dishImg.appendChild(infoBtn);
+    });
+
+    // Тап вне карточки — закрывает overlay
+    document.addEventListener('click', function() {
+      document.querySelectorAll('.dish-card.desc-open').forEach(function(c) {
+        c.classList.remove('desc-open');
+      });
     });
   })();
 

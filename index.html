@@ -427,8 +427,9 @@
     .search-no-results { text-align: center; color: var(--text-2); padding: 32px 0; font-size: 0.9rem; }
     .search-hint { text-align: center; color: var(--text-muted, #9A8F7E); padding: 24px 0; font-size: 0.82rem; }
 
-    /* Яндекс Suggest — тёмная тема */
+    /* Яндекс Suggest — тёмная тема + z-index поверх корзины */
     [class*="suggest-list"] {
+      z-index: 9999 !important;
       background: var(--surface-2) !important;
       border: 1px solid var(--border) !important;
       border-radius: var(--radius-md) !important;
@@ -1257,6 +1258,19 @@
       cursor: pointer;
     }
     .upsell-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    .chopstick-btn {
+      width: 34px; height: 34px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1.2rem;
+      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .chopstick-btn:hover { border-color: var(--accent); color: var(--accent); }
 
     .cart-footer {
       padding: 20px 24px;
@@ -3718,8 +3732,13 @@
   <div class="upsell" id="cartUpsell" style="display:none">
     <div class="upsell-title">Часто добавляют к заказу:</div>
     <div class="upsell-items">
-      <span class="upsell-chip" onclick="addToCart({id:127,name:'Васаби 20г',price:25,emoji:'🌿'})">🌿 Васаби 25 ₽ +</span>
-      <span class="upsell-chip" onclick="addToCart({id:123,name:'Имбирь 30г',price:30,emoji:'🌸'})">🌸 Имбирь 30 ₽ +</span>
+      <span class="upsell-chip" onclick="addToCart({id:127,name:'Васаби 20г',price:25,emoji:'🌿'})">🌿 Васаби 20г · 25 ₽</span>
+      <span class="upsell-chip" onclick="addToCart({id:138,name:'Васаби 40г',price:45,emoji:'🌿'})">🌿 Васаби 40г · 45 ₽</span>
+      <span class="upsell-chip" onclick="addToCart({id:139,name:'Васаби 60г',price:65,emoji:'🌿'})">🌿 Васаби 60г · 65 ₽</span>
+      <span class="upsell-chip" onclick="addToCart({id:123,name:'Имбирь 30г',price:30,emoji:'🌸'})">🌸 Имбирь 30г · 30 ₽</span>
+      <span class="upsell-chip" onclick="addToCart({id:120,name:'Имбирь 50г',price:50,emoji:'🌸'})">🌸 Имбирь 50г · 50 ₽</span>
+      <span class="upsell-chip" onclick="addToCart({id:128,name:'Имбирь 100г',price:65,emoji:'🌸'})">🌸 Имбирь 100г · 65 ₽</span>
+      <span class="upsell-chip" onclick="addToCart({id:121,name:'Соевый от шефа (100 мл)',price:75,emoji:'⭐'})">⭐ Соевый 100мл · 75 ₽</span>
     </div>
   </div>
 
@@ -3788,24 +3807,25 @@
           <div class="form-grid">
             <div class="form-field">
               <label class="form-label">Улица</label>
-              <input type="text" class="form-input" id="street" placeholder="Начните вводить улицу...">
+              <input type="text" class="form-input" id="street" placeholder="Начните вводить улицу..." autocomplete="off">
+              <div style="font-size:0.72rem;color:var(--text-muted,#9A8F7E);margin-top:4px">Например: Гоголя, Ленина, Пролетарская</div>
             </div>
             <div class="form-grid form-grid-4" style="margin-top:0">
               <div class="form-field">
                 <label class="form-label">Дом</label>
-                <input type="text" class="form-input" id="house" placeholder="1">
+                <input type="text" class="form-input" id="house" placeholder="Например: 7">
               </div>
               <div class="form-field">
                 <label class="form-label">Подъезд</label>
-                <input type="text" class="form-input" id="entrance" placeholder="1">
+                <input type="text" class="form-input" id="entrance" placeholder="Например: 2">
               </div>
               <div class="form-field">
                 <label class="form-label">Этаж</label>
-                <input type="text" class="form-input" id="floor" placeholder="5">
+                <input type="text" class="form-input" id="floor" placeholder="Например: 4">
               </div>
               <div class="form-field">
                 <label class="form-label">Кв./офис</label>
-                <input type="text" class="form-input" id="flat" placeholder="12">
+                <input type="text" class="form-input" id="flat" placeholder="Например: 47">
               </div>
             </div>
           </div>
@@ -3836,21 +3856,60 @@
               </div>
               <div class="payment-opt-check"></div>
             </div>
-            <div class="payment-opt" onclick="selectPayment(this, 2)">
+            <div class="payment-opt" onclick="selectPayment(this, 2); toggleCashField(true)">
               <div class="payment-opt-icon">💵</div>
               <div class="payment-opt-text">
                 <div class="payment-opt-title">Наличными курьеру</div>
-                <div class="payment-opt-sub">Сдача с любой суммы</div>
+                <div class="payment-opt-sub">Подготовим сдачу</div>
               </div>
               <div class="payment-opt-check"></div>
             </div>
-            <div class="payment-opt" onclick="selectPayment(this, 3)">
-              <div class="payment-opt-icon">📱</div>
+            <div class="payment-opt" onclick="selectPayment(this, 3); toggleCashField(false)">
+              <div class="payment-opt-icon">📲</div>
               <div class="payment-opt-text">
-                <div class="payment-opt-title">Картой курьеру</div>
-                <div class="payment-opt-sub">POS-терминал у курьера</div>
+                <div class="payment-opt-title">QR-код</div>
+                <div class="payment-opt-sub">Оплата при курьере по QR</div>
               </div>
               <div class="payment-opt-check"></div>
+            </div>
+          </div>
+          <div id="cashField" style="display:none;margin-top:12px">
+            <div class="form-field">
+              <label class="form-label">Подготовить сдачу с:</label>
+              <input type="text" class="form-input" id="cashFrom" placeholder="Например: 2000 ₽ (или оставьте пустым — без сдачи)" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Палочки</div>
+          <div class="form-field">
+            <label class="form-label">Количество наборов</label>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+              <button type="button" class="chopstick-btn" onclick="changeChopsticks(-1)">−</button>
+              <span id="chopstickVal" style="min-width:28px;text-align:center;font-weight:700;font-size:1.1rem">1</span>
+              <button type="button" class="chopstick-btn" onclick="changeChopsticks(1)">+</button>
+              <span style="font-size:0.8rem;color:var(--text-2);margin-left:4px">набор = палочки + соевый + имбирь + васаби</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" id="preorderSection">
+          <div class="form-section-title" style="display:flex;align-items:center;gap:8px">
+            Предзаказ
+            <span style="font-size:0.75rem;font-weight:400;color:var(--text-2)">(необязательно)</span>
+          </div>
+          <div id="closedBanner" style="display:none;background:rgba(232,168,71,0.1);border:1px solid rgba(232,168,71,0.3);border-radius:10px;padding:10px 14px;font-size:0.83rem;color:var(--accent);margin-bottom:12px">
+            🕙 Сейчас не работаем. Оставьте заказ — оператор свяжется после 10:00
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="form-field">
+              <label class="form-label">Дата доставки</label>
+              <input type="date" class="form-input" id="preorderDate">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Желаемое время</label>
+              <input type="time" class="form-input" id="preorderTime" min="10:00" max="22:00" step="1800">
             </div>
           </div>
         </div>
@@ -4237,6 +4296,29 @@
     selectedPayment = val;
   }
 
+  function toggleCashField(show) {
+    document.getElementById('cashField').style.display = show ? '' : 'none';
+  }
+
+  var chopstickCount = 1;
+  function changeChopsticks(delta) {
+    chopstickCount = Math.max(0, Math.min(10, chopstickCount + delta));
+    document.getElementById('chopstickVal').textContent = chopstickCount;
+  }
+
+  // Preorder: set min date to today
+  (function() {
+    var d = document.getElementById('preorderDate');
+    if (d) {
+      var today = new Date();
+      var yyyy = today.getFullYear();
+      var mm = String(today.getMonth()+1).padStart(2,'0');
+      var dd = String(today.getDate()).padStart(2,'0');
+      d.min = yyyy + '-' + mm + '-' + dd;
+      d.value = yyyy + '-' + mm + '-' + dd;
+    }
+  })();
+
   async function submitOrder() {
     const name  = document.getElementById('customerName').value.trim();
     const phone = document.getElementById('customerPhone').value.trim();
@@ -4253,6 +4335,17 @@
     }
     if (cart.length === 0) { showToast('⚠️', 'Корзина пуста'); return; }
 
+    // Closed-hours check (10:00–22:00 Kurgan = UTC+5)
+    var now = new Date();
+    var utcH = now.getUTCHours(), utcM = now.getUTCMinutes();
+    var localMinutes = (utcH * 60 + utcM + 5 * 60) % (24 * 60);
+    var openMin = 10 * 60, closeMin = 22 * 60;
+    var isClosed = localMinutes < openMin || localMinutes >= closeMin;
+    document.getElementById('closedBanner').style.display = isClosed ? '' : 'none';
+    if (isClosed) {
+      // Still allow pre-order submission — just show banner
+    }
+
     const btn = document.querySelector('#checkoutForm .btn-primary');
     btn.disabled = true;
     btn.textContent = 'Отправляем заказ...';
@@ -4268,6 +4361,10 @@
       flat:     document.getElementById('flat').value.trim(),
       comment:  document.getElementById('comment').value.trim(),
       pay:      String(selectedPayment),
+      cash_from: document.getElementById('cashFrom') ? document.getElementById('cashFrom').value.trim() : '',
+      chopsticks: chopstickCount,
+      preorder_date: document.getElementById('preorderDate') ? document.getElementById('preorderDate').value : '',
+      preorder_time: document.getElementById('preorderTime') ? document.getElementById('preorderTime').value : '',
       items:    cart.map(i => ({ id: i.id, qty: i.qty || 1 }))
     };
 

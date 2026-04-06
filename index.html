@@ -5771,6 +5771,8 @@
   function openCallback() {
     var overlay = document.getElementById('callbackOverlay');
     overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
     document.body.style.overflow = 'hidden';
     document.getElementById('cbError').style.display = 'none';
     document.getElementById('cbSuccess').style.display = 'none';
@@ -5779,7 +5781,10 @@
   }
 
   function closeCallback() {
-    document.getElementById('callbackOverlay').style.display = 'none';
+    var overlay = document.getElementById('callbackOverlay');
+    overlay.style.display = 'none';
+    overlay.style.opacity = '';
+    overlay.style.pointerEvents = '';
     document.body.style.overflow = '';
   }
 

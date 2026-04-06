@@ -5190,19 +5190,12 @@
 
   function updateTimers() {
     const ms = getPromoMs();
-    const active = ms !== null && ms > 0;
-
-    // Карточка акции в герое
-    const heroPromo = document.querySelector('.hero-promo');
-    if (heroPromo) heroPromo.style.display = active ? '' : 'none';
-
-    if (active) {
-      const str = formatTimer(ms);
-      const ht = document.getElementById('heroTimer');
-      const pt = document.getElementById('promoTimer');
-      if (ht) ht.textContent = str;
-      if (pt) pt.textContent = str;
-    }
+    // карточка всегда видна; таймер считает только 10:00–22:00, иначе 00:00:00
+    const str = (ms !== null && ms > 0) ? formatTimer(ms) : '00:00:00';
+    const ht = document.getElementById('heroTimer');
+    const pt = document.getElementById('promoTimer');
+    if (ht) ht.textContent = str;
+    if (pt) pt.textContent = str;
   }
   updateTimers();
   setInterval(updateTimers, 1000);

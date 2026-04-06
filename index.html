@@ -5726,7 +5726,20 @@
 
   // Keyboard ESC
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeCart(); closeCheckout(); }
+    if (e.key === 'Escape') {
+      var co = document.getElementById('checkoutPageOverlay');
+      if (co && co.classList.contains('open')) { closeCheckoutPage(); return; }
+      closeCart(); closeCheckout();
+    }
+  });
+
+  // Click outside street suggestions — hide dropdown
+  document.addEventListener('click', function(e) {
+    var sugg = document.getElementById('coStreetSugg');
+    var inp  = document.getElementById('coStreet');
+    if (sugg && inp && !inp.contains(e.target) && !sugg.contains(e.target)) {
+      sugg.style.display = 'none';
+    }
   });
 
   // ============================================================

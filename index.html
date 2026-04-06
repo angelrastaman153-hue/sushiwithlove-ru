@@ -4070,7 +4070,7 @@
   })();
 
   // ============================================================
-  // SUGGEST АДРЕСА (Photon / Komoot, без API-ключа)
+  // SUGGEST АДРЕСА (Overpass OSM — все улицы Кургана, кеш за сессию)
   // ============================================================
   (function() {
     var streetInput = document.getElementById('street');
@@ -4088,49 +4088,59 @@
     ].join(';');
     wrap.appendChild(drop);
 
-    var timer = null;
-    var lastQ = '';
-    var ctrl = null;
+    var streetsCache = null;   // null = не загружено, [] = загружено (пустое или нет)
+    var loading = false;
 
-    streetInput.addEventListener('input', function() {
-      clearTimeout(timer);
-      var q = this.value.trim();
-      if (q.length < 2) { drop.style.display = 'none'; return; }
-      timer = setTimeout(function() { fetchSuggest(q); }, 300);
+    // Загружаем все улицы Кургана при первом фокусе
+    streetInput.addEventListener('focus', function preload() {
+      streetInput.removeEventListener('focus', preload);
+      if (loading || streetsCache) return;
+      loading = true;
+      // Overpass bbox: юг,запад,север,восток — границы Кургана
+      var q = '[out:json][timeout:30];way["highway"]["name"](55.30,65.00,55.62,65.70);out tags;';
+      fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(q)
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var seen = {};
+        (data.elements || []).forEach(function(el) {
+          var name = el.tags && el.tags.name;
+          if (name && !seen[name]) seen[name] = true;
+        });
+        streetsCache = Object.keys(seen).sort(function(a,b){ return a.localeCompare(b,'ru'); });
+        loading = false;
+        // Если успели что-то напечатать — сразу показываем
+        var q = streetInput.value.trim();
+        if (q.length >= 2) filterAndShow(q);
+      })
+      .catch(function() { streetsCache = []; loading = false; });
     });
 
-    function fetchSuggest(q) {
-      lastQ = q;
-      if (ctrl) ctrl.abort();
-      ctrl = new AbortController();
-      // Photon: поиск улиц по Кургану (lat/lon центра Кургана)
-      var url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q + ' Курган')
-        + '&lat=55.4507&lon=65.3535&limit=12&lang=ru';
-      fetch(url, { signal: ctrl.signal })
-        .then(function(r) { return r.json(); })
-        .then(function(data) { renderDrop(data.features || []); })
-        .catch(function() {});
-    }
+    streetInput.addEventListener('input', function() {
+      var q = this.value.trim();
+      if (q.length < 2) { drop.style.display = 'none'; return; }
+      if (!streetsCache) {
+        // Данные ещё грузятся — показываем индикатор
+        drop.innerHTML = '<div style="padding:12px 14px;font-size:0.85rem;color:var(--text-2)">Загружаем улицы…</div>';
+        drop.style.display = '';
+        return;
+      }
+      filterAndShow(q);
+    });
 
-    function renderDrop(features) {
-      var seen = {};
-      var streets = [];
-      features.forEach(function(f) {
-        var p = f.properties || {};
-        // Берём только улицы города Кургана
-        if (p.type !== 'street') return;
-        var city = p.city || p.county || p.state || '';
-        if (city.indexOf('Курган') === -1) return;
-        var name = p.name || '';
-        if (!name || seen[name]) return;
-        seen[name] = true;
-        streets.push(name);
-      });
+    function filterAndShow(q) {
+      var ql = q.toLowerCase();
+      var matches = streetsCache.filter(function(s) {
+        return s.toLowerCase().indexOf(ql) !== -1;
+      }).slice(0, 12);
 
-      if (streets.length === 0) { drop.style.display = 'none'; return; }
+      if (matches.length === 0) { drop.style.display = 'none'; return; }
 
       drop.innerHTML = '';
-      streets.forEach(function(street) {
+      matches.forEach(function(street) {
         var row = document.createElement('div');
         row.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:0.87rem;'
           + 'color:#F5F0E8;border-bottom:1px solid rgba(232,168,71,0.08);transition:background 0.15s';

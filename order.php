@@ -71,7 +71,16 @@ if ($pay === 2) {
 $preorderDate = trim(fp_get($data, 'preorder_date', ''));
 $preorderTime = trim(fp_get($data, 'preorder_time', ''));
 if ($preorderDate || $preorderTime) {
-    $commentParts[] = 'Предзаказ: ' . trim($preorderDate . ' ' . $preorderTime);
+    $months = array(
+        1=>'января',2=>'февраля',3=>'марта',4=>'апреля',5=>'мая',6=>'июня',
+        7=>'июля',8=>'августа',9=>'сентября',10=>'октября',11=>'ноября',12=>'декабря'
+    );
+    $dateStr = $preorderDate;
+    if ($preorderDate && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $preorderDate, $m)) {
+        $dateStr = (int)$m[3] . ' ' . $months[(int)$m[2]] . ' ' . $m[1];
+    }
+    $parts = array_filter(array($dateStr, $preorderTime));
+    $commentParts[] = 'Предзаказ на: ' . implode(', ', $parts);
 }
 
 $descr = implode(' | ', array_filter($commentParts));

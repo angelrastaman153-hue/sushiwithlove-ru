@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     /* ============================================================
@@ -3492,15 +3493,11 @@
         </div>
       </div>
 
-      <div class="reveal" style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">
-        <iframe
-          src="https://yandex.ru/map-widget/v1/?um=constructor%3A1697ff035df586144735d456b0d65df70d3ef0e25bf15b39714b513381fcb8d1&source=constructor"
-          width="100%"
-          height="460"
-          frameborder="0"
-          allowfullscreen="true"
-          style="display:block;"
-        ></iframe>
+      <div class="reveal" style="border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);position:relative">
+        <div id="deliveryMap" style="width:100%;height:460px;"></div>
+        <div id="mapSuccessBanner" style="display:none;position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1000;background:#1E1810;border:1px solid var(--accent);border-radius:10px;padding:10px 20px;font-size:0.88rem;color:var(--accent);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
+          ✅ Адрес добавлен к заказу
+        </div>
       </div>
     </div>
   </div>
@@ -4724,6 +4721,99 @@
     el.setAttribute('data-form-type', 'other');
     el.setAttribute('data-1p-ignore', 'true');
   });
+
+  // ============================================================
+  // ИНТЕРАКТИВНАЯ КАРТА ДОСТАВКИ (Leaflet + Nominatim)
+  // ============================================================
+  (function() {
+    if (!document.getElementById('deliveryMap')) return;
+
+    var script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = function() {
+      var map = L.map('deliveryMap', { zoomControl: true }).setView([55.4507, 65.3535], 12);
+
+      // Тёмные тайлы CartoDB (подходят под дизайн сайта)
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CARTO',
+        maxZoom: 19,
+        subdomains: 'abcd'
+      }).addTo(map);
+
+      var marker = null;
+      var currentStreet = '';
+      var currentHouse  = '';
+
+      var popupStyle = [
+        'font-family:Manrope,sans-serif',
+        'min-width:180px',
+        'text-align:center'
+      ].join(';');
+
+      map.on('click', function(e) {
+        var lat = e.latlng.lat.toFixed(6);
+        var lng = e.latlng.lng.toFixed(6);
+
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup('<div style="' + popupStyle + '"><div style="font-size:0.8rem;color:#888;margin-bottom:6px">Определяем адрес…</div></div>', { maxWidth: 240 }).openPopup();
+
+        // Reverse geocode через Nominatim
+        fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng
+          + '&format=json&accept-language=ru&zoom=18')
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var a = data.address || {};
+            currentStreet = a.road || a.pedestrian || a.footway || a.path || '';
+            currentHouse  = a.house_number || '';
+            var label = currentStreet + (currentHouse ? ', ' + currentHouse : '');
+            if (!label) label = 'Адрес не определён';
+
+            marker.setPopupContent(
+              '<div style="' + popupStyle + '">'
+              + '<div style="font-weight:700;font-size:0.9rem;margin-bottom:8px">' + label + '</div>'
+              + '<button onclick="applyMapAddress()" style="'
+                + 'padding:8px 16px;background:#E8A847;border:none;border-radius:8px;'
+                + 'font-weight:700;font-size:0.85rem;cursor:pointer;width:100%'
+              + '">📍 Доставить сюда</button>'
+              + '</div>'
+            );
+            marker.openPopup();
+          })
+          .catch(function() {
+            marker.setPopupContent('<div style="' + popupStyle + '">Не удалось определить адрес.<br>Введите вручную.</div>');
+          });
+      });
+
+      window.applyMapAddress = function() {
+        var streetEl = document.getElementById('street');
+        var houseEl  = document.getElementById('house');
+        if (streetEl) streetEl.value = currentStreet;
+        if (houseEl)  houseEl.value  = currentHouse;
+
+        // Снимаем readonly если есть
+        if (streetEl) streetEl.removeAttribute('readonly');
+
+        // Показываем баннер на карте
+        var banner = document.getElementById('mapSuccessBanner');
+        if (banner) {
+          banner.style.display = '';
+          setTimeout(function() { banner.style.display = 'none'; }, 3000);
+        }
+
+        // Закрываем попап
+        if (marker) marker.closePopup();
+
+        // Открываем корзину и делаем доставку активной
+        if (typeof openCart === 'function') openCart();
+        var deliveryRadio = document.getElementById('typeDelivery');
+        if (deliveryRadio) { deliveryRadio.checked = true; toggleAddressSection(true); }
+
+        showToast('📍', 'Адрес добавлен: ' + currentStreet + (currentHouse ? ', ' + currentHouse : ''));
+      };
+    };
+    document.head.appendChild(script);
+  })();
 
   // ============================================================
   // CUSTOM CURSOR

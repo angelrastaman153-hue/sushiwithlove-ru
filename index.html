@@ -1951,6 +1951,16 @@
     .promo-card:hover::before { opacity: 1; }
     .promo-card > * { position: relative; z-index: 1; }
 
+    .promo-card-msg {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      display: none;
+    }
+
     .promo-extra {
       font-size: 0.8rem;
       color: rgba(232,168,71,0.85);
@@ -2603,8 +2613,9 @@
           <div class="promo-title">1LOVE</div>
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
           <div class="promo-extra">🍣 8 шт</div>
-          <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
-            onclick="applyPromoCode('1LOVE', window.matchMedia('(hover:none)').matches)" style="margin-top:auto">Применить промокод</button>
+          <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center;margin-top:auto"
+            onclick="applyPromoCode('1LOVE')">Применить промокод</button>
+          <div class="promo-card-msg" id="promoCardMsg-1LOVE"></div>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -2632,9 +2643,10 @@
           <p><strong>BDAY1</strong>: к заказу от 999 ₽ — ролл «Лава с шиитаке» в подарок.<br><br>
           <strong>BDAY2</strong>: к заказу от 1 999 ₽ — набор «Праздничный»: «Лава с шиитаке» + «Калифорния классическая».</p>
           <div style="display:flex;gap:8px;margin-top:auto">
-            <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY1')">Вставить BDAY1</button>
-            <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY2')">Вставить BDAY2</button>
+            <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY1')">Применить BDAY1</button>
+            <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY2')">Применить BDAY2</button>
           </div>
+          <div class="promo-card-msg" id="promoCardMsg-BDAY"></div>
         </div>
       </div>
 
@@ -2651,7 +2663,8 @@
           <div class="promo-desc">Заберите заказ выгоднее</div>
           <div class="promo-extra">💰 Скидка на самовывоз</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
-            onclick="applyPromoCode('СВ10', window.matchMedia('(hover:none)').matches)">Применить промокод</button>
+            onclick="applyPromoCode('СВ10')">Применить промокод</button>
+          <div class="promo-card-msg" id="promoCardMsg-СВ10"></div>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -5288,15 +5301,38 @@
     }
   });
 
-  function applyPromoCode(code, withScroll) {
-    var input = document.getElementById('promoInput');
-    if (!input) return;
-    input.value = code;
-    if (withScroll) {
-      setTimeout(function() {
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 80);
+  function applyPromoCode(code) {
+    var c = (code || '').trim().toUpperCase();
+
+    // ID блока сообщения: BDAY1/BDAY2 → один общий блок BDAY
+    var msgKey = (c === 'BDAY1' || c === 'BDAY2') ? 'BDAY' : c;
+    var msgEl = document.getElementById('promoCardMsg-' + msgKey);
+
+    var promo = PROMO_DB[c];
+
+    if (msgEl) {
+      msgEl.style.display = '';
+      if (!promo) {
+        msgEl.innerHTML = '<span style="color:var(--danger)">❌ Промокод «' + c + '» не существует.</span>';
+        return;
+      }
+      var result = promo.check();
+      if (result.ok) {
+        msgEl.innerHTML = '<span style="color:#4ade80">✅ ' + result.msg + '</span>';
+        activePromoCode = c;
+        var ci = document.getElementById('cartPromoInput');
+        var oi = document.getElementById('checkoutPromoInput');
+        if (ci) ci.value = c;
+        if (oi) oi.value = c;
+      } else {
+        msgEl.innerHTML = '<span style="color:var(--accent)">⚠️ ' + result.reason + '</span>';
+      }
+      return;
     }
+
+    // Fallback: нет msgEl — просто вставляем в поле корзины
+    var input = document.getElementById('cartPromoInput') || document.getElementById('promoInput');
+    if (input) input.value = code;
   }
 
   // Header clock

@@ -43,15 +43,17 @@ $logLine = date('Y-m-d H:i:s') . ' | ' . $name . ' | ' . $phone . PHP_EOL;
 $descr = '⚡ ПЕРЕЗВОНИТЬ: ' . $name;
 
 $post = [
-    'secret' => FP_SECRET,
-    'phone'  => $phone,
-    'name'   => $name,
-    'street' => 'Заявка с сайта — перезвонить',
-    'home'   => '',
-    'descr'  => $descr,
-    'pay'    => '2',
-    'person' => 0,
-    'point'  => 746,
+    'secret'        => FP_SECRET,
+    'phone'         => $phone,
+    'name'          => $name,
+    'street'        => 'Заявка с сайта — перезвонить',
+    'home'          => '',
+    'descr'         => $descr,
+    'pay'           => '2',
+    'person'        => 0,
+    'point'         => 746,
+    'product[0]'    => 602,
+    'product_kol[0]'=> 1,
 ];
 
 $postStr = http_build_query($post);

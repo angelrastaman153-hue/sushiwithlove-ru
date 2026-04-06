@@ -1407,7 +1407,7 @@
     .form-grid-2 { grid-template-columns: 1fr 1fr; }
     .form-grid-4 { grid-template-columns: 2fr 1fr 1fr 1fr; }
 
-    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .form-label { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
     .form-input {
       background: var(--surface-2);
@@ -3772,11 +3772,11 @@
           <div class="form-section-title">Как получить?</div>
           <div class="radio-group">
             <div class="radio-opt">
-              <input type="radio" name="delivery_type" id="typeDelivery" value="delivery" checked>
+              <input type="radio" name="delivery_type" id="typeDelivery" value="delivery" checked onchange="toggleAddressSection(true)">
               <label for="typeDelivery">🚗 Доставка</label>
             </div>
             <div class="radio-opt">
-              <input type="radio" name="delivery_type" id="typeSelf" value="self">
+              <input type="radio" name="delivery_type" id="typeSelf" value="self" onchange="toggleAddressSection(false)">
               <label for="typeSelf">🏪 Самовывоз</label>
             </div>
           </div>
@@ -3844,6 +3844,13 @@
               </div>
               <div class="payment-opt-check"></div>
             </div>
+            <div id="cashField" style="display:none;padding:12px 14px;background:rgba(232,168,71,0.06);border:1px solid rgba(232,168,71,0.2);border-radius:10px;margin-top:-4px">
+              <label class="form-label" style="margin-bottom:8px;display:block">Сдача с:</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" class="form-input" id="cashFrom" placeholder="Например: 2000 ₽" inputmode="numeric" style="flex:1">
+                <button type="button" onclick="document.getElementById('cashFrom').value='';this.classList.add('active')" style="padding:0 14px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:8px;color:var(--text-2);font-size:0.82rem;white-space:nowrap;transition:var(--transition)" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='';this.style.color=''">Без сдачи</button>
+              </div>
+            </div>
             <div class="payment-opt" onclick="selectPayment(this, 3); toggleCashField(false)">
               <div class="payment-opt-icon">📲</div>
               <div class="payment-opt-text">
@@ -3853,23 +3860,17 @@
               <div class="payment-opt-check"></div>
             </div>
           </div>
-          <div id="cashField" style="display:none;margin-top:12px">
-            <div class="form-field">
-              <label class="form-label">Подготовить сдачу с:</label>
-              <input type="text" class="form-input" id="cashFrom" placeholder="Например: 2000 ₽ (или оставьте пустым — без сдачи)" inputmode="numeric">
-            </div>
-          </div>
         </div>
 
         <div class="form-section">
           <div class="form-section-title">Палочки</div>
           <div class="form-field">
-            <label class="form-label">Количество наборов</label>
+            <label class="form-label">Количество пар</label>
             <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
               <button type="button" class="chopstick-btn" onclick="changeChopsticks(-1)">−</button>
               <span id="chopstickVal" style="min-width:28px;text-align:center;font-weight:700;font-size:1.1rem">1</span>
               <button type="button" class="chopstick-btn" onclick="changeChopsticks(1)">+</button>
-              <span style="font-size:0.8rem;color:var(--text-2);margin-left:4px">набор = палочки + соевый + имбирь + васаби</span>
+              <span style="font-size:0.8rem;color:var(--text-2);margin-left:4px">пара палочек</span>
             </div>
           </div>
         </div>
@@ -4336,6 +4337,11 @@
 
   function toggleCashField(show) {
     document.getElementById('cashField').style.display = show ? '' : 'none';
+  }
+
+  function toggleAddressSection(show) {
+    var s = document.getElementById('addressSection');
+    if (s) s.style.display = show ? '' : 'none';
   }
 
   var chopstickCount = 1;

@@ -1557,6 +1557,48 @@
     }
 
     /* ============================================================
+       ЛИЧНЫЙ КАБИНЕТ
+    ============================================================ */
+    .lk-wrap { position: relative; }
+    .lk-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-2);
+      font-size: 0.82rem; font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .lk-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .lk-btn.logged-in { border-color: rgba(232,168,71,0.5); color: var(--accent); }
+    .lk-dropdown {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      background: var(--card, #1E1810);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 8px;
+      min-width: 230px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      z-index: 1500; display: none;
+    }
+    .lk-dropdown.open { display: block; }
+    .lk-dd-header { padding: 12px 12px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+    .lk-dd-name { font-weight: 700; font-size: 1rem; color: var(--text); }
+    .lk-dd-phone { font-size: 0.8rem; color: var(--text-2); margin-top: 2px; }
+    .lk-dd-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px;
+      cursor: pointer; color: var(--text-2); font-size: 0.88rem;
+      transition: background .15s;
+    }
+    .lk-dd-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .lk-dd-item.danger { color: #e05a5a; }
+    .lk-dd-item.danger:hover { background: rgba(224,90,90,0.08); color: #e05a5a; }
+    @media (max-width: 600px) { .lk-btn { display: none; } }
+
+    /* ============================================================
        CHECKOUT MODAL
     ============================================================ */
     .modal-overlay {
@@ -2707,6 +2749,17 @@
           <span class="dot"></span>8-922-578-2070
         </a>
         <div class="header-hours" id="headerHours">Ежедневно 10:00–22:00</div>
+      </div>
+      <div class="lk-wrap" id="lkWrap">
+        <button class="lk-btn" id="lkBtn" onclick="lkToggle()">👤 Войти</button>
+        <div class="lk-dropdown" id="lkDropdown">
+          <div class="lk-dd-header">
+            <div class="lk-dd-name" id="lkDdName"></div>
+            <div class="lk-dd-phone" id="lkDdPhone"></div>
+          </div>
+          <div class="lk-dd-item">🎁 Мои баллы: <b id="lkDdBonuses" style="color:var(--accent);margin-left:4px">0</b></div>
+          <div class="lk-dd-item danger" onclick="lkLogout()">🚪 Выйти</div>
+        </div>
       </div>
       <button class="search-btn" id="searchBtn" aria-label="Поиск">🔍</button>
       <button class="cart-btn" id="cartBtn" aria-label="Корзина">
@@ -4088,6 +4141,37 @@
 </div>
 
 <!-- ============================================================
+     ЛИЧНЫЙ КАБИНЕТ — МОДАЛ ВХОДА
+============================================================ -->
+<div class="modal-overlay" id="lkOverlay" onclick="if(event.target===this)closeLk()" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="max-width:400px;padding:36px 32px 32px">
+    <div class="modal-header" style="margin-bottom:20px">
+      <div class="modal-header-title">👤 Личный кабинет</div>
+      <button class="modal-close" onclick="closeLk()">✕</button>
+    </div>
+    <p style="color:var(--text-2);font-size:0.88rem;margin-bottom:22px;line-height:1.55">
+      История заказов и баллы сохранятся на вашем устройстве.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="form-group">
+        <label class="form-label">Ваше имя</label>
+        <input type="text" id="lkName" class="form-input" placeholder="Как вас зовут?" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Номер телефона</label>
+        <input type="tel" id="lkPhone" class="form-input" placeholder="8 (___) ___-__-__" maxlength="18" autocomplete="tel" inputmode="numeric">
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.88rem;color:var(--text-2);line-height:1.5">
+        <input type="checkbox" id="lkConsent" style="margin-top:2px;accent-color:var(--accent);width:18px;height:18px;flex-shrink:0">
+        <span>Подтверждаю, что это мой номер телефона</span>
+      </label>
+      <div id="lkError" style="display:none;color:#e05a5a;font-size:0.85rem"></div>
+      <button id="lkSubmitBtn" class="btn btn-primary" style="width:100%;justify-content:center" onclick="lkSubmit()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
      CALLBACK MODAL
 ============================================================ -->
 <div class="modal-overlay" id="callbackOverlay" onclick="if(event.target===this)closeCallback()" style="display:none;align-items:center;justify-content:center">
@@ -4264,9 +4348,12 @@
         <div class="co-block">
           <div style="display:flex;flex-direction:column;gap:12px">
             <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text-2);line-height:1.5">
-              <input type="checkbox" id="coConsent" style="margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
+              <input type="checkbox" id="coConsent" checked style="margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0" onchange="coConsentChanged()">
               <span>Я соглашаюсь с <a href="#" onclick="return false" style="color:var(--accent)">обработкой персональных данных</a> и <a href="#" onclick="return false" style="color:var(--accent)">пользовательским соглашением</a></span>
             </label>
+            <div id="coConsentWarn" style="display:none;background:rgba(224,90,90,0.1);border:1px solid rgba(224,90,90,0.35);border-radius:10px;padding:12px 14px;font-size:0.85rem;color:#e05a5a;line-height:1.5">
+              Без согласия оформить заказ нельзя.<br>Позвоните нам: <a href="tel:+79225782070" style="color:#e05a5a;font-weight:700">8-922-578-2070</a>
+            </div>
             <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text-2);line-height:1.5">
               <input type="checkbox" id="coSubscribe" style="margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
               <span>Хочу получать новости и акции (необязательно)</span>
@@ -6219,6 +6306,9 @@
     coSetDelivery('delivery');
     coSetTimeMode('soon');
     coSelectPayment(2);
+    document.getElementById('coConsent').checked = true;
+    document.getElementById('coConsentWarn').style.display = 'none';
+    document.getElementById('coSubmitBtn').disabled = false;
     document.getElementById('coPromoMsg').style.display = 'none';
     document.getElementById('coSubmitErr').style.display = 'none';
     if (coActivePromo) {
@@ -6232,6 +6322,14 @@
   function closeCheckoutPage() {
     document.getElementById('checkoutPageOverlay').classList.remove('open');
     document.body.style.overflow = '';
+  }
+
+  function coConsentChanged() {
+    var checked = document.getElementById('coConsent').checked;
+    var warn    = document.getElementById('coConsentWarn');
+    var btn     = document.getElementById('coSubmitBtn');
+    warn.style.display = checked ? 'none' : 'block';
+    btn.disabled = !checked;
   }
 
   function coRenderItems() {
@@ -6617,7 +6715,135 @@
     if (e.key === 'Escape' && document.getElementById('callbackOverlay').style.display === 'flex') {
       closeCallback();
     }
+    if (e.key === 'Escape' && document.getElementById('lkOverlay').style.display === 'flex') {
+      closeLk();
+    }
   });
+
+  // ============================================================
+  // ЛИЧНЫЙ КАБИНЕТ
+  // ============================================================
+  var LK_KEY = 'svl_user';
+
+  function lkGet() {
+    try { return JSON.parse(localStorage.getItem(LK_KEY)) || null; } catch(e) { return null; }
+  }
+
+  function lkFmt(phone) {
+    var d = (phone || '').replace(/\D/g,'');
+    if (d.length === 11) return '8 (' + d.slice(1,4) + ') ' + d.slice(4,7) + '-' + d.slice(7,9) + '-' + d.slice(9,11);
+    return phone || '';
+  }
+
+  function lkUpdateHeader() {
+    var user = lkGet();
+    var btn  = document.getElementById('lkBtn');
+    if (!btn) return;
+    if (user) {
+      btn.textContent = '👤 ' + (user.name || lkFmt(user.phone));
+      btn.classList.add('logged-in');
+      var ddName  = document.getElementById('lkDdName');
+      var ddPhone = document.getElementById('lkDdPhone');
+      if (ddName)  ddName.textContent  = user.name || 'Профиль';
+      if (ddPhone) ddPhone.textContent = lkFmt(user.phone);
+    } else {
+      btn.textContent = '👤 Войти';
+      btn.classList.remove('logged-in');
+    }
+  }
+
+  function lkToggle() {
+    var user = lkGet();
+    if (user) {
+      document.getElementById('lkDropdown').classList.toggle('open');
+    } else {
+      openLk();
+    }
+  }
+
+  function openLk() {
+    var ov = document.getElementById('lkOverlay');
+    ov.style.display = 'flex';
+    ov.style.opacity = '1';
+    ov.style.pointerEvents = 'all';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('lkError').style.display = 'none';
+    document.getElementById('lkName').value  = '';
+    document.getElementById('lkPhone').value = '';
+    document.getElementById('lkConsent').checked = false;
+    lkInitMask();
+    setTimeout(function(){ document.getElementById('lkName').focus(); }, 60);
+  }
+
+  function closeLk() {
+    var ov = document.getElementById('lkOverlay');
+    ov.style.display = 'none';
+    ov.style.opacity = '';
+    ov.style.pointerEvents = '';
+    document.body.style.overflow = '';
+  }
+
+  function lkSubmit() {
+    var name    = document.getElementById('lkName').value.trim();
+    var phone   = document.getElementById('lkPhone').value.replace(/\D/g,'');
+    var consent = document.getElementById('lkConsent').checked;
+    var err     = document.getElementById('lkError');
+    err.style.display = 'none';
+    if (!name)             { err.textContent = 'Введите ваше имя';                          err.style.display = 'block'; document.getElementById('lkName').focus();  return; }
+    if (phone.length < 11) { err.textContent = 'Введите корректный номер телефона';          err.style.display = 'block'; document.getElementById('lkPhone').focus(); return; }
+    if (!consent)          { err.textContent = 'Подтвердите, что это ваш номер телефона';   err.style.display = 'block'; return; }
+    localStorage.setItem(LK_KEY, JSON.stringify({ name: name, phone: phone }));
+    lkUpdateHeader();
+    closeLk();
+  }
+
+  function lkLogout() {
+    localStorage.removeItem(LK_KEY);
+    document.getElementById('lkDropdown').classList.remove('open');
+    lkUpdateHeader();
+  }
+
+  function lkInitMask() {
+    var inp = document.getElementById('lkPhone');
+    if (!inp || inp._lkMask) return;
+    inp._lkMask = true;
+    inp.addEventListener('input', function(e) {
+      var d = e.target.value.replace(/\D/g,'');
+      if (!d.length) { e.target.value = ''; return; }
+      if (d[0]==='7'||d[0]==='8') d = d.slice(1);
+      if (d.length > 10) d = d.slice(0,10);
+      var r = '8';
+      if (!d.length) { e.target.value = r; return; }
+      r += ' (' + d.slice(0, Math.min(3,d.length));
+      if (d.length > 3) r += ') ' + d.slice(3, Math.min(6,d.length));
+      if (d.length > 6) r += '-' + d.slice(6, Math.min(8,d.length));
+      if (d.length > 8) r += '-' + d.slice(8,10);
+      e.target.value = r;
+    });
+  }
+
+  // Закрыть dropdown при клике вне
+  document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('lkWrap');
+    var dd   = document.getElementById('lkDropdown');
+    if (dd && wrap && !wrap.contains(e.target)) dd.classList.remove('open');
+  });
+
+  // Pre-fill checkout from LK
+  var _origOpenCheckoutPage = openCheckoutPage;
+  openCheckoutPage = function() {
+    _origOpenCheckoutPage();
+    var user = lkGet();
+    if (user) {
+      var nameInp  = document.getElementById('coName');
+      var phoneInp = document.getElementById('coPhone');
+      if (nameInp  && !nameInp.value)  nameInp.value  = user.name || '';
+      if (phoneInp && !phoneInp.value) phoneInp.value = lkFmt(user.phone);
+    }
+  };
+
+  // Init
+  lkUpdateHeader();
 </script>
 </body>
 </html>

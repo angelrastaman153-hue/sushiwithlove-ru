@@ -1393,6 +1393,17 @@
     }
     .modal-header h2 { font-family: var(--font-display); font-size: 1.8rem; }
     .modal-body { padding: 0 28px 28px; }
+    .back-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      color: var(--text-2);
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .back-btn:hover { background: var(--surface-3); color: var(--text); }
 
     .form-section { margin-bottom: 24px; }
     .form-section-title {
@@ -3856,6 +3867,7 @@
 
     <div id="checkoutForm">
       <div class="modal-header">
+        <button class="back-btn" onclick="closeCheckout(); openCart();" title="Вернуться в корзину">←</button>
         <h2>Оформление заказа</h2>
         <button class="close-btn" onclick="closeCheckout()">✕</button>
       </div>
@@ -3873,6 +3885,16 @@
               <label for="typeSelf">🏪 Самовывоз</label>
             </div>
           </div>
+        </div>
+
+        <!-- Промокод в оформлении заказа -->
+        <div class="form-section">
+          <div class="form-section-title">Промокод</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-input" id="checkoutPromoInput" placeholder="Введите промокод" autocomplete="off" data-lpignore="true" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button type="button" class="btn btn-secondary" style="padding:0 16px;flex-shrink:0" onclick="applyPromoFromCheckout()">Применить</button>
+          </div>
+          <div id="checkoutPromoMsg" style="margin-top:8px;font-size:0.8rem;display:none"></div>
         </div>
 
         <div class="form-section" id="addressSection">
@@ -3916,6 +3938,11 @@
               <input type="text" inputmode="tel" class="form-input" id="customerPhone" placeholder="8 (___) ___-__-__" autocomplete="new-password" data-lpignore="true" data-form-type="other" data-1p-ignore="true">
             </div>
           </div>
+          <label class="consent-label" style="display:flex;align-items:flex-start;gap:10px;margin-top:12px;cursor:pointer">
+            <input type="checkbox" id="consentCheck" style="margin-top:3px;flex-shrink:0;accent-color:var(--accent);width:16px;height:16px">
+            <span style="font-size:0.78rem;color:var(--text-2);line-height:1.4">Я согласен(а) на <a href="#" style="color:var(--accent)">обработку персональных данных</a> в соответствии с Федеральным законом №152-ФЗ</span>
+          </label>
+          <div id="consentError" style="display:none;font-size:0.78rem;color:var(--danger);margin-top:4px">Необходимо дать согласие на обработку персональных данных</div>
         </div>
 
         <div class="form-section">
@@ -3999,16 +4026,6 @@
           <div class="order-summary-row"><span>Товары</span><span id="summarySubtotal">–</span></div>
           <div class="order-summary-row"><span>Доставка</span><span id="summaryDelivery">–</span></div>
           <div class="order-summary-row total"><span>Итого</span><span id="summaryTotal">–</span></div>
-        </div>
-
-        <!-- Промокод в оформлении заказа -->
-        <div class="form-section">
-          <div class="form-section-title">Промокод</div>
-          <div style="display:flex;gap:8px">
-            <input type="text" class="form-input" id="checkoutPromoInput" placeholder="Введите промокод" autocomplete="off" data-lpignore="true" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-            <button type="button" class="btn btn-secondary" style="padding:0 16px;flex-shrink:0" onclick="applyPromoFromCheckout()">Применить</button>
-          </div>
-          <div id="checkoutPromoMsg" style="margin-top:8px;font-size:0.8rem;display:none"></div>
         </div>
 
         <p style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px"><span style="color:var(--danger)">*</span> — обязательное поле</p>
@@ -4514,6 +4531,16 @@
       return;
     }
     if (cart.length === 0) { showToast('⚠️', 'Корзина пуста'); return; }
+
+    // Проверка согласия на обработку персональных данных
+    var consentCheck = document.getElementById('consentCheck');
+    var consentError = document.getElementById('consentError');
+    if (consentCheck && !consentCheck.checked) {
+      consentError.style.display = '';
+      consentCheck.closest('label').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (consentError) consentError.style.display = 'none';
 
     // Валидация: наличные — нужна сумма или «Без сдачи»
     if (selectedPayment === 2) {

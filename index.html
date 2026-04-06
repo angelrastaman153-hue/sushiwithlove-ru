@@ -860,6 +860,36 @@
       border-color: var(--accent);
     }
 
+    .filter-bar {
+      background: #0F0B08;
+      border-top: 1px solid var(--border);
+    }
+    .filter-bar .container {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 8px 24px 12px;
+    }
+    .filter-bar .container::-webkit-scrollbar { display: none; }
+    .filter-pill {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-2);
+      white-space: nowrap;
+      transition: var(--transition);
+      border: 1px solid var(--border);
+      background: transparent;
+    }
+    .filter-pill:hover { color: var(--text); border-color: var(--text-2); }
+    .filter-pill.active {
+      color: #0F0B08;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
     .menu-group { margin-bottom: 48px; }
     .menu-group-title {
       font-family: var(--font-display);
@@ -2659,6 +2689,17 @@
       <button class="cat-btn" data-target="deals">Выгодные</button>
       <button class="cat-btn" data-target="together">Допы</button>
       <button class="cat-btn" data-target="drinks">Напитки</button>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <div class="container" style="padding-top:0;padding-bottom:10px">
+        <button class="filter-pill active" data-tag="">Все</button>
+        <button class="filter-pill" data-tag="лосось">🐟 Лосось</button>
+        <button class="filter-pill" data-tag="креветка">🦐 Креветка</button>
+        <button class="filter-pill" data-tag="острый">🔥 Острые</button>
+        <button class="filter-pill" data-tag="курица">🐔 Курица</button>
+        <button class="filter-pill" data-tag="авокадо">🥑 Авокадо</button>
+        <button class="filter-pill" data-tag="запеченный">♨️ Запечённые</button>
+      </div>
     </div>
   </div>
 
@@ -4622,6 +4663,76 @@
     });
   }, observerOpts);
   menuGroups.forEach(g => catObserver.observe(g));
+
+  // ============================================================
+  // INGREDIENT FILTER
+  // ============================================================
+  (function() {
+    var TAG_RULES = [
+      { tag: 'лосось',     re: /лосос|лосем|филадел|бархатн|пляжн/i },
+      { tag: 'креветка',   re: /креветк|эби/i },
+      { tag: 'острый',     re: /остр|этна|огнен|васаби|пепперони/i },
+      { tag: 'курица',     re: /куриц|курич|курочк|наггет|гавайск|гриб/i },
+      { tag: 'авокадо',    re: /авокадо/i },
+      { tag: 'запеченный', re: /запеч|темпурн/i },
+    ];
+
+    // Assign data-tags to every dish card
+    document.querySelectorAll('.dish-card').forEach(function(card) {
+      var text = (card.dataset.name || '') + ' ' + (card.querySelector('.dish-composition') ? card.querySelector('.dish-composition').textContent : '');
+      var tags = [];
+      TAG_RULES.forEach(function(rule) {
+        if (rule.re.test(text)) tags.push(rule.tag);
+      });
+      card.dataset.tags = tags.join(' ');
+    });
+
+    var activeTag = '';
+    var pills = document.querySelectorAll('.filter-pill');
+
+    function applyFilter() {
+      document.querySelectorAll('.menu-group').forEach(function(group) {
+        var cards = group.querySelectorAll('.dish-card');
+        var visibleCount = 0;
+        cards.forEach(function(card) {
+          var show = !activeTag || (card.dataset.tags && card.dataset.tags.split(' ').indexOf(activeTag) !== -1);
+          card.style.display = show ? '' : 'none';
+          if (show) visibleCount++;
+        });
+
+        // Show/hide empty-state message
+        var emptyMsg = group.querySelector('.filter-empty-msg');
+        if (!emptyMsg) {
+          emptyMsg = document.createElement('p');
+          emptyMsg.className = 'filter-empty-msg';
+          emptyMsg.style.cssText = 'color:var(--text-2);font-size:0.9rem;padding:12px 0;display:none';
+          emptyMsg.textContent = 'Нет позиций по выбранному фильтру';
+          group.appendChild(emptyMsg);
+        }
+        emptyMsg.style.display = (visibleCount === 0 && activeTag) ? '' : 'none';
+      });
+    }
+
+    pills.forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        var tag = pill.dataset.tag;
+        if (tag === activeTag) {
+          // clicking active non-"все" pill deselects
+          activeTag = '';
+        } else {
+          activeTag = tag;
+        }
+        pills.forEach(function(p) {
+          p.classList.toggle('active', p.dataset.tag === activeTag);
+        });
+        // make sure "Все" pill is active when no filter
+        if (!activeTag) {
+          document.querySelector('.filter-pill[data-tag=""]').classList.add('active');
+        }
+        applyFilter();
+      });
+    });
+  })();
 
   // ============================================================
   // SCROLL REVEAL

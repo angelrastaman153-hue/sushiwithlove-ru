@@ -104,11 +104,15 @@ $post = array(
 );
 
 foreach (array_values($items) as $i => $item) {
-    $art = (int) fp_get($item, 'id', 0);
-    $qty = max(1, (int) fp_get($item, 'qty', 1));
+    $art   = (int) fp_get($item, 'id', 0);
+    $qty   = max(1, (int) fp_get($item, 'qty', 1));
+    $price = fp_get($item, 'price', null);
     if ($art <= 0) continue;
     $post['product[' . $i . ']']     = $art;
     $post['product_kol[' . $i . ']'] = $qty;
+    if ($price !== null && $price !== '') {
+        $post['product_price[' . $i . ']'] = (float) $price;
+    }
 }
 
 $postStr = http_build_query($post);

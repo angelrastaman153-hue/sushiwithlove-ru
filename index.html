@@ -2499,8 +2499,17 @@
 
     <div class="hero-promo reveal reveal-delay-2">
       <div class="hero-promo-label">⏱ Акция до конца дня</div>
-      <div class="hero-promo-offer">Сет «Вечерний» −20%</div>
+      <div class="hero-promo-offer">Сет ВЫГОДНЫЙ −20%</div>
       <div class="hero-timer" id="heroTimer">–</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px">
+        <span style="text-decoration:line-through;color:var(--text-2);font-size:1rem">1 499 ₽</span>
+        <span style="color:var(--accent);font-size:1.35rem;font-weight:700">1 199 ₽</span>
+      </div>
+      <button onclick="addToCart({id:111,name:'Сет ВЫГОДНЫЙ (акция −20%)',price:1199,emoji:'💰'})"
+        style="margin-top:10px;width:100%;padding:10px 0;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:background 0.2s"
+        onmouseenter="this.style.background='#D4923A'" onmouseleave="this.style.background='var(--accent)'">
+        + В корзину
+      </button>
     </div>
   </div>
 </section>
@@ -4497,7 +4506,7 @@
       preorder_time: document.getElementById('preorderTime') ? document.getElementById('preorderTime').value : '',
       order_total: getCartTotal() + getDeliveryCost(),
       promo_code: activePromoCode,
-      items:    cart.map(i => ({ id: i.id, qty: i.qty || 1 }))
+      items:    cart.map(i => ({ id: i.id, qty: i.qty || 1, price: i.price }))
     };
 
     try {

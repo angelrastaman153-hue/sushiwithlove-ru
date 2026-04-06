@@ -55,7 +55,14 @@ $pay = (int) fp_get($data, 'pay', 1);
 $cashFrom = trim(fp_get($data, 'cash_from', ''));
 if ($pay === 2) {
     if ($cashFrom) {
-        $commentParts[] = 'Сдача с: ' . $cashFrom;
+        $cashFromNum = (int) preg_replace('/\D/', '', $cashFrom);
+        $orderTotal  = (int) fp_get($data, 'order_total', 0);
+        $changeNote  = 'Сдача с: ' . $cashFrom;
+        if ($cashFromNum > 0 && $orderTotal > 0) {
+            $change = $cashFromNum - $orderTotal;
+            $changeNote .= ' (сдача: ' . $change . ' ₽)';
+        }
+        $commentParts[] = $changeNote;
     } else {
         $commentParts[] = 'Без сдачи';
     }

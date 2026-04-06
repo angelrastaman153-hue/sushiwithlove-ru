@@ -4461,6 +4461,7 @@
       chopsticks: chopstickCount,
       preorder_date: document.getElementById('preorderDate') ? document.getElementById('preorderDate').value : '',
       preorder_time: document.getElementById('preorderTime') ? document.getElementById('preorderTime').value : '',
+      order_total: getCartTotal() + getDeliveryCost(),
       items:    cart.map(i => ({ id: i.id, qty: i.qty || 1 }))
     };
 

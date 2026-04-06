@@ -51,6 +51,9 @@ $commentParts = array();
 $userComment = trim(fp_get($data, 'comment', ''));
 if ($userComment) $commentParts[] = $userComment;
 
+$promoCode = trim(fp_get($data, 'promo_code', ''));
+if ($promoCode) $commentParts[] = 'Промокод: ' . $promoCode;
+
 $pay = (int) fp_get($data, 'pay', 1);
 $cashFrom = trim(fp_get($data, 'cash_from', ''));
 if ($pay === 2) {

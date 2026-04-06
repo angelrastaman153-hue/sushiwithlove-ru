@@ -3741,6 +3741,15 @@
       <div class="cart-total-row total"><span>Итого</span><span id="cartTotal">0 ₽</span></div>
     </div>
 
+    <!-- Промокод в корзине -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;gap:8px">
+        <input type="text" class="form-input" id="cartPromoInput" placeholder="Промокод" autocomplete="off" data-lpignore="true" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        <button type="button" class="btn btn-secondary" style="padding:0 16px;flex-shrink:0" onclick="applyPromoFromCart()">Применить</button>
+      </div>
+      <div id="cartPromoMsg" style="margin-top:8px;font-size:0.8rem;display:none"></div>
+    </div>
+
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openCheckout()">
       Продолжить оформление заказа →
     </button>
@@ -3907,6 +3916,16 @@
           <div class="order-summary-row"><span>Товары</span><span id="summarySubtotal">–</span></div>
           <div class="order-summary-row"><span>Доставка</span><span id="summaryDelivery">–</span></div>
           <div class="order-summary-row total"><span>Итого</span><span id="summaryTotal">–</span></div>
+        </div>
+
+        <!-- Промокод в оформлении заказа -->
+        <div class="form-section">
+          <div class="form-section-title">Промокод</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-input" id="checkoutPromoInput" placeholder="Введите промокод" autocomplete="off" data-lpignore="true" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button type="button" class="btn btn-secondary" style="padding:0 16px;flex-shrink:0" onclick="applyPromoFromCheckout()">Применить</button>
+          </div>
+          <div id="checkoutPromoMsg" style="margin-top:8px;font-size:0.8rem;display:none"></div>
         </div>
 
         <p style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px"><span style="color:var(--danger)">*</span> — обязательное поле</p>
@@ -4459,6 +4478,7 @@
       preorder_date: document.getElementById('preorderDate') ? document.getElementById('preorderDate').value : '',
       preorder_time: document.getElementById('preorderTime') ? document.getElementById('preorderTime').value : '',
       order_total: getCartTotal() + getDeliveryCost(),
+      promo_code: activePromoCode,
       items:    cart.map(i => ({ id: i.id, qty: i.qty || 1 }))
     };
 
@@ -4676,17 +4696,95 @@
   // ============================================================
   // PROMO CODE
   // ============================================================
-  function applyPromo() {
-    const code = document.getElementById('promoInput').value.trim().toUpperCase();
-    if (code === 'ПЕРВЫЙ') {
-      showToast('🎉 Промокод применён!', 'Скидка −15% будет учтена при заказе', 'promo');
-      document.getElementById('promoInput').style.borderColor = '#4ade80';
-    } else if (code === '') {
-      document.getElementById('promoInput').focus();
-    } else {
-      document.getElementById('promoInput').style.borderColor = 'var(--danger)';
-      showToast('⚠️ Промокод не найден', 'Проверьте правильность ввода', 'error');
+  var activePromoCode = '';
+
+  var PROMO_DB = {
+    '1LOVE': {
+      label: '1LOVE',
+      desc: 'Первый заказ — ролл «Филадельфия лайт с огурцом» в подарок (8 шт)',
+      check: function() {
+        var total = getCartTotal();
+        if (total < 999) return { ok: false, reason: 'Минимальная сумма заказа 999 ₽. Не хватает ' + (999 - total) + ' ₽.' };
+        return { ok: true, msg: '🎉 Промокод применён! К заказу добавят ролл «Филадельфия лайт с огурцом»' };
+      }
+    },
+    'BDAY1': {
+      label: 'BDAY1',
+      desc: 'Именинник — ролл «Лава с шиитаке» в подарок при заказе от 999 ₽',
+      check: function() {
+        var total = getCartTotal();
+        if (total < 999) return { ok: false, reason: 'Минимальная сумма заказа 999 ₽. Не хватает ' + (999 - total) + ' ₽.' };
+        return { ok: true, msg: '🎂 Промокод применён! К заказу добавят ролл «Лава с шиитаке»' };
+      }
+    },
+    'BDAY2': {
+      label: 'BDAY2',
+      desc: 'Именинник — набор «Праздничный» в подарок при заказе от 1 999 ₽',
+      check: function() {
+        var total = getCartTotal();
+        if (total < 1999) return { ok: false, reason: 'Минимальная сумма заказа 1 999 ₽. Не хватает ' + (1999 - total) + ' ₽.' };
+        return { ok: true, msg: '🎂 Промокод применён! К заказу добавят набор «Праздничный»' };
+      }
+    },
+    'СВ10': {
+      label: 'СВ10',
+      desc: 'Скидка 10% при самовывозе. Выберите «Самовывоз» в способе получения.',
+      check: function() {
+        var deliveryEl = document.querySelector('input[name="delivery_type"]:checked');
+        var dtype = deliveryEl ? deliveryEl.value : 'delivery';
+        if (dtype !== 'self') return { ok: false, reason: 'Промокод действует только при самовывозе. Выберите «Самовывоз» в способе получения.' };
+        return { ok: true, msg: '🏪 Промокод применён! Скидка 10% на самовывоз учтена.' };
+      }
     }
+  };
+
+  function checkPromoCode(code, inputEl, msgEl) {
+    var c = code.trim().toUpperCase();
+    if (!c) { inputEl.focus(); return; }
+
+    var promo = PROMO_DB[c];
+    msgEl.style.display = '';
+
+    if (!promo) {
+      msgEl.innerHTML = '<span style="color:var(--danger)">❌ Промокод «' + c + '» не существует. Проверьте правильность ввода.</span>';
+      inputEl.style.borderColor = 'var(--danger)';
+      activePromoCode = '';
+      return;
+    }
+
+    var result = promo.check();
+    if (result.ok) {
+      msgEl.innerHTML = '<span style="color:#4ade80">' + result.msg + '</span>';
+      inputEl.style.borderColor = '#4ade80';
+      activePromoCode = c;
+      // Синхронизируем оба поля
+      var cartInput = document.getElementById('cartPromoInput');
+      var checkoutInput = document.getElementById('checkoutPromoInput');
+      if (cartInput) cartInput.value = c;
+      if (checkoutInput) checkoutInput.value = c;
+    } else {
+      msgEl.innerHTML = '<span style="color:var(--accent)">⚠️ <strong>' + promo.desc + '</strong><br>' + result.reason + '</span>';
+      inputEl.style.borderColor = 'var(--accent)';
+      activePromoCode = '';
+    }
+  }
+
+  function applyPromoFromCart() {
+    var input = document.getElementById('cartPromoInput');
+    var msg   = document.getElementById('cartPromoMsg');
+    checkPromoCode(input.value, input, msg);
+  }
+
+  function applyPromoFromCheckout() {
+    var input = document.getElementById('checkoutPromoInput');
+    var msg   = document.getElementById('checkoutPromoMsg');
+    checkPromoCode(input.value, input, msg);
+  }
+
+  // Старая функция (для кнопок на акциях)
+  function applyPromo() {
+    var input = document.getElementById('cartPromoInput') || document.getElementById('promoInput');
+    if (input) { checkPromoCode(input.value, input, document.getElementById('cartPromoMsg') || document.createElement('div')); }
   }
 
   // ============================================================

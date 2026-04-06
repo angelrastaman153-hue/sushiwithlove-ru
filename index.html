@@ -1146,21 +1146,36 @@
     }
     .dish-meta {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 14px;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1px;
     }
-    .dish-weight { font-size: 0.78rem; color: var(--text-2); }
-    .dish-price { font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+    .dish-weight { font-size: 0.72rem; color: var(--text-2); }
+    .dish-price { font-size: 1.05rem; font-weight: 700; color: var(--accent); }
 
     .dish-footer {
-      padding: 0 16px 14px;
+      padding: 10px 16px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
       position: relative;
       z-index: 5;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+
+    /* Строка с названием + кнопка ℹ */
+    .dish-name-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .dish-name-row .dish-name { margin-bottom: 0; flex: 1; }
+    .dish-info-btn {
+      flex-shrink: 0;
     }
 
     .add-btn {
@@ -2061,46 +2076,52 @@
       display: none;
     }
     .promo-tip-close:hover { color: var(--accent); }
+    .promo-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .promo-title-row .promo-title { margin-bottom: 0; }
+
     .promo-hint-btn {
-      position: absolute;
-      top: 18px; right: 16px;
-      width: 32px; height: 32px;
+      width: 30px; height: 30px;
+      flex-shrink: 0;
       border-radius: 50%;
-      background: rgba(15,11,8,0.88);
-      border: 1.5px solid rgba(232,168,71,0.55);
+      background: rgba(232,168,71,0.1);
+      border: 1.5px solid rgba(232,168,71,0.45);
       color: rgba(232,168,71,0.9);
       font-size: 0.8rem;
       font-weight: 700;
       font-family: var(--font-ui);
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 30; /* выше promo-tip (20) и promo-body (1) */
+      z-index: 30;
       cursor: pointer;
     }
     @media (hover: none) {
       .promo-card:hover .promo-tip { opacity: 0; pointer-events: none; transform: translateY(12px); }
       .promo-tip.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
       .promo-tip-close { display: block; }
-      .promo-hint-btn { display: flex; }
     }
 
     /* Кнопка просмотра состава блюда на мобиле */
     .dish-info-btn {
-      position: absolute;
-      top: 10px; right: 10px;
-      width: 30px; height: 30px;
+      width: 26px; height: 26px;
       border-radius: 50%;
-      background: rgba(15,11,8,0.75);
-      border: 1.5px solid rgba(232,168,71,0.5);
-      color: rgba(232,168,71,0.95);
-      font-size: 0.8rem;
+      background: var(--surface-2);
+      border: 1.5px solid rgba(232,168,71,0.4);
+      color: rgba(232,168,71,0.9);
+      font-size: 0.72rem;
       font-weight: 700;
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 6;
+      flex-shrink: 0;
       cursor: pointer;
+      z-index: 6;
     }
     @media (hover: none) {
       .dish-info-btn { display: flex; }
@@ -2678,10 +2699,12 @@
           <img src="photos/promo/promo-1love.jpg.png" alt="Промокод 1LOVE" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p1">🎁</div>
         </div>
-        <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         <div class="promo-body">
           <div class="promo-tag">ПЕРВЫЙ ЗАКАЗ · ПРОМОКОД</div>
-          <div class="promo-title">1LOVE</div>
+          <div class="promo-title-row">
+            <div class="promo-title">1LOVE</div>
+            <button class="promo-hint-btn" aria-label="Условия акции">?</button>
+          </div>
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
           <div class="promo-extra">🍣 8 шт</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center;margin-top:auto"
@@ -2701,10 +2724,12 @@
           <img src="photos/promo/promo-bday.jpg.png" alt="Промокод именинникам" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p2">🎂</div>
         </div>
-        <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         <div class="promo-body">
           <div class="promo-tag">ИМЕНИННИКАМ · ПРОМОКОД</div>
-          <div class="promo-title">BDAY1 / BDAY2</div>
+          <div class="promo-title-row">
+            <div class="promo-title">BDAY1 / BDAY2</div>
+            <button class="promo-hint-btn" aria-label="Условия акции">?</button>
+          </div>
           <div class="promo-desc">Подарок к заказу в день рождения</div>
           <div class="promo-extra">🎁 2 уровня подарка</div>
           <button class="btn btn-secondary promo-tip-btn" style="width:100%;justify-content:center">Посмотреть условия</button>
@@ -2727,10 +2752,12 @@
           <img src="photos/promo/promo-sv10.jpg.png" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p3">🚶</div>
         </div>
-        <button class="promo-hint-btn" aria-label="Условия акции">?</button>
         <div class="promo-body">
           <div class="promo-tag">САМОВЫВОЗ · ПРОМОКОД</div>
-          <div class="promo-title">СВ10</div>
+          <div class="promo-title-row">
+            <div class="promo-title">СВ10</div>
+            <button class="promo-hint-btn" aria-label="Условия акции">?</button>
+          </div>
           <div class="promo-desc">Заберите заказ выгоднее</div>
           <div class="promo-extra">💰 Скидка на самовывоз</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
@@ -5014,7 +5041,7 @@
 
       card.appendChild(overlay);
 
-      // Кнопка «ℹ» для мобиле — показывает overlay по тапу
+      // Кнопка «ℹ» — рядом с названием блюда (только на мобиле)
       var infoBtn = document.createElement('button');
       infoBtn.className = 'dish-info-btn';
       infoBtn.setAttribute('aria-label', 'Состав блюда');
@@ -5022,15 +5049,28 @@
       infoBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         var isOpen = card.classList.contains('desc-open');
-        // Закрыть все остальные
         document.querySelectorAll('.dish-card.desc-open').forEach(function(c) {
           c.classList.remove('desc-open');
         });
         if (!isOpen) card.classList.add('desc-open');
       });
-      // Вставляем в dish-img (если есть)
-      var dishImg = card.querySelector('.dish-img');
-      if (dishImg) dishImg.appendChild(infoBtn);
+
+      // Оборачиваем dish-name + infoBtn в .dish-name-row
+      var nameEl = card.querySelector('.dish-name');
+      if (nameEl) {
+        var nameRow = document.createElement('div');
+        nameRow.className = 'dish-name-row';
+        nameEl.parentNode.insertBefore(nameRow, nameEl);
+        nameRow.appendChild(nameEl);
+        nameRow.appendChild(infoBtn);
+      }
+
+      // Перемещаем dish-meta в dish-footer (перед кнопкой)
+      var meta = card.querySelector('.dish-meta');
+      var footer = card.querySelector('.dish-footer');
+      if (meta && footer) {
+        footer.appendChild(meta);
+      }
     });
 
     // Тап вне карточки — закрывает overlay

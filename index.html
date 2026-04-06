@@ -5114,9 +5114,9 @@
   // ============================================================
   function getMidnightMs() {
     const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(23, 59, 59, 0);
-    return midnight - now;
+    const end = new Date(now);
+    end.setHours(22, 0, 0, 0);
+    return end - now;
   }
 
   function formatTimer(ms) {

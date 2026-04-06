@@ -46,6 +46,29 @@ $deliveryType = fp_get($data, 'delivery_type', 'delivery');
 $street = $deliveryType === 'self' ? 'Самовывоз' : trim(fp_get($data, 'street', ''));
 $home   = $deliveryType === 'self' ? '' : trim(fp_get($data, 'home', ''));
 
+// Формируем комментарий с доп. данными
+$commentParts = array();
+$userComment = trim(fp_get($data, 'comment', ''));
+if ($userComment) $commentParts[] = $userComment;
+
+$pay = (int) fp_get($data, 'pay', 1);
+$cashFrom = trim(fp_get($data, 'cash_from', ''));
+if ($pay === 2) {
+    if ($cashFrom) {
+        $commentParts[] = 'Сдача с: ' . $cashFrom;
+    } else {
+        $commentParts[] = 'Без сдачи';
+    }
+}
+
+$preorderDate = trim(fp_get($data, 'preorder_date', ''));
+$preorderTime = trim(fp_get($data, 'preorder_time', ''));
+if ($preorderDate || $preorderTime) {
+    $commentParts[] = 'Предзаказ: ' . trim($preorderDate . ' ' . $preorderTime);
+}
+
+$descr = implode(' | ', array_filter($commentParts));
+
 $post = array(
     'secret' => FP_SECRET,
     'phone'  => $phone,
@@ -55,8 +78,9 @@ $post = array(
     'pod'    => trim(fp_get($data, 'entrance', '')),
     'et'     => trim(fp_get($data, 'floor', '')),
     'apart'  => trim(fp_get($data, 'flat', '')),
-    'descr'  => trim(fp_get($data, 'comment', '')),
+    'descr'  => $descr,
     'pay'    => fp_get($data, 'pay', '2'),
+    'person' => max(0, (int) fp_get($data, 'chopsticks', 1)),
     'point'  => 746,
 );
 

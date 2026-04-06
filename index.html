@@ -2041,23 +2041,15 @@
       background: rgba(12,9,6,0.96);
       backdrop-filter: blur(12px);
       padding: 24px 20px 20px;
-      display: flex;
+      display: none;          /* скрыт через display, не opacity */
       flex-direction: column;
       justify-content: flex-start;
-      opacity: 0;
-      transform: translateY(12px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      pointer-events: none;
       z-index: 20;
     }
-    .promo-card:hover .promo-tip,
     .promo-tip.open {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
+      display: flex;          /* только JS открывает */
     }
     .promo-tip p {
-      margin: auto 0;
       font-size: 0.88rem;
       color: var(--text-2);
       line-height: 1.75;
@@ -2073,7 +2065,7 @@
       padding: 4px 8px;
       border-radius: 6px;
       transition: color 0.2s;
-      display: none;
+      display: block;         /* всегда видна внутри открытого tip */
     }
     .promo-tip-close:hover { color: var(--accent); }
     .promo-title-row {
@@ -2100,11 +2092,6 @@
       justify-content: center;
       z-index: 30;
       cursor: pointer;
-    }
-    @media (hover: none) {
-      .promo-card:hover .promo-tip { opacity: 0; pointer-events: none; transform: translateY(12px); }
-      .promo-tip.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
-      .promo-tip-close { display: block; }
     }
 
     /* Кнопка просмотра состава блюда на мобиле */
@@ -5614,23 +5601,36 @@
     });
   })();
 
-  // Promo cards tip
+  // Promo cards tip — display:none/flex, JS-only управление
   document.querySelectorAll('.promo-card').forEach(function(card) {
     var tip = card.querySelector('.promo-tip');
     var closeBtn = card.querySelector('.promo-tip-close');
     var hintBtn = card.querySelector('.promo-hint-btn');
     if (!tip) return;
-    // «?» button — opens tip on mobile
+
+    function openTip()  { tip.classList.add('open'); }
+    function closeTip() { tip.classList.remove('open'); }
+
+    // Десктоп: hover мышью
+    var hoverDevice = window.matchMedia('(hover: hover) and (pointer: fine)');
+    if (hoverDevice.matches) {
+      card.addEventListener('mouseenter', openTip);
+      card.addEventListener('mouseleave', closeTip);
+    }
+
+    // «?» кнопка — работает везде
     if (hintBtn) {
       hintBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        tip.classList.toggle('open');
+        tip.classList.contains('open') ? closeTip() : openTip();
       });
     }
+
+    // Крестик внутри tip
     if (closeBtn) {
       closeBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        tip.classList.remove('open');
+        closeTip();
       });
     }
   });

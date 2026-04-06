@@ -1408,6 +1408,7 @@
     .form-grid-4 { grid-template-columns: 2fr 1fr 1fr 1fr; }
 
     .form-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .req-star { color: var(--danger); font-size: 0.85em; margin-left: 1px; }
     .form-label { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
     .form-input {
       background: var(--surface-2);
@@ -3786,26 +3787,26 @@
           <div class="form-section-title">Адрес доставки</div>
           <div class="form-grid">
             <div class="form-field">
-              <label class="form-label">Улица</label>
-              <input type="text" class="form-input" id="street" placeholder="Начните вводить улицу..." autocomplete="off">
+              <label class="form-label">Улица <span class="req-star">*</span></label>
+              <input type="text" class="form-input" id="street" placeholder="Начните вводить улицу..." autocomplete="off" data-lpignore="true" data-form-type="other">
               <div style="font-size:0.72rem;color:var(--text-muted,#9A8F7E);margin-top:4px">Например: Гоголя, Ленина, Пролетарская</div>
             </div>
             <div class="form-grid form-grid-4" style="margin-top:0">
               <div class="form-field">
-                <label class="form-label">Дом</label>
+                <label class="form-label">Дом <span class="req-star">*</span></label>
                 <input type="text" class="form-input" id="house" placeholder="Например: 7">
               </div>
               <div class="form-field">
                 <label class="form-label">Подъезд</label>
-                <input type="text" class="form-input" id="entrance" placeholder="Например: 2">
+                <input type="text" class="form-input" id="entrance" placeholder="№">
               </div>
               <div class="form-field">
                 <label class="form-label">Этаж</label>
-                <input type="text" class="form-input" id="floor" placeholder="Например: 4">
+                <input type="text" class="form-input" id="floor" placeholder="№">
               </div>
               <div class="form-field">
                 <label class="form-label">Кв./офис</label>
-                <input type="text" class="form-input" id="flat" placeholder="Например: 47">
+                <input type="text" class="form-input" id="flat" placeholder="№">
               </div>
             </div>
           </div>
@@ -3815,11 +3816,11 @@
           <div class="form-section-title">Ваши данные</div>
           <div class="form-grid form-grid-2">
             <div class="form-field">
-              <label class="form-label">Имя</label>
+              <label class="form-label">Имя <span class="req-star">*</span></label>
               <input type="text" class="form-input" id="customerName" placeholder="Как вас зовут?">
             </div>
             <div class="form-field">
-              <label class="form-label">Телефон</label>
+              <label class="form-label">Телефон <span class="req-star">*</span></label>
               <input type="tel" class="form-input" id="customerPhone" placeholder="8 (___) ___-__-__">
             </div>
           </div>
@@ -3908,6 +3909,7 @@
           <div class="order-summary-row total"><span>Итого</span><span id="summaryTotal">–</span></div>
         </div>
 
+        <p style="font-size:0.75rem;color:var(--text-2);margin-bottom:10px"><span style="color:var(--danger)">*</span> — обязательное поле</p>
         <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:1.05rem" onclick="submitOrder()">
           Оформить заказ
         </button>
@@ -4069,13 +4071,12 @@
   })();
 
   // ============================================================
-  // SUGGEST АДРЕСА (Nominatim / OpenStreetMap, без API-ключа)
+  // SUGGEST АДРЕСА (Photon / Komoot, без API-ключа)
   // ============================================================
   (function() {
     var streetInput = document.getElementById('street');
     if (!streetInput) return;
 
-    // Создаём выпадающий список
     var wrap = streetInput.parentElement;
     wrap.style.position = 'relative';
     var drop = document.createElement('div');
@@ -4090,41 +4091,43 @@
 
     var timer = null;
     var lastQ = '';
+    var ctrl = null;
 
     streetInput.addEventListener('input', function() {
       clearTimeout(timer);
       var q = this.value.trim();
       if (q.length < 2) { drop.style.display = 'none'; return; }
-      if (q === lastQ) return;
-      timer = setTimeout(function() { fetchSuggest(q); }, 350);
+      timer = setTimeout(function() { fetchSuggest(q); }, 300);
     });
 
     function fetchSuggest(q) {
       lastQ = q;
-      var url = 'https://nominatim.openstreetmap.org/search'
-        + '?q=' + encodeURIComponent(q + ' Курган')
-        + '&format=json&limit=10&countrycodes=ru&addressdetails=1'
-        + '&accept-language=ru&bounded=1'
-        + '&viewbox=65.0,55.62,65.7,55.30'; // bbox Кургана
-      fetch(url, { headers: { 'Accept-Language': 'ru' } })
+      if (ctrl) ctrl.abort();
+      ctrl = new AbortController();
+      // Photon: поиск улиц по Кургану (lat/lon центра Кургана)
+      var url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q + ' Курган')
+        + '&lat=55.4507&lon=65.3535&limit=12&lang=ru';
+      fetch(url, { signal: ctrl.signal })
         .then(function(r) { return r.json(); })
-        .then(function(data) { renderDrop(data, q); })
+        .then(function(data) { renderDrop(data.features || []); })
         .catch(function() {});
     }
 
-    function renderDrop(items, q) {
-      // Фильтруем и дедублицируем улицы
+    function renderDrop(features) {
       var seen = {};
       var streets = [];
-      items.forEach(function(item) {
-        var a = item.address || {};
-        var street = a.road || a.pedestrian || a.path || a.footway || '';
-        if (!street || seen[street]) return;
-        // Убеждаемся, что результат из Кургана
-        if (a.city && a.city.indexOf('Курган') === -1 && a.town && a.town.indexOf('Курган') === -1) return;
-        seen[street] = true;
-        streets.push(street);
+      features.forEach(function(f) {
+        var p = f.properties || {};
+        // Берём только улицы города Кургана
+        if (p.type !== 'street') return;
+        var city = p.city || p.county || p.state || '';
+        if (city.indexOf('Курган') === -1) return;
+        var name = p.name || '';
+        if (!name || seen[name]) return;
+        seen[name] = true;
+        streets.push(name);
       });
+
       if (streets.length === 0) { drop.style.display = 'none'; return; }
 
       drop.innerHTML = '';
@@ -4149,13 +4152,11 @@
       drop.style.display = '';
     }
 
-    // Закрываем при клике вне
     document.addEventListener('click', function(e) {
       if (!wrap.contains(e.target)) drop.style.display = 'none';
     });
-
     streetInput.addEventListener('blur', function() {
-      setTimeout(function() { drop.style.display = 'none'; }, 150);
+      setTimeout(function() { drop.style.display = 'none'; }, 200);
     });
   })();
 

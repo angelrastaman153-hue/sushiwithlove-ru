@@ -427,26 +427,6 @@
     .search-no-results { text-align: center; color: var(--text-2); padding: 32px 0; font-size: 0.9rem; }
     .search-hint { text-align: center; color: var(--text-muted, #9A8F7E); padding: 24px 0; font-size: 0.82rem; }
 
-    /* Яндекс Suggest — тёмная тема + z-index поверх корзины */
-    [class*="suggest-list"] {
-      z-index: 9999 !important;
-      background: var(--surface-2) !important;
-      border: 1px solid var(--border) !important;
-      border-radius: var(--radius-md) !important;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
-      font-family: var(--font-body) !important;
-    }
-    [class*="suggest-item"] {
-      color: var(--text) !important;
-      font-size: 0.88rem !important;
-      padding: 9px 14px !important;
-    }
-    [class*="suggest-item_selected"],
-    [class*="suggest-item"]:hover {
-      background: var(--surface-3, #342C1E) !important;
-      color: var(--accent) !important;
-    }
-
     .cart-btn {
       position: relative;
       width: 38px; height: 38px;
@@ -4087,36 +4067,94 @@
   })();
 
   // ============================================================
-  // SUGGEST АДРЕСА (Яндекс Карты)
+  // SUGGEST АДРЕСА (Nominatim / OpenStreetMap, без API-ключа)
   // ============================================================
   (function() {
     var streetInput = document.getElementById('street');
     if (!streetInput) return;
-    var done = false;
 
-    function load() {
-      if (done) return;
-      done = true;
-      var s = document.createElement('script');
-      s.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
-      s.onload = function() {
-        ymaps.ready(function() {
-          var sv = new ymaps.SuggestView('street', {
-            boundedBy: [[55.30, 65.00], [55.62, 65.70]],
-            results: 8
-          });
-          // Вставляем выбранное значение без «Курган, » в начале
-          sv.events.add('select', function(e) {
-            var val = e.get('item').value;
-            val = val.replace(/^[^,]+,\s*/, ''); // убираем «Россия, Курганская область, Курган,»
-            streetInput.value = val;
-          });
-        });
-      };
-      document.head.appendChild(s);
+    // Создаём выпадающий список
+    var wrap = streetInput.parentElement;
+    wrap.style.position = 'relative';
+    var drop = document.createElement('div');
+    drop.style.cssText = [
+      'position:absolute','left:0','right:0','top:calc(100% + 4px)',
+      'z-index:9999','background:#1E1810',
+      'border:1px solid rgba(232,168,71,0.35)','border-radius:10px',
+      'box-shadow:0 8px 28px rgba(0,0,0,0.55)','overflow:hidden',
+      'display:none','max-height:260px','overflow-y:auto'
+    ].join(';');
+    wrap.appendChild(drop);
+
+    var timer = null;
+    var lastQ = '';
+
+    streetInput.addEventListener('input', function() {
+      clearTimeout(timer);
+      var q = this.value.trim();
+      if (q.length < 2) { drop.style.display = 'none'; return; }
+      if (q === lastQ) return;
+      timer = setTimeout(function() { fetchSuggest(q); }, 350);
+    });
+
+    function fetchSuggest(q) {
+      lastQ = q;
+      var url = 'https://nominatim.openstreetmap.org/search'
+        + '?q=' + encodeURIComponent(q + ' Курган')
+        + '&format=json&limit=10&countrycodes=ru&addressdetails=1'
+        + '&accept-language=ru&bounded=1'
+        + '&viewbox=65.0,55.62,65.7,55.30'; // bbox Кургана
+      fetch(url, { headers: { 'Accept-Language': 'ru' } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { renderDrop(data, q); })
+        .catch(function() {});
     }
 
-    streetInput.addEventListener('focus', load, { once: true });
+    function renderDrop(items, q) {
+      // Фильтруем и дедублицируем улицы
+      var seen = {};
+      var streets = [];
+      items.forEach(function(item) {
+        var a = item.address || {};
+        var street = a.road || a.pedestrian || a.path || a.footway || '';
+        if (!street || seen[street]) return;
+        // Убеждаемся, что результат из Кургана
+        if (a.city && a.city.indexOf('Курган') === -1 && a.town && a.town.indexOf('Курган') === -1) return;
+        seen[street] = true;
+        streets.push(street);
+      });
+      if (streets.length === 0) { drop.style.display = 'none'; return; }
+
+      drop.innerHTML = '';
+      streets.forEach(function(street) {
+        var row = document.createElement('div');
+        row.style.cssText = 'padding:10px 14px;cursor:pointer;font-size:0.87rem;'
+          + 'color:#F5F0E8;border-bottom:1px solid rgba(232,168,71,0.08);transition:background 0.15s';
+        row.textContent = street;
+        row.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          streetInput.value = street;
+          drop.style.display = 'none';
+        });
+        row.addEventListener('mouseenter', function() {
+          this.style.background = '#342C1E'; this.style.color = '#E8A847';
+        });
+        row.addEventListener('mouseleave', function() {
+          this.style.background = ''; this.style.color = '#F5F0E8';
+        });
+        drop.appendChild(row);
+      });
+      drop.style.display = '';
+    }
+
+    // Закрываем при клике вне
+    document.addEventListener('click', function(e) {
+      if (!wrap.contains(e.target)) drop.style.display = 'none';
+    });
+
+    streetInput.addEventListener('blur', function() {
+      setTimeout(function() { drop.style.display = 'none'; }, 150);
+    });
   })();
 
   function selectVariant(btn) {

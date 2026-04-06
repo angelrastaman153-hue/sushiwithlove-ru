@@ -4420,13 +4420,16 @@
     var openMin = 10 * 60, closeMin = 22 * 60;
     var isClosed = localMinutes < openMin || localMinutes >= closeMin;
     document.getElementById('closedBanner').style.display = isClosed ? '' : 'none';
-    if (isClosed) {
-      // Still allow pre-order submission — just show banner
-    }
 
     const btn = document.querySelector('#checkoutForm .btn-primary');
     btn.disabled = true;
     btn.textContent = 'Отправляем заказ...';
+
+    var userComment = document.getElementById('comment').value.trim();
+    if (isClosed) {
+      var preorderNote = '⏰ ПРЕДЗАКАЗ — принято в нерабочее время, перезвонить после 10:00';
+      userComment = userComment ? preorderNote + '. ' + userComment : preorderNote;
+    }
 
     const payload = {
       name,
@@ -4437,7 +4440,7 @@
       entrance: document.getElementById('entrance').value.trim(),
       floor:    document.getElementById('floor').value.trim(),
       flat:     document.getElementById('flat').value.trim(),
-      comment:  document.getElementById('comment').value.trim(),
+      comment:  userComment,
       pay:      String(selectedPayment),
       cash_from: document.getElementById('cashFrom') ? document.getElementById('cashFrom').value.trim() : '',
       chopsticks: chopstickCount,
@@ -4463,6 +4466,13 @@
       if (result.ok) {
         const orderNum = result.order_id ? '№' + result.order_id : 'А-' + Math.floor(100 + Math.random() * 900);
         document.getElementById('orderNumberDisplay').textContent = 'Заказ ' + orderNum;
+        // Меняем текст под номером заказа в зависимости от времени
+        var successMsg = document.querySelector('#successScreen p');
+        if (successMsg) {
+          successMsg.innerHTML = isClosed
+            ? 'Заказ принят! Сейчас нерабочее время.<br>Оператор <strong>перезвонит после 10:00</strong>.'
+            : 'Ожидайте звонка оператора в течение 5 минут.<br>Примерное время доставки: <strong>~45 минут</strong>';
+        }
         document.getElementById('checkoutForm').style.display = 'none';
         document.getElementById('successScreen').style.display = '';
         cart = [];

@@ -38,7 +38,9 @@
     ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; font-size: 16px; }
+    html { scroll-behavior: smooth; font-size: 17px; }
+    html.fs-s { font-size: 15px; }
+    html.fs-l { font-size: 20px; }
 
     body {
       background: var(--bg);
@@ -295,6 +297,21 @@
       margin-left: auto;
       flex-shrink: 0;
     }
+    .fs-switcher {
+      display: flex; align-items: center; gap: 1px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px;
+    }
+    .fs-btn {
+      padding: 4px 9px; border-radius: 16px;
+      font-weight: 700; color: var(--text-2);
+      font-size: 0.72rem; cursor: pointer;
+      transition: all .15s; background: transparent; border: none;
+    }
+    .fs-btn.active { background: rgba(232,168,71,0.15); color: var(--accent); }
+    .fs-btn:hover:not(.active) { color: var(--text); }
+    @media (max-width: 860px) { .fs-switcher { display: none; } }
     .header-phones {
       display: flex;
       flex-direction: column;
@@ -2840,6 +2857,11 @@
         </a>
         <div class="header-hours" id="headerHours">Ежедневно 10:00–22:00</div>
       </div>
+      <div class="fs-switcher" id="fsSwitcher">
+        <button class="fs-btn" data-size="s" onclick="setFontSize('s')" title="Мелкий шрифт">А−</button>
+        <button class="fs-btn active" data-size="m" onclick="setFontSize('m')" title="Обычный шрифт">А</button>
+        <button class="fs-btn" data-size="l" onclick="setFontSize('l')" title="Крупный шрифт">А+</button>
+      </div>
       <div class="lk-wrap" id="lkWrap">
         <button class="lk-btn" id="lkBtn" onclick="lkToggle()">👤 Войти</button>
         <div class="lk-dropdown" id="lkDropdown">
@@ -2885,7 +2907,15 @@
 
   <div class="container">
     <div class="hero-content">
-      <div class="hero-badge reveal">
+      <h1 class="reveal">
+        Суши и роллы
+        <em>по Кургану и&nbsp;пригороду</em>
+      </h1>
+      <p class="reveal reveal-delay-1" style="font-size:1.1rem;color:var(--text-2);margin-top:12px;margin-bottom:20px">
+        Среднее время доставки по центру — 40 минут
+      </p>
+
+      <div class="hero-badge reveal reveal-delay-2">
         <div class="guarantee-wrap" id="guaranteeWrap">
           <span class="badge badge-accent guarantee-badge">
             <span class="guarantee-badge-title">ГАРАНТИЯ КАЧЕСТВА</span>
@@ -2894,14 +2924,6 @@
           </span>
         </div>
       </div>
-
-      <h1 class="reveal reveal-delay-1">
-        Суши и роллы
-        <em>по Кургану и&nbsp;пригороду</em>
-      </h1>
-      <p class="reveal reveal-delay-1" style="font-size:1.1rem;color:var(--text-2);margin-top:12px;margin-bottom:32px">
-        Среднее время доставки по центру — 40 минут
-      </p>
 
 
       <div class="hero-actions reveal reveal-delay-3">
@@ -6919,6 +6941,24 @@
       closeLk();
     }
   });
+
+  // ============================================================
+  // РАЗМЕР ШРИФТА
+  // ============================================================
+  (function() {
+    var saved = localStorage.getItem('svl_fs') || 'm';
+    function applySize(size) {
+      document.documentElement.classList.remove('fs-s', 'fs-l');
+      if (size === 's') document.documentElement.classList.add('fs-s');
+      if (size === 'l') document.documentElement.classList.add('fs-l');
+      document.querySelectorAll('.fs-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.size === size);
+      });
+      localStorage.setItem('svl_fs', size);
+    }
+    window.setFontSize = applySize;
+    applySize(saved);
+  })();
 
   // ============================================================
   // КОПИРОВАНИЕ ПРОМОКОДА

@@ -664,6 +664,69 @@
       letter-spacing: 0.05em;
     }
 
+    /* Кнопка ? и попап у виджета акции дня */
+    .hero-promo-name-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .hero-promo-name-row .hero-promo-offer { margin-bottom: 0; }
+    .hero-deal-popup-overlay {
+      position: fixed; inset: 0; z-index: 1350;
+      background: rgba(0,0,0,0.55);
+      display: none;
+    }
+    .hero-deal-popup-overlay.open { display: block; }
+    .hero-deal-popup {
+      position: absolute;
+      top: 0; right: calc(100% + 16px);
+      width: 260px;
+      background: var(--surface, #1E1810);
+      border: 1px solid rgba(232,168,71,0.25);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      z-index: 1360;
+      display: none;
+    }
+    .hero-deal-popup.open { display: block; }
+    .hero-deal-popup-img {
+      height: 148px;
+      background: var(--surface-2) center/cover no-repeat;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 52px;
+    }
+    .hero-deal-popup-body { padding: 14px 16px 16px; }
+    .hero-deal-popup-badge {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 6px;
+    }
+    .hero-deal-popup-name {
+      font-family: var(--font-display); font-size: 1.15rem;
+      color: var(--text); margin-bottom: 8px; line-height: 1.2;
+    }
+    .hero-deal-popup-comp {
+      font-size: 0.78rem; color: var(--text-2); line-height: 1.5; margin-bottom: 10px;
+    }
+    .hero-deal-popup-prices {
+      display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px;
+    }
+    .hero-deal-popup-old { text-decoration: line-through; color: var(--text-2); font-size: 0.85rem; }
+    .hero-deal-popup-new { color: var(--accent); font-size: 1.1rem; font-weight: 700; }
+    .hero-deal-popup-close {
+      position: absolute; top: 8px; right: 10px;
+      background: rgba(0,0,0,0.45); border: none; border-radius: 50%;
+      width: 28px; height: 28px; color: #fff; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    @media (max-width: 900px) {
+      .hero-deal-popup {
+        position: fixed;
+        top: 50%; left: 50%; right: auto;
+        transform: translate(-50%, -50%);
+        width: calc(100vw - 48px); max-width: 320px;
+        z-index: 1360;
+      }
+    }
+
     .hero-scroll {
       display: flex;
       align-items: center;
@@ -2852,9 +2915,29 @@
       </div>
     </div>
 
-    <div class="hero-promo reveal reveal-delay-2">
+    <div class="hero-promo reveal reveal-delay-2" style="position:relative">
       <div class="hero-promo-label">⏱ Акция до конца дня</div>
-      <div class="hero-promo-offer" id="heroDealName">–</div>
+      <div class="hero-promo-name-row">
+        <div class="hero-promo-offer" id="heroDealName">–</div>
+        <button class="promo-hint-btn" onclick="toggleHeroDealPopup(event)" aria-label="Состав сета" style="flex-shrink:0">?</button>
+      </div>
+
+      <!-- Попап с карточкой сета -->
+      <div class="hero-deal-popup" id="heroDealPopup">
+        <button class="hero-deal-popup-close" onclick="closeHeroDealPopup()">✕</button>
+        <div class="hero-deal-popup-img" id="heroDealPopupImg"></div>
+        <div class="hero-deal-popup-body">
+          <div class="hero-deal-popup-badge">🔥 Акция дня — скидка 10%</div>
+          <div class="hero-deal-popup-name" id="heroDealPopupName"></div>
+          <div class="hero-deal-popup-comp" id="heroDealPopupComp"></div>
+          <div class="hero-deal-popup-prices">
+            <span class="hero-deal-popup-old" id="heroDealPopupOld"></span>
+            <span class="hero-deal-popup-new" id="heroDealPopupNew"></span>
+          </div>
+          <button class="btn btn-primary" id="heroDealPopupBtn" style="width:100%;justify-content:center;padding:10px">+ В корзину</button>
+        </div>
+      </div>
+
       <div class="hero-timer" id="heroTimer">–</div>
       <div style="display:flex;align-items:baseline;gap:10px;margin-top:8px">
         <span id="heroDealOldPrice" style="text-decoration:line-through;color:var(--text-2);font-size:1rem">–</span>
@@ -2868,6 +2951,8 @@
     </div>
   </div>
 </section>
+
+<div class="hero-deal-popup-overlay" id="heroDealOverlay" onclick="closeHeroDealPopup()"></div>
 
 <!-- ============================================================
      TRUST BAR
@@ -5377,7 +5462,7 @@
   // ============================================================
   (function() {
     // Формат: 'data-name': ['состав (ингредиенты)', 'описание вкуса']
-    var DISH_DESCS = {
+    window.DISH_DESCS = {
       // Сеты
       'Сет ДОБРО': [
         'Запечённый Эби Томаго, запечённый с курой, Маки краб, горячий Барбекю, Катана, Фудзияма, Ред модель и Филадельфия темпура.',
@@ -5634,13 +5719,13 @@
   // АКЦИЯ ДНЯ — ротация по дням недели
   // ============================================================
   var DAILY_DEALS = [
-    { name: 'Сет КОРПОРАТИВНЫЙ',    id: 285, oldPrice: 1999, price: 1799, emoji: '👔' }, // Вс
-    { name: 'Сет ВЫГОДНЫЙ',         id: 111, oldPrice: 1499, price: 1349, emoji: '💰' }, // Пн
-    { name: 'Сет ДОБРО',            id: 198, oldPrice: 1999, price: 1799, emoji: '🎁' }, // Вт
-    { name: 'Сет ПОПУЛЯРНЫЙ',       id: 12,  oldPrice: 1299, price: 1169, emoji: '💝' }, // Ср
-    { name: 'Сет КОМБО',            id: 115, oldPrice: 1609, price: 1449, emoji: '🎯' }, // Чт
-    { name: 'Сет БОЛЬШАЯ КОМПАНИЯ', id: 406, oldPrice: 2099, price: 1889, emoji: '🎉' }, // Пт
-    { name: 'Сет ВОСТОРГ',          id: 10,  oldPrice: 1299, price: 1169, emoji: '🌟' }, // Сб
+    { name: 'Сет КОРПОРАТИВНЫЙ',    id: 285, oldPrice: 1999, price: 1799, emoji: '👔', img: 'photos/sets/set-korporativnyy.jpg' }, // Вс
+    { name: 'Сет ВЫГОДНЫЙ',         id: 111, oldPrice: 1499, price: 1349, emoji: '💰', img: 'photos/sets/set-vygodnyy.jpg'      }, // Пн
+    { name: 'Сет ДОБРО',            id: 198, oldPrice: 1999, price: 1799, emoji: '🎁', img: 'photos/sets/set-dobro.jpg'         }, // Вт
+    { name: 'Сет ПОПУЛЯРНЫЙ',       id: 12,  oldPrice: 1299, price: 1169, emoji: '💝', img: 'photos/sets/set-populyarnyy.jpg'   }, // Ср
+    { name: 'Сет КОМБО',            id: 115, oldPrice: 1609, price: 1449, emoji: '🎯', img: 'photos/sets/set-kombo.jpg'         }, // Чт
+    { name: 'Сет БОЛЬШАЯ КОМПАНИЯ', id: 406, oldPrice: 2099, price: 1889, emoji: '🎉', img: 'photos/sets/set-bolshaya-kompaniya.jpg' }, // Пт
+    { name: 'Сет ВОСТОРГ',          id: 10,  oldPrice: 1299, price: 1169, emoji: '🌟', img: 'photos/sets/set-vostorg.jpg'       }, // Сб
   ];
 
   (function() {
@@ -5656,7 +5741,59 @@
     if (btn) btn.onclick = function() {
       addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, emoji: deal.emoji });
     };
+
+    // Заполняем попап
+    var popupImg  = document.getElementById('heroDealPopupImg');
+    var popupName = document.getElementById('heroDealPopupName');
+    var popupComp = document.getElementById('heroDealPopupComp');
+    var popupOld  = document.getElementById('heroDealPopupOld');
+    var popupNew  = document.getElementById('heroDealPopupNew');
+    var popupBtn  = document.getElementById('heroDealPopupBtn');
+
+    if (popupImg) {
+      if (deal.img) {
+        popupImg.style.backgroundImage = "url('" + deal.img + "')";
+        popupImg.textContent = '';
+      } else {
+        popupImg.textContent = deal.emoji;
+      }
+    }
+    if (popupName) popupName.textContent = deal.name;
+    if (popupComp && typeof DISH_DESCS !== 'undefined' && DISH_DESCS[deal.name]) {
+      popupComp.textContent = DISH_DESCS[deal.name][0];
+    } else if (popupComp) {
+      popupComp.textContent = '';
+    }
+    if (popupOld) popupOld.textContent = deal.oldPrice + ' ₽';
+    if (popupNew) popupNew.textContent = deal.price + ' ₽';
+    if (popupBtn) popupBtn.onclick = function() {
+      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, emoji: deal.emoji });
+      closeHeroDealPopup();
+    };
   })();
+
+  function toggleHeroDealPopup(e) {
+    e && e.stopPropagation();
+    var popup   = document.getElementById('heroDealPopup');
+    var overlay = document.getElementById('heroDealOverlay');
+    var isOpen  = popup.classList.contains('open');
+    if (isOpen) {
+      popup.classList.remove('open');
+      overlay.classList.remove('open');
+    } else {
+      popup.classList.add('open');
+      overlay.classList.add('open');
+    }
+  }
+
+  function closeHeroDealPopup() {
+    document.getElementById('heroDealPopup').classList.remove('open');
+    document.getElementById('heroDealOverlay').classList.remove('open');
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeHeroDealPopup();
+  });
 
   // ============================================================
   // TIMERS

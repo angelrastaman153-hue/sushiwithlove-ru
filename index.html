@@ -823,6 +823,33 @@
     .promo-code-input::placeholder { color: var(--text-2); }
 
     /* ============================================================
+       TOAST (уведомление о копировании промокода)
+    ============================================================ */
+    .copy-toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface-3, #342C1E);
+      border: 1px solid rgba(232,168,71,0.35);
+      color: var(--text);
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .copy-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ============================================================
        MENU
     ============================================================ */
     .menu-section { padding-bottom: 100px; }
@@ -2902,13 +2929,12 @@
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
           <div class="promo-extra">🍣 8 шт</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center;margin-top:auto"
-            onclick="applyPromoCode('1LOVE')">Применить промокод</button>
-          <div class="promo-card-msg" id="promoCardMsg-1LOVE"></div>
+            onclick="copyPromoCode('1LOVE')">Скопировать промокод</button>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
           <p>Промокод <strong>1LOVE</strong>. К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок, 8 шт.<br>Действует для новых клиентов.</p>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="applyPromoCode('1LOVE')">Вставить промокод 1LOVE</button>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="copyPromoCode('1LOVE')">Копировать промокод</button>
         </div>
       </div>
 
@@ -2933,10 +2959,9 @@
           <p><strong>BDAY1</strong>: к заказу от 999 ₽ — ролл «Лава с шиитаке» в подарок.<br><br>
           <strong>BDAY2</strong>: к заказу от 1 999 ₽ — набор «Праздничный»: «Лава с шиитаке» + «Калифорния классическая».</p>
           <div style="display:flex;gap:8px;margin-top:auto">
-            <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY1')">Применить BDAY1</button>
-            <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="applyPromoCode('BDAY2')">Применить BDAY2</button>
+            <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="copyPromoCode('BDAY1')">Копировать BDAY1</button>
+            <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="copyPromoCode('BDAY2')">Копировать BDAY2</button>
           </div>
-          <div class="promo-card-msg" id="promoCardMsg-BDAY"></div>
         </div>
       </div>
 
@@ -2955,23 +2980,17 @@
           <div class="promo-desc">Заберите заказ выгоднее</div>
           <div class="promo-extra">💰 Скидка на самовывоз</div>
           <button class="btn btn-primary promo-tip-btn" style="width:100%;justify-content:center"
-            onclick="applyPromoCode('СВ10')">Применить промокод</button>
-          <div class="promo-card-msg" id="promoCardMsg-СВ10"></div>
+            onclick="copyPromoCode('СВ10')">Скопировать промокод</button>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
           <p>Промокод <strong>СВ10</strong>. Скидка 10% на самовывоз. Подходит для тех, кто хочет забрать заказ самостоятельно и получить более выгодную цену.</p>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="applyPromoCode('СВ10')">Вставить промокод СВ10</button>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="copyPromoCode('СВ10')">Копировать промокод</button>
         </div>
       </div>
 
     </div>
 
-    <div class="promo-code-block reveal">
-      <span>Есть промокод?</span>
-      <input type="text" class="promo-code-input" id="promoInput" placeholder="Введите промокод">
-      <button class="btn btn-secondary" onclick="applyPromo()">Применить</button>
-    </div>
   </div>
 </section>
 
@@ -4142,6 +4161,9 @@
   </div>
   <div class="mobile-cart-cta" id="mobileCartSum">Оформить →</div>
 </div>
+
+<!-- Toast уведомление -->
+<div class="copy-toast" id="copyToast"></div>
 
 <!-- ============================================================
      ЛИЧНЫЙ КАБИНЕТ — МОДАЛ ВХОДА
@@ -6760,6 +6782,31 @@
       closeLk();
     }
   });
+
+  // ============================================================
+  // КОПИРОВАНИЕ ПРОМОКОДА
+  // ============================================================
+  var _copyToastTimer = null;
+  function copyPromoCode(code) {
+    var toast = document.getElementById('copyToast');
+    navigator.clipboard.writeText(code).then(function() {
+      toast.textContent = '✓ Промокод ' + code + ' скопирован в буфер обмена';
+      toast.classList.add('show');
+      clearTimeout(_copyToastTimer);
+      _copyToastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2800);
+    }).catch(function() {
+      // Fallback для старых браузеров
+      var ta = document.createElement('textarea');
+      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast.textContent = '✓ Промокод ' + code + ' скопирован в буфер обмена';
+      toast.classList.add('show');
+      clearTimeout(_copyToastTimer);
+      _copyToastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2800);
+    });
+  }
 
   // ============================================================
   // ЛИЧНЫЙ КАБИНЕТ

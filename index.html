@@ -587,7 +587,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 40px;
       align-items: stretch;
-      min-height: 100vh;
+      min-height: calc(100vh - 130px);
       padding-top: 96px;
     }
 
@@ -595,8 +595,9 @@
       max-width: 560px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding-bottom: 48px;
+      justify-content: flex-start;
+      padding-top: 20px;
+      padding-bottom: 32px;
     }
 
     .hero-badge {
@@ -750,6 +751,8 @@
       gap: 10px;
       color: var(--text-2);
       font-size: 0.85rem;
+      margin-top: auto;
+      padding-top: 24px;
     }
     .scroll-line {
       width: 40px; height: 1px;

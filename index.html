@@ -703,11 +703,11 @@
     }
     .hero-deal-popup-overlay.open { display: block; }
     .hero-deal-popup {
-      position: absolute;
-      top: 50%; right: calc(100% + 16px);
-      transform: translateY(-50%);
-      width: 260px;
-      max-height: calc(100vh - 220px);
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px;
+      max-height: 70vh;
       overflow-y: auto;
       background: var(--surface, #1E1810);
       border: 1px solid rgba(232,168,71,0.25);
@@ -748,13 +748,7 @@
     }
     @media (max-width: 900px) {
       .hero-deal-popup {
-        position: fixed;
-        top: 50%; left: 50%; right: auto;
-        transform: translate(-50%, -50%);
         width: calc(100vw - 48px); max-width: 320px;
-        max-height: 62vh;
-        overflow-y: auto;
-        z-index: 1360;
       }
     }
 

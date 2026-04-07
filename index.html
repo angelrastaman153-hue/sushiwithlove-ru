@@ -704,10 +704,7 @@
     .hero-deal-popup-overlay.open { display: block; }
     .hero-deal-popup {
       position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
       width: 280px;
-      max-height: 70vh;
       overflow-y: auto;
       background: var(--surface, #1E1810);
       border: 1px solid rgba(232,168,71,0.25);
@@ -747,8 +744,10 @@
       display: flex; align-items: center; justify-content: center; cursor: pointer;
     }
     @media (max-width: 900px) {
-      .hero-deal-popup {
+      .hero-deal-popup.open {
         width: calc(100vw - 48px); max-width: 320px;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
       }
     }
 
@@ -5831,7 +5830,34 @@
   function toggleHeroDealPopup(e) {
     e && e.stopPropagation();
     var popup = document.getElementById('heroDealPopup');
-    popup.classList.toggle('open');
+    if (popup.classList.contains('open')) {
+      popup.classList.remove('open');
+      return;
+    }
+    // Позиционируем относительно кнопки «?»
+    var btn = e ? e.currentTarget : document.querySelector('.promo-hint-btn');
+    var rect = btn.getBoundingClientRect();
+    var popupW = 280;
+    var margin = 12;
+    var safeTop = 80; // ниже шапки
+    var safeBottom = 80; // выше trust bar / нижней зоны
+
+    // Пробуем слева от кнопки
+    var left = rect.left - popupW - margin;
+    if (left < 10) left = rect.right + margin; // если не влезает — справа
+
+    // По вертикали: стараемся выровнять по центру кнопки, но зажимаем в безопасную зону
+    var centerY = rect.top + rect.height / 2;
+    var maxPopupH = window.innerHeight - safeTop - safeBottom;
+    var top = centerY - maxPopupH / 2;
+    if (top < safeTop) top = safeTop;
+
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+    popup.style.transform = 'none';
+    popup.style.maxHeight = maxPopupH + 'px';
+
+    popup.classList.add('open');
   }
 
   function closeHeroDealPopup() {

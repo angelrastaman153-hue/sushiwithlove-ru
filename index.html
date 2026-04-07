@@ -603,7 +603,8 @@
       max-width: 560px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
+      padding-top: 28px;
       padding-bottom: 24px;
     }
 
@@ -703,12 +704,14 @@
     .hero-deal-popup-overlay.open { display: block; }
     .hero-deal-popup {
       position: absolute;
-      top: 0; right: calc(100% + 16px);
+      top: 50%; right: calc(100% + 16px);
+      transform: translateY(-50%);
       width: 260px;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
       background: var(--surface, #1E1810);
       border: 1px solid rgba(232,168,71,0.25);
       border-radius: var(--radius-lg);
-      overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,0.8);
       z-index: 1360;
       display: none;
@@ -3015,7 +3018,7 @@
     </div>
   </div>
 </div>
-<div class="hero-scroll reveal" style="padding:10px 24px">
+<div class="hero-scroll" style="padding:10px 24px">
   <div class="scroll-line"></div>
   <span>Листайте вниз, чтобы выбрать блюда</span>
 </div>

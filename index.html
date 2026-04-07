@@ -2945,7 +2945,7 @@
       <div class="hero-promo-label">⏱ Акция до конца дня</div>
       <div class="hero-promo-name-row">
         <div class="hero-promo-offer" id="heroDealName">–</div>
-        <button class="promo-hint-btn" onclick="toggleHeroDealPopup(event)" aria-label="Состав сета" style="flex-shrink:0">?</button>
+        <button class="promo-hint-btn" onclick="toggleHeroDealPopup(event, this)" aria-label="Состав сета" style="flex-shrink:0">?</button>
       </div>
 
       <!-- Попап с карточкой сета -->
@@ -5827,7 +5827,7 @@
     });
   })();
 
-  function toggleHeroDealPopup(e) {
+  function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
     var popup = document.getElementById('heroDealPopup');
     if (popup.classList.contains('open')) {
@@ -5835,7 +5835,7 @@
       return;
     }
     // Позиционируем относительно кнопки «?»
-    var btn = e ? e.currentTarget : document.querySelector('.promo-hint-btn');
+    if (!btn) btn = document.querySelector('.promo-hint-btn');
     var rect = btn.getBoundingClientRect();
     var popupW = 280;
     var margin = 12;

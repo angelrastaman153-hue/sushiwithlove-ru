@@ -603,9 +603,8 @@
       max-width: 560px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      padding-top: 16px;
-      padding-bottom: 28px;
+      justify-content: center;
+      padding-bottom: 24px;
     }
 
     .hero-badge {
@@ -660,7 +659,8 @@
     .hero-promo {
       position: absolute;
       right: 40px;
-      bottom: calc(50vh - 160px);
+      top: 50%;
+      transform: translateY(-50%);
       background: rgba(30, 24, 16, 0.85);
       backdrop-filter: blur(16px);
       border: 1px solid var(--border);
@@ -759,8 +759,6 @@
       gap: 10px;
       color: var(--text-2);
       font-size: 0.85rem;
-      margin-top: auto;
-      padding-top: 20px;
     }
     .scroll-line {
       width: 40px; height: 1px;
@@ -2943,10 +2941,6 @@
         <button class="btn btn-ghost" onclick="openCallback()">📞 Перезвоните мне</button>
       </div>
 
-      <div class="hero-scroll reveal reveal-delay-4">
-        <div class="scroll-line"></div>
-        <span>Листайте вниз, чтобы выбрать блюда</span>
-      </div>
     </div>
 
     <div class="hero-promo reveal reveal-delay-2">
@@ -3020,6 +3014,10 @@
       </div>
     </div>
   </div>
+</div>
+<div class="hero-scroll reveal" style="padding:10px 24px">
+  <div class="scroll-line"></div>
+  <span>Листайте вниз, чтобы выбрать блюда</span>
 </div>
 </div><!-- /hero-screen -->
 

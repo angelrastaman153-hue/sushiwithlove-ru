@@ -703,12 +703,11 @@
     }
     .hero-deal-popup-overlay.open { display: block; }
     .hero-deal-popup {
-      position: absolute;
-      right: calc(100% + 16px);
-      top: 50%;
-      transform: translateY(-50%);
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
       width: 280px;
-      max-height: 55vh;
+      max-height: 70vh;
       overflow-y: auto;
       background: var(--surface, #1E1810);
       border: 1px solid rgba(232,168,71,0.25);
@@ -2456,8 +2455,11 @@
       .header-phone { display: none; }
       .burger { display: flex; }
 
+      /* Скрываем hero-promo ВНУТРИ hero-screen — JS переместит его после */
+      .hero-screen .hero-promo { display: none; }
+
       .hero-screen { height: auto; }
-      .hero { flex: none; }
+      .hero { flex: none; overflow: hidden; }
       .hero .container {
         grid-template-columns: 1fr;
         height: auto;
@@ -2469,12 +2471,6 @@
       .hero-visual { display: none; }
       .hero-actions { justify-content: center; }
       .hero-scroll { justify-content: center; }
-      .hero-promo {
-        position: static;
-        margin: 0 auto;
-        max-width: 320px;
-        border-radius: var(--radius-lg);
-      }
 
       .trust-bar .container {
         grid-template-columns: 1fr 1fr;
@@ -5841,7 +5837,29 @@
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
     var popup = document.getElementById('heroDealPopup');
-    popup.classList.toggle('open');
+    if (popup.classList.contains('open')) {
+      popup.classList.remove('open');
+      return;
+    }
+    if (window.innerWidth > 768) {
+      var heroPromo = document.querySelector('.hero-promo');
+      if (heroPromo) {
+        var r = heroPromo.getBoundingClientRect();
+        var pw = 280;
+        // Правый край попапа = левый край виджета - 16px
+        // В fixed: right = innerWidth - (r.left - 16) = innerWidth - r.left + 16
+        popup.style.position = 'fixed';
+        popup.style.right = (window.innerWidth - r.left + 16) + 'px';
+        popup.style.left = 'auto';
+        popup.style.top = Math.max(80, r.top) + 'px';
+        popup.style.width = pw + 'px';
+        popup.style.transform = 'none';
+        popup.style.maxHeight = Math.min(window.innerHeight - Math.max(80, r.top) - 100, window.innerHeight * 0.7) + 'px';
+      }
+    } else {
+      popup.style.cssText = '';
+    }
+    popup.classList.add('open');
   }
 
   function closeHeroDealPopup() {
@@ -6081,7 +6099,9 @@
     var _hs = document.querySelector('.hero-screen');
     if (_hp && _hs && _hs.parentNode) {
       _hs.parentNode.insertBefore(_hp, _hs.nextSibling);
-      _hp.style.cssText = 'position:static;margin:16px auto;max-width:320px;width:calc(100% - 32px);display:block;';
+      // Сбрасываем reveal-анимацию и делаем видимым
+      _hp.classList.add('visible');
+      _hp.style.cssText = 'display:block;position:static;margin:16px auto;max-width:320px;width:calc(100% - 32px);opacity:1;transform:none;';
     }
   }
 

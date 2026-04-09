@@ -6273,7 +6273,7 @@
     if (!q) return;
     var btn = input.nextElementSibling;
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
-    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курган, ' + q) + '&format=json&limit=1&accept-language=ru')
+    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=1&accept-language=ru&countrycodes=ru&viewbox=63.5,56.5,68.0,54.5')
       .then(function(r) { return r.json(); })
       .then(function(results) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }

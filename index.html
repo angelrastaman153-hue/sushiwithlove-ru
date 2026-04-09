@@ -5846,14 +5846,18 @@
       var heroPromo = document.querySelector('.hero-promo');
       if (heroPromo) {
         var r = heroPromo.getBoundingClientRect();
-        // Ставим попап левее виджета, центрируем по вертикали в экране
+        var pw = 280;
+        // Левый край попапа = левый край виджета - ширина попапа - 16px
+        var left = Math.max(10, r.left - pw - 16);
+        // Высота: не заходить на шапку и trust bar
+        var maxH = window.innerHeight - 200;
         popup.style.position = 'fixed';
-        popup.style.right = (window.innerWidth - r.left + 16) + 'px';
-        popup.style.left = 'auto';
+        popup.style.left = left + 'px';
+        popup.style.right = 'auto';
         popup.style.top = '50%';
         popup.style.transform = 'translateY(-50%)';
-        popup.style.width = '280px';
-        popup.style.maxHeight = '70vh';
+        popup.style.width = pw + 'px';
+        popup.style.maxHeight = maxH + 'px';
       }
     } else {
       popup.style.cssText = '';

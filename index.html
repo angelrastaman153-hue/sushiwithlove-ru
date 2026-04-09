@@ -777,6 +777,7 @@
         max-height: 80vh;
         overflow-y: auto;
       }
+      .hero-deal-popup-img { display: none !important; }
     }
 
     .hero-scroll {
@@ -5765,7 +5766,7 @@
         popupImg.textContent = deal.emoji;
       }
     }
-    if (popupName) popupName.textContent = deal.name;
+    if (popupName) popupName.textContent = deal.emoji + ' ' + deal.name;
     if (popupComp && typeof DISH_DESCS !== 'undefined' && DISH_DESCS[deal.name]) {
       popupComp.textContent = DISH_DESCS[deal.name][0];
     } else if (popupComp) {

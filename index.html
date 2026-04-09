@@ -3050,7 +3050,7 @@
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
           <p>Промокод <strong>1LOVE</strong>. К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок, 8 шт.<br>Действует для новых клиентов.</p>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="copyPromoCode('1LOVE')">Копировать промокод</button>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="copyPromoCode('1LOVE',this)">Копировать промокод</button>
         </div>
       </div>
 
@@ -3073,8 +3073,8 @@
           <p><strong>BDAY1</strong>: к заказу от 999 ₽ — ролл «Лава с шиитаке» в подарок.<br><br>
           <strong>BDAY2</strong>: к заказу от 1 999 ₽ — набор «Праздничный»: «Лава с шиитаке» + «Калифорния классическая».</p>
           <div style="display:flex;gap:8px;margin-top:auto">
-            <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="copyPromoCode('BDAY1')">Копировать BDAY1</button>
-            <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="copyPromoCode('BDAY2')">Копировать BDAY2</button>
+            <button class="btn btn-secondary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="copyPromoCode('BDAY1',this)">Копировать BDAY1</button>
+            <button class="btn btn-primary" style="flex:1;justify-content:center;font-size:0.82rem" onclick="copyPromoCode('BDAY2',this)">Копировать BDAY2</button>
           </div>
         </div>
       </div>
@@ -3096,7 +3096,7 @@
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
           <p>Промокод <strong>СВ10</strong>. Скидка 10% на самовывоз. Подходит для тех, кто хочет забрать заказ самостоятельно и получить более выгодную цену.</p>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="copyPromoCode('СВ10')">Копировать промокод</button>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="copyPromoCode('СВ10',this)">Копировать промокод</button>
         </div>
       </div>
 
@@ -6995,24 +6995,27 @@
   // КОПИРОВАНИЕ ПРОМОКОДА
   // ============================================================
   var _copyToastTimer = null;
-  function copyPromoCode(code) {
+  function copyPromoCode(code, btn) {
     var toast = document.getElementById('copyToast');
-    navigator.clipboard.writeText(code).then(function() {
+    function onCopied() {
       toast.textContent = '✓ Промокод ' + code + ' скопирован в буфер обмена';
       toast.classList.add('show');
       clearTimeout(_copyToastTimer);
       _copyToastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2800);
-    }).catch(function() {
-      // Fallback для старых браузеров
+      if (btn) {
+        var orig = btn.textContent;
+        btn.textContent = 'Промокод «' + code + '» скопирован';
+        btn.disabled = true;
+        setTimeout(function() { btn.textContent = orig; btn.disabled = false; }, 3000);
+      }
+    }
+    navigator.clipboard.writeText(code).then(onCopied).catch(function() {
       var ta = document.createElement('textarea');
       ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      toast.textContent = '✓ Промокод ' + code + ' скопирован в буфер обмена';
-      toast.classList.add('show');
-      clearTimeout(_copyToastTimer);
-      _copyToastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2800);
+      onCopied();
     });
   }
 

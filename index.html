@@ -5358,9 +5358,16 @@
         return;
       }
 
+      // Витрина «Хиты продаж» — скрываем при любом фильтре,
+      // чтобы дубли не показывались дважды
+      var hitsGroup = document.getElementById('hits');
+      if (hitsGroup) hitsGroup.style.display = 'none';
+
       var anyVisible = false;
 
       document.querySelectorAll('.menu-group').forEach(function(group) {
+        // Пропускаем витрину — она уже скрыта
+        if (group.id === 'hits') return;
         // Определяем: есть ли подгруппы (нет прямого .dishes-grid в group)
         var hasSubgroups = !group.querySelector(':scope > .dishes-grid');
         var groupVisible = false;

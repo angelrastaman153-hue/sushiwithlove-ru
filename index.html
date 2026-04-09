@@ -2451,7 +2451,6 @@
       .header-phone { display: none; }
       .burger { display: flex; }
 
-      .hero { overflow: hidden; }
       .hero .container {
         grid-template-columns: 1fr;
         text-align: center;
@@ -2461,13 +2460,9 @@
       .hero-actions { justify-content: center; }
       .hero-scroll { justify-content: center; }
       .hero-promo {
-        position: absolute;
-        bottom: 16px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: calc(100% - 40px);
+        position: static;
+        margin: 0 auto;
         max-width: 320px;
-        top: auto;
       }
 
       .trust-bar .container {
@@ -3012,7 +3007,7 @@
     <div class="trust-item reveal reveal-delay-3">
       <div class="trust-icon">🏆</div>
       <div>
-        <div class="trust-num" data-target="2015" data-prefix="с ">0</div>
+        <div class="trust-num" data-target="2015" data-prefix="с " data-noformat="1">0</div>
         <div class="trust-label">Года<br>в Кургане</div>
       </div>
     </div>
@@ -5740,7 +5735,7 @@
         const progress = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
         const value = target * eased;
-        el.textContent = prefix + (decimal > 0 ? value.toFixed(decimal) : Math.floor(value).toLocaleString('ru-RU')) + suffix;
+        el.textContent = prefix + (decimal > 0 ? value.toFixed(decimal) : el.dataset.noformat ? String(Math.floor(value)) : Math.floor(value).toLocaleString('ru-RU')) + suffix;
         if (progress < 1) requestAnimationFrame(step);
       }
       requestAnimationFrame(step);
@@ -5835,7 +5830,29 @@
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
     var popup = document.getElementById('heroDealPopup');
-    popup.classList.toggle('open');
+    if (popup.classList.contains('open')) {
+      popup.classList.remove('open');
+      return;
+    }
+    if (window.innerWidth > 768) {
+      // Десктоп: ставим слева от виджета акции
+      var heroPromo = document.querySelector('.hero-promo');
+      var r = heroPromo ? heroPromo.getBoundingClientRect() : (btn || document.querySelector('.promo-hint-btn')).getBoundingClientRect();
+      var popupW = 280;
+      var left = r.left - popupW - 16;
+      if (left < 8) left = r.right + 16;
+      var safeTop = 80;
+      var safeBottom = 160;
+      var maxH = window.innerHeight - safeTop - safeBottom;
+      popup.style.left = left + 'px';
+      popup.style.top = safeTop + 'px';
+      popup.style.transform = 'none';
+      popup.style.maxHeight = maxH + 'px';
+    } else {
+      // Мобайл: CSS centering
+      popup.style.cssText = '';
+    }
+    popup.classList.add('open');
   }
 
   function closeHeroDealPopup() {
@@ -6068,6 +6085,16 @@
   // INIT
   // ============================================================
   updateCartUI();
+
+  // На мобайле перемещаем виджет акции после trust-bar
+  if (window.innerWidth <= 768) {
+    var _hp = document.querySelector('.hero-promo');
+    var _tb = document.querySelector('.trust-bar');
+    if (_hp && _tb && _tb.parentNode) {
+      _tb.parentNode.insertBefore(_hp, _tb.nextSibling);
+      _hp.style.cssText = 'position:static;margin:0 auto;max-width:320px;width:calc(100% - 32px);border-radius:0 0 var(--radius-lg) var(--radius-lg);border-top:none;';
+    }
+  }
 
   // Отключаем менеджеры паролей (LastPass, 1Password, Bitwarden) на всех полях
   document.querySelectorAll('input, textarea').forEach(function(el) {

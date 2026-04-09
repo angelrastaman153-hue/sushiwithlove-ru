@@ -216,15 +216,20 @@
       background: #C84B31;
       color: #fff;
     }
-    /* ярко-красный — Острое, Романтик */
+    /* ярко-красный — Острое */
     .badge-danger {
       background: #D04530;
       color: #fff;
     }
-    /* золотой — Выгодно, 2 по цене 1, Акция дня */
+    /* золотой — Выгодно, акция, Много! */
     .badge-gold {
       background: #E8A847;
       color: #1a1209;
+    }
+    /* фиолетовый — Романтик, Для двоих */
+    .badge-scenario {
+      background: #7D5FBF;
+      color: #fff;
     }
 
     /* ============================================================
@@ -3134,24 +3139,34 @@
       <button class="cat-btn active" data-target="hits">Хиты продаж</button>
       <button class="cat-btn" data-target="sets">Сеты</button>
       <button class="cat-btn" data-target="rolls">Роллы</button>
-      <button class="cat-btn" data-target="hot">Горячие</button>
+      <button class="cat-btn" data-target="hot">Горячее</button>
       <button class="cat-btn" data-target="pizza">Пицца</button>
       <button class="cat-btn" data-target="together">Допы</button>
       <button class="cat-btn" data-target="drinks">Напитки</button>
     </div>
     <div class="filter-bar" id="filterBar">
-      <div class="container" style="padding-top:0;padding-bottom:10px">
+      <!-- Группа 1: по продукту / вкусу -->
+      <div class="container" style="padding-top:6px;padding-bottom:4px">
         <button class="filter-pill active" data-tag="">Все</button>
         <button class="filter-pill" data-tag="лосось">🐟 Лосось</button>
         <button class="filter-pill" data-tag="креветка">🦐 Креветка</button>
-        <button class="filter-pill" data-tag="острый">🔥 Острые</button>
-        <button class="filter-pill" data-tag="курица">🐔 Курица</button>
         <button class="filter-pill" data-tag="краб">🦀 Краб</button>
+        <button class="filter-pill" data-tag="курица">🐔 Курица</button>
+        <button class="filter-pill" data-tag="острый">🔥 Острые</button>
         <button class="filter-pill" data-tag="запеченный">♨️ Запечённые</button>
         <button class="filter-pill" data-tag="горячий">🌡️ Горячие</button>
-        <button class="filter-pill" data-tag="выгодно">💰 Выгодно</button>
-        <button class="filter-pill" data-tag="компания">👥 Для компании</button>
         <span style="display:inline-block;min-width:16px;flex-shrink:0" aria-hidden="true"></span>
+      </div>
+      <!-- Группа 2: по сценарию / выгоде -->
+      <div style="border-top:1px solid rgba(232,168,71,0.12)">
+        <div class="container" style="padding-top:4px;padding-bottom:8px">
+          <button class="filter-pill" data-tag="хит">⭐ Хит</button>
+          <button class="filter-pill" data-tag="выгодно">💰 Выгодно</button>
+          <button class="filter-pill" data-tag="компания">👥 Для компании</button>
+          <button class="filter-pill" data-tag="двоих">💑 Для двоих</button>
+          <button class="filter-pill" data-tag="акция">🎁 Акция дня</button>
+          <span style="display:inline-block;min-width:16px;flex-shrink:0" aria-hidden="true"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -3267,60 +3282,6 @@
 
       <div style="margin-bottom:32px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <span style="font-size:1.4rem">🏆</span>
-          <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--accent,#E8A847);margin:0">Хиты сетов</h4>
-        </div>
-        <div class="dishes-grid stagger-grid">
-          <div class="dish-card reveal" data-id="111" data-name="Сет ДОБРО" data-price="1999" data-emoji="🎁">
-            <div class="dish-img ph-1"><div class="dish-img-ph ph-1">🎁</div><div class="dish-badges"><span class="badge badge-hot">Хит №1</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ДОБРО</div>
-              <div class="dish-composition">Большой сборный сет из лучших роллов — для большой компании</div>
-              <div class="dish-meta"><span class="dish-weight">1 650 г</span><span class="dish-price">1 999 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:198,name:'Сет ДОБРО',price:1999,emoji:'🎁'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal reveal-delay-1" data-id="112" data-name="2 сета по цене 1 (Бархатный + Темпурный)" data-price="1999" data-emoji="🔥">
-            <div class="dish-img ph-2"><div class="dish-img-ph ph-2">🔥</div><div class="dish-badges"><span class="badge badge-gold">2 по цене 1</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">2 сета по цене 1</div>
-              <div class="dish-composition">Сет БАРХАТНЫЙ + Сет ТЕМПУРНЫЙ — две коробки по одной цене</div>
-              <div class="dish-meta"><span class="dish-weight">48 шт · 1 775 г</span><span class="dish-price">1 999 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:144,name:'2 сета по цене 1 (Бархатный + Темпурный)',price:1999,emoji:'🔥'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal reveal-delay-2" data-id="113" data-name="Сет ВЫГОДНЫЙ" data-price="1499" data-emoji="💰">
-            <div class="dish-img ph-3"><div class="dish-img-ph ph-3">💰</div><div class="dish-badges"><span class="badge badge-gold">Выгодно</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ВЫГОДНЫЙ</div>
-              <div class="dish-composition">Отличный выбор на каждый день — сытно и по-настоящему вкусно</div>
-              <div class="dish-meta"><span class="dish-weight">1 220 г</span><span class="dish-price">1 499 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:111,name:'Сет ВЫГОДНЫЙ',price:1499,emoji:'💰'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal reveal-delay-3" data-id="114" data-name="Сет КОМБО" data-price="1609" data-emoji="🎯">
-            <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🎯</div><div class="dish-badges"><span class="badge badge-hot">Хит</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет КОМБО</div>
-              <div class="dish-composition">Классика + запечённые + острые — три вкуса в одном наборе</div>
-              <div class="dish-meta"><span class="dish-weight">1 150 г</span><span class="dish-price">1 609 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:115,name:'Сет КОМБО',price:1609,emoji:'🎯'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal" data-id="115" data-name="Сет ПОПУЛЯРНЫЙ" data-price="1299" data-emoji="💝">
-            <div class="dish-img ph-5"><div class="dish-img-ph ph-5">💝</div><div class="dish-badges"><span class="badge badge-hot">Хит</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ПОПУЛЯРНЫЙ</div>
-              <div class="dish-composition">Классические роллы, которые любят все — идеально для двоих</div>
-              <div class="dish-meta"><span class="dish-weight">850 г</span><span class="dish-price">1 299 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:12,name:'Сет ПОПУЛЯРНЫЙ',price:1299,emoji:'💝'})">+ В корзину</button></div>
-          </div>
-        </div>
-      </div>
-
-      <div style="margin-bottom:32px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
           <span style="font-size:1.4rem">💑</span>
           <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--accent,#E8A847);margin:0">На вечер вдвоём</h4>
         </div>
@@ -3335,7 +3296,7 @@
             <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:12,name:'Сет ПОПУЛЯРНЫЙ',price:1299,emoji:'💝'})">+ В корзину</button></div>
           </div>
           <div class="dish-card reveal reveal-delay-1" data-id="122" data-name="Сет АМУР" data-price="1399" data-emoji="❤️">
-            <div class="dish-img ph-5"><div class="dish-img-ph ph-5">❤️</div><div class="dish-badges"><span class="badge badge-danger">Романтик</span></div></div>
+            <div class="dish-img ph-5"><div class="dish-img-ph ph-5">❤️</div><div class="dish-badges"><span class="badge badge-scenario">Романтик</span></div></div>
             <div class="dish-body">
               <div class="dish-name">Сет АМУР</div>
               <div class="dish-composition">Нежные роллы с лососем и авокадо — для романтического вечера</div>
@@ -3427,50 +3388,6 @@
         </div>
       </div>
 
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <span style="font-size:1.4rem">🍱</span>
-          <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--accent,#E8A847);margin:0">По вкусу</h4>
-        </div>
-        <div class="dishes-grid stagger-grid">
-          <div class="dish-card reveal" data-id="151" data-name="Сет ЗАПЕЧЕННЫЙ" data-price="888" data-emoji="🔥">
-            <div class="dish-img ph-2"><div class="dish-img-ph ph-2">🔥</div><div class="dish-badges"><span class="badge badge-hot">Хит</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ЗАПЕЧЕННЫЙ</div>
-              <div class="dish-composition">Хрустящая корочка, тянущийся сыр, горячий соус сверху</div>
-              <div class="dish-meta"><span class="dish-weight">650 г</span><span class="dish-price">888 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:3,name:'Сет ЗАПЕЧЕННЫЙ',price:888,emoji:'🔥'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal reveal-delay-1" data-id="152" data-name="Сет ТЕМПУРНЫЙ" data-price="899" data-emoji="✨">
-            <div class="dish-img ph-3"><div class="dish-img-ph ph-3">✨</div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ТЕМПУРНЫЙ</div>
-              <div class="dish-composition">Роллы в хрустящем темпурном кляре с нежной начинкой</div>
-              <div class="dish-meta"><span class="dish-weight">665 г</span><span class="dish-price">899 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:5,name:'Сет ТЕМПУРНЫЙ',price:899,emoji:'✨'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal reveal-delay-2" data-id="156" data-name="Сет ВОСТОРГ" data-price="1299" data-emoji="🌟">
-            <div class="dish-img ph-4"><div class="dish-img-ph ph-4">🌟</div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ВОСТОРГ</div>
-              <div class="dish-composition">Премиум-набор из лучших роллов — для особых моментов</div>
-              <div class="dish-meta"><span class="dish-weight">910 г</span><span class="dish-price">1 299 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:10,name:'Сет ВОСТОРГ',price:1299,emoji:'🌟'})">+ В корзину</button></div>
-          </div>
-          <div class="dish-card reveal reveal-delay-3" data-id="154" data-name="Сет ТОПЧИК" data-price="695" data-emoji="🏆">
-            <div class="dish-img ph-5"><div class="dish-img-ph ph-5">🏆</div><div class="dish-badges"><span class="badge badge-hot">Топ</span></div></div>
-            <div class="dish-body">
-              <div class="dish-name">Сет ТОПЧИК</div>
-              <div class="dish-composition">Самые рейтинговые роллы собраны в один небольшой набор</div>
-              <div class="dish-meta"><span class="dish-weight">520 г</span><span class="dish-price">695 ₽</span></div>
-            </div>
-            <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:1,name:'Сет ТОПЧИК',price:695,emoji:'🏆'})">+ В корзину</button></div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ===== Блок 4: Роллы ===== -->
@@ -3493,7 +3410,7 @@
             <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:95,name:'Филадельфия классическая с огурцом',price:649,emoji:'🍣'})">+ В корзину</button></div>
           </div>
           <div class="dish-card reveal reveal-delay-1" data-id="242" data-name="ЛАЙТ ФИЛАДЕЛЬФИЯ С ОГУРЦОМ" data-price="429" data-emoji="🥒">
-            <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🥒</div></div>
+            <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🥒</div><div class="dish-badges"><span class="badge badge-hot">Хит</span></div></div>
             <div class="dish-body">
               <div class="dish-name">ЛАЙТ ФИЛАДЕЛЬФИЯ С ОГУРЦОМ</div>
               <div class="dish-composition">Лёгкий вариант классики — меньше калорий, тот же отличный вкус</div>
@@ -3504,7 +3421,7 @@
         </div>
       </div>
 
-      <div style="margin-bottom:32px">
+      <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
           <span style="font-size:1.4rem">♨️</span>
           <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--accent,#E8A847);margin:0">Горячие и запечённые</h4>
@@ -3537,17 +3454,8 @@
             </div>
             <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:113,name:'Запечённый Этна',price:499,emoji:'🌋'})">+ В корзину</button></div>
           </div>
-        </div>
-      </div>
-
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <span style="font-size:1.4rem">🦀</span>
-          <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--accent,#E8A847);margin:0">С креветкой и крабом</h4>
-        </div>
-        <div class="dishes-grid stagger-grid">
-          <div class="dish-card reveal" data-id="246" data-name="Запечённый Эби Томаго" data-price="299" data-emoji="🦐">
-            <div class="dish-img ph-1"><div class="dish-img-ph ph-1">🦐</div></div>
+          <div class="dish-card reveal reveal-delay-3" data-id="246" data-name="Запечённый Эби Томаго" data-price="299" data-emoji="🦐">
+            <div class="dish-img ph-1"><div class="dish-img-ph ph-1">🦐</div><div class="dish-badges"><span class="badge badge-hot">Хит</span></div></div>
             <div class="dish-body">
               <div class="dish-name">Запечённый Эби Томаго</div>
               <div class="dish-composition">Тигровая креветка эби, омлет тамаго, запечённый соус — пикантно</div>
@@ -3559,9 +3467,9 @@
       </div>
     </div>
 
-    <!-- ===== Блок 5: Горячие ===== -->
+    <!-- ===== Блок 5: Горячее ===== -->
     <div class="menu-group" id="hot">
-      <h3 class="menu-group-title">Горячие</h3>
+      <h3 class="menu-group-title">Горячее</h3>
 
       <!-- Горячие роллы — без заголовка, показываем сразу -->
       <div style="margin-bottom:32px">
@@ -3730,6 +3638,16 @@
           <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--accent,#E8A847);margin:0">Соусы</h4>
         </div>
       <div class="dishes-grid stagger-grid">
+
+        <div class="dish-card reveal" data-id="171" data-name="Соевый соус" data-price="30" data-emoji="🍶">
+          <div class="dish-img ph-1"><div class="dish-img-ph ph-1">🍶</div></div>
+          <div class="dish-body">
+            <div class="dish-name">Соевый соус</div>
+            <div class="dish-composition">Классический японский соевый соус — к роллам и суши</div>
+            <div class="dish-meta"><span class="dish-weight">20 мл</span><span class="dish-price">30 ₽</span></div>
+          </div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:122,name:'Соевый соус',price:30,emoji:'🍶'})">+ В корзину</button></div>
+        </div>
 
 <div class="dish-card reveal reveal-delay-1" data-id="172" data-name="Соевый от шефа (100 мл)" data-price="89" data-emoji="⭐">
           <div class="dish-img ph-2"><div class="dish-img-ph ph-2">⭐</div><div class="dish-badges"><span class="badge badge-hot">Авторский</span></div></div>
@@ -5356,28 +5274,29 @@
   // ============================================================
   (function() {
     var TAG_MAP = {
-      'Сет ДОБРО':                              'курица креветка краб запеченный компания',
-      'Сет ВЫГОДНЫЙ':                           'креветка курица острый запеченный выгодно',
-      'Сет ПЛЯЖНЫЙ':                            'лосось выгодно',
-      'Сет КОМБО':                              'лосось креветка курица краб горячий компания',
+      // Сеты
+      'Сет ДОБРО':                              'курица креветка краб запеченный компания хит',
+      'Сет ВЫГОДНЫЙ':                           'креветка курица острый запеченный выгодно хит',
+      'Сет ПЛЯЖНЫЙ':                            'лосось выгодно двоих',
+      'Сет КОМБО':                              'лосось креветка курица краб горячий компания хит',
       'Сет ВОСТОРГ':                            'креветка курица запеченный',
-      'Сет ЗАПЕЧЕННЫЙ':                         'курица краб запеченный',
+      'Сет ЗАПЕЧЕННЫЙ':                         'курица краб запеченный горячий хит',
       'Сет ТЕМПУРНЫЙ':                          'лосось креветка курица краб горячий выгодно',
-      'Сет ПОПУЛЯРНЫЙ':                         'лосось краб выгодно',
-      'Сет АМУР':                               'лосось креветка краб запеченный',
+      'Сет ПОПУЛЯРНЫЙ':                         'лосось краб выгодно двоих хит',
+      'Сет АМУР':                               'лосось креветка краб запеченный двоих',
       'Сет БОЛЬШАЯ КОМПАНИЯ':                   'лосось креветка курица краб запеченный горячий компания',
       'Сет КОРПОРАТИВНЫЙ':                      'курица краб компания',
       'Сет ПО КАЙФУ':                           'креветка курица запеченный выгодно',
-      'Сет ТОПЧИК':                             'креветка краб выгодно',
-      '2 сета по цене 1 (Бархатный + Темпурный)': 'лосось креветка курица краб горячий выгодно компания',
-      'Филадельфия классическая с огурцом':     'лосось',
-      'ЛАЙТ ФИЛАДЕЛЬФИЯ С ОГУРЦОМ':             'лосось',
+      'Сет ТОПЧИК':                             'креветка краб выгодно хит',
+      '2 сета по цене 1 (Бархатный + Темпурный)': 'лосось креветка курица краб горячий выгодно компания хит',
+      // Роллы
+      'Филадельфия классическая с огурцом':     'лосось хит',
+      'ЛАЙТ ФИЛАДЕЛЬФИЯ С ОГУРЦОМ':             'лосось хит',
       'Запечённый с лососем':                   'лосось запеченный',
-      'Запечённый Эби Томаго':                  'креветка запеченный',
+      'Запечённый Эби Томаго':                  'креветка запеченный хит',
       'Запечённый Этна':                        'курица креветка краб запеченный острый',
-      'Горячий с Креветками':                   'креветка горячий',
-      'Сет ЗАПЕЧЕННЫЙ (горячий)':               'курица краб запеченный горячий',
-      'Сет ТЕМПУРНЫЙ (горячий)':                'лосось креветка курица краб горячий',
+      'Горячий с Креветками':                   'креветка горячий хит',
+      // Допы
       'Имбирь 30г':                             'острый',
       'Имбирь 50г':                             'острый',
       'Имбирь 100г':                            'острый',
@@ -5385,7 +5304,8 @@
       'Васаби 40г':                             'острый',
       'Васаби 60г':                             'острый',
       'Комбо фри + наггетсы':                   'курица выгодно',
-      'Тигровые креветки с соусом':             'креветка',
+      'Тигровые креветки с соусом':             'креветка хит',
+      // Пицца
       'Пицца «Курочка с грибами»':              'курица',
       'Пицца «Пепперони»':                      'острый',
       'Пицца «Мясная»':                         'курица',
@@ -5841,6 +5761,8 @@
         b.textContent = '🔥 −10% сегодня';
         badges.appendChild(b);
       }
+      // Добавляем тег «акция» для фильтра
+      card.dataset.tags = ((card.dataset.tags || '') + ' акция').trim();
       // Переопределяем кнопку «В корзину»
       var btn = card.querySelector('.add-btn');
       if (btn) {

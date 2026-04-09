@@ -770,16 +770,15 @@
     }
     @media (max-width: 768px) {
       .hero-deal-popup {
-        position: fixed !important;
-        top: 50% !important;
-        left: 16px !important;
-        right: 16px !important;
-        bottom: auto !important;
-        width: auto !important;
+        position: relative !important;
+        top: auto !important; left: auto !important; right: auto !important;
+        transform: none !important;
+        width: 100% !important;
         max-width: none !important;
         max-height: none !important;
-        transform: translateY(-50%) !important;
         overflow: hidden !important;
+        margin-top: 12px;
+        border-radius: 12px;
       }
       .hero-deal-popup-img { height: 180px; }
     }
@@ -4111,7 +4110,6 @@
      CART DRAWER
 ============================================================ -->
 <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
-<div class="hero-deal-popup-overlay" id="heroDealOverlay" onclick="closeHeroDealPopup()"></div>
 
 <div class="cart-drawer" id="cartDrawer">
   <div class="cart-header">
@@ -5815,18 +5813,12 @@
 
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
-    var popup   = document.getElementById('heroDealPopup');
-    var overlay = document.getElementById('heroDealOverlay');
-    var isOpen  = popup.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('open', isOpen);
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    var popup = document.getElementById('heroDealPopup');
+    popup.classList.toggle('open');
   }
 
   function closeHeroDealPopup() {
     document.getElementById('heroDealPopup').classList.remove('open');
-    var overlay = document.getElementById('heroDealOverlay');
-    if (overlay) overlay.classList.remove('open');
-    document.body.style.overflow = '';
   }
 
   document.addEventListener('keydown', function(e) {

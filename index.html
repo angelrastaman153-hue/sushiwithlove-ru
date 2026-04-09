@@ -771,14 +771,14 @@
     @media (max-width: 768px) {
       .hero-deal-popup {
         position: fixed !important;
-        top: 72px !important;
+        top: 50% !important;
         left: 16px !important;
         right: 16px !important;
         bottom: auto !important;
         width: auto !important;
         max-width: none !important;
         max-height: none !important;
-        transform: none !important;
+        transform: translateY(-50%) !important;
         overflow: hidden !important;
       }
       .hero-deal-popup-img { display: none !important; }
@@ -2557,8 +2557,10 @@
       .logo-icon { width: 46px; height: 46px; flex-shrink: 0; }
       .logo-text {
         position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 0;
+        right: 0;
+        text-align: center;
+        transform: none;
         font-size: 1.35rem;
         letter-spacing: 0.04em;
         white-space: nowrap;

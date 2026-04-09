@@ -7008,7 +7008,7 @@
         var siblings = [];
         if (btn.parentNode) {
           Array.prototype.forEach.call(btn.parentNode.children, function(child) {
-            if (child !== btn && child.tagName === 'BUTTON') { siblings.push(child); child.style.display = 'none'; }
+            if (child !== btn && child.tagName === 'BUTTON' && child.classList.contains('btn')) { siblings.push(child); child.style.display = 'none'; }
           });
         }
         btn.textContent = 'Промокод «' + code + '» скопирован';

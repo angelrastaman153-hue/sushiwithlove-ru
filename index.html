@@ -3001,6 +3001,9 @@
         <button class="promo-hint-btn" onclick="toggleHeroDealPopup(event, this)" aria-label="Состав сета" style="flex-shrink:0">?</button>
       </div>
 
+      <!-- Оверлей за попапом акции -->
+      <div class="hero-deal-popup-overlay" id="heroDealOverlay" onclick="closeHeroDealPopup()"></div>
+
       <!-- Попап с карточкой сета -->
       <div class="hero-deal-popup" id="heroDealPopup">
         <button class="hero-deal-popup-close" onclick="closeHeroDealPopup()">✕</button>
@@ -5814,12 +5817,18 @@
 
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
-    var popup = document.getElementById('heroDealPopup');
-    popup.classList.toggle('open');
+    var popup   = document.getElementById('heroDealPopup');
+    var overlay = document.getElementById('heroDealOverlay');
+    var isOpen  = popup.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('open', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
   }
 
   function closeHeroDealPopup() {
     document.getElementById('heroDealPopup').classList.remove('open');
+    var overlay = document.getElementById('heroDealOverlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
   }
 
   document.addEventListener('keydown', function(e) {

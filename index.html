@@ -1011,10 +1011,23 @@
       gap: 6px;
       overflow-x: auto;
       scrollbar-width: none;
-      padding: 8px 24px 12px;
+      padding: 4px 24px 8px;
     }
     .filter-bar .container::-webkit-scrollbar { display: none; }
     .filter-bar .container::after { content: ''; display: block; min-width: 16px; flex-shrink: 0; }
+    .filter-group-label {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(192,168,128,0.5);
+      padding: 7px 24px 0;
+      white-space: nowrap;
+    }
+    @media (max-width: 768px) {
+      .filter-group-label { padding: 6px 16px 0; }
+    }
     .filter-pill {
       padding: 5px 14px;
       border-radius: 20px;
@@ -3145,8 +3158,9 @@
       <button class="cat-btn" data-target="drinks">Напитки</button>
     </div>
     <div class="filter-bar" id="filterBar">
-      <!-- Группа 1: по продукту / вкусу -->
-      <div class="container" style="padding-top:6px;padding-bottom:4px">
+      <!-- Группа 1: по ингредиенту -->
+      <span class="filter-group-label">По ингредиенту</span>
+      <div class="container">
         <button class="filter-pill active" data-tag="">Все</button>
         <button class="filter-pill" data-tag="лосось">🐟 Лосось</button>
         <button class="filter-pill" data-tag="креветка">🦐 Креветка</button>
@@ -3157,16 +3171,15 @@
         <button class="filter-pill" data-tag="горячий">🌡️ Горячие</button>
         <span style="display:inline-block;min-width:16px;flex-shrink:0" aria-hidden="true"></span>
       </div>
-      <!-- Группа 2: по сценарию / выгоде -->
-      <div style="border-top:1px solid rgba(232,168,71,0.12)">
-        <div class="container" style="padding-top:4px;padding-bottom:8px">
-          <button class="filter-pill" data-tag="хит">⭐ Хит</button>
-          <button class="filter-pill" data-tag="выгодно">💰 Выгодно</button>
-          <button class="filter-pill" data-tag="компания">👥 Для компании</button>
-          <button class="filter-pill" data-tag="двоих">💑 Для двоих</button>
-          <button class="filter-pill" data-tag="акция">🎁 Акция дня</button>
-          <span style="display:inline-block;min-width:16px;flex-shrink:0" aria-hidden="true"></span>
-        </div>
+      <!-- Группа 2: по выгоде и ситуации -->
+      <span class="filter-group-label" style="padding-top:10px">По выгоде и ситуации</span>
+      <div class="container" style="padding-bottom:10px">
+        <button class="filter-pill" data-tag="хит">⭐ Хит</button>
+        <button class="filter-pill" data-tag="выгодно">💰 Выгодно</button>
+        <button class="filter-pill" data-tag="компания">👥 Для компании</button>
+        <button class="filter-pill" data-tag="двоих">💑 Для двоих</button>
+        <button class="filter-pill" data-tag="акция">🎁 Акция дня</button>
+        <span style="display:inline-block;min-width:16px;flex-shrink:0" aria-hidden="true"></span>
       </div>
     </div>
   </div>

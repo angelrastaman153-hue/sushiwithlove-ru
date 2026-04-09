@@ -6532,9 +6532,7 @@
     if (!wrap || !popup) return;
     function open()  { popup.classList.add('open'); overlay.classList.add('open'); }
     function close() { popup.classList.remove('open'); overlay.classList.remove('open'); }
-    // Desktop: open on hover, close only by explicit action
-    wrap.addEventListener('mouseenter', function() { open(); });
-    // Click: toggle on mobile, close if open on desktop
+    // Открывается только по клику
     wrap.addEventListener('click', function(e) {
       e.stopPropagation();
       popup.classList.contains('open') ? close() : open();

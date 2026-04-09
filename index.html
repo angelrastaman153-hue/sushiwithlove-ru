@@ -703,11 +703,12 @@
     }
     .hero-deal-popup-overlay.open { display: block; }
     .hero-deal-popup {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      position: absolute;
+      right: calc(100% + 16px);
+      top: 50%;
+      transform: translateY(-50%);
       width: 280px;
-      max-height: 70vh;
+      max-height: calc(100vh - 220px);
       overflow-y: auto;
       background: var(--surface, #1E1810);
       border: 1px solid rgba(232,168,71,0.25);
@@ -748,9 +749,9 @@
     }
     @media (max-width: 768px) {
       .hero-deal-popup {
-        position: fixed;
-        top: 50%; left: 50%; right: auto;
-        transform: translate(-50%, -50%);
+        position: fixed !important;
+        top: 50% !important; left: 50% !important; right: auto !important;
+        transform: translate(-50%, -50%) !important;
         width: calc(100vw - 48px); max-width: 320px;
         max-height: 70vh;
       }
@@ -5838,31 +5839,7 @@
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
     var popup = document.getElementById('heroDealPopup');
-    if (popup.classList.contains('open')) {
-      popup.classList.remove('open');
-      return;
-    }
-    if (window.innerWidth > 768) {
-      var heroPromo = document.querySelector('.hero-promo');
-      if (heroPromo) {
-        var r = heroPromo.getBoundingClientRect();
-        var pw = 280;
-        // Левый край попапа = левый край виджета - ширина попапа - 16px
-        var left = Math.max(10, r.left - pw - 16);
-        // Высота: не заходить на шапку и trust bar
-        var maxH = window.innerHeight - 200;
-        popup.style.position = 'fixed';
-        popup.style.left = left + 'px';
-        popup.style.right = 'auto';
-        popup.style.top = '50%';
-        popup.style.transform = 'translateY(-50%)';
-        popup.style.width = pw + 'px';
-        popup.style.maxHeight = maxH + 'px';
-      }
-    } else {
-      popup.style.cssText = '';
-    }
-    popup.classList.add('open');
+    popup.classList.toggle('open');
   }
 
   function closeHeroDealPopup() {

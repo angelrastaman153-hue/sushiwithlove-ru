@@ -773,8 +773,9 @@
         position: fixed !important;
         top: 50% !important; left: 50% !important; right: auto !important;
         transform: translate(-50%, -50%) !important;
-        width: calc(100vw - 48px); max-width: 320px;
-        max-height: 70vh;
+        width: calc(100vw - 48px); max-width: 340px;
+        max-height: 80vh;
+        overflow-y: auto;
       }
     }
 
@@ -2264,7 +2265,8 @@
       gap: 40px;
       margin-bottom: 48px;
     }
-    .footer-brand .logo { margin-bottom: 16px; }
+    .footer-brand .logo { margin-bottom: 16px; position: relative; }
+    .footer-brand .logo-text { position: static !important; transform: none !important; left: auto !important; }
     .footer-brand p { font-size: 0.85rem; color: var(--text-2); line-height: 1.7; max-width: 280px; }
     .footer-socials { display: flex; gap: 10px; margin-top: 20px; }
     .social-btn {
@@ -3000,6 +3002,11 @@
           <div class="hero-deal-popup-badge">🔥 Акция дня — скидка 10%</div>
           <div class="hero-deal-popup-name" id="heroDealPopupName"></div>
           <div class="hero-deal-popup-comp" id="heroDealPopupComp"></div>
+          <div class="hero-deal-popup-prices">
+            <span class="hero-deal-popup-old" id="heroDealPopupOld"></span>
+            <span class="hero-deal-popup-new" id="heroDealPopupNew"></span>
+          </div>
+          <button id="heroDealPopupBtn" style="width:100%;padding:10px 0;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;font-size:0.88rem;cursor:pointer">+ В корзину</button>
         </div>
       </div>
 
@@ -3998,7 +4005,7 @@
 <section id="about">
   <div class="container">
     <div class="about-inner">
-      <h2 class="reveal">Готовим в Кургане <span style="color:var(--accent);font-style:italic">с 14 февраля 2015 года</span></h2>
+      <h2 class="reveal">Готовим в Кургане<br><span style="color:var(--accent);font-style:italic">с 14 февраля 2015 года</span></h2>
       <p class="reveal reveal-delay-1">
         Небольшая локальная команда из Кургана. Делаем роллы и суши на заказ — следим за качеством ингредиентов, работаем аккуратно и стараемся, чтобы каждый заказ хотелось повторить.
       </p>

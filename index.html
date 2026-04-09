@@ -7009,14 +7009,21 @@
         setTimeout(function() { btn.textContent = orig; btn.disabled = false; }, 3000);
       }
     }
-    navigator.clipboard.writeText(code).then(onCopied).catch(function() {
+    function fallback() {
       var ta = document.createElement('textarea');
       ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select();
-      document.execCommand('copy');
+      try { document.execCommand('copy'); } catch(e) {}
       document.body.removeChild(ta);
       onCopied();
-    });
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(onCopied).catch(fallback);
+      } else {
+        fallback();
+      }
+    } catch(e) { fallback(); }
   }
 
   // ============================================================

@@ -7008,16 +7008,16 @@
         var siblings = [];
         if (btn.parentNode) {
           Array.prototype.forEach.call(btn.parentNode.children, function(child) {
-            if (child !== btn) { siblings.push(child); child.style.display = 'none'; }
+            if (child !== btn && child.tagName === 'BUTTON') { siblings.push(child); child.style.display = 'none'; }
           });
         }
         btn.textContent = 'Промокод «' + code + '» скопирован';
         btn.disabled = true;
-        btn.style.flex = '1 1 100%';
+        if (siblings.length > 0) btn.style.flex = '1 1 100%';
         setTimeout(function() {
           btn.textContent = orig;
           btn.disabled = false;
-          btn.style.flex = origFlex;
+          if (siblings.length > 0) btn.style.flex = origFlex;
           siblings.forEach(function(s) { s.style.display = ''; });
         }, 3000);
       }

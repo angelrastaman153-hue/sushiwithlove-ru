@@ -591,12 +591,12 @@
     .hero .container {
       position: relative;
       z-index: 2;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
       height: 100%;
       padding-top: 96px;
+      padding-right: 360px;
     }
 
     .hero-content {
@@ -613,7 +613,7 @@
     }
 
     .hero h1 {
-      font-size: clamp(34px, 4vw, 62px);
+      font-size: clamp(40px, 5.5vw, 84px);
       font-weight: 300;
       color: var(--text);
       margin-bottom: 20px;
@@ -2462,12 +2462,12 @@
       .hero-screen { height: auto; }
       .hero { flex: none; overflow: hidden; }
       .hero .container {
-        grid-template-columns: 1fr;
         height: auto;
         min-height: 0;
         text-align: center;
         padding-top: 88px;
         padding-bottom: 24px;
+        padding-right: 16px;
       }
       .hero-visual { display: none; }
       .hero-actions { justify-content: center; }

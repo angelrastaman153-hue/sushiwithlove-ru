@@ -38,9 +38,8 @@
     ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html { scroll-behavior: smooth; font-size: 17px; }
-    html.fs-s { font-size: 15px; }
-    html.fs-l { font-size: 20px; }
+    html { scroll-behavior: smooth; font-size: 20px; }
+    html.fs-l { font-size: 24px; }
 
     body {
       background: var(--bg);
@@ -2880,7 +2879,6 @@
         <div class="header-hours" id="headerHours">Ежедневно 10:00–22:00</div>
       </div>
       <div class="fs-switcher" id="fsSwitcher">
-        <button class="fs-btn" data-size="s" onclick="setFontSize('s')" title="Мелкий шрифт">А−</button>
         <button class="fs-btn active" data-size="m" onclick="setFontSize('m')" title="Обычный шрифт">А</button>
         <button class="fs-btn" data-size="l" onclick="setFontSize('l')" title="Крупный шрифт">А+</button>
       </div>
@@ -7008,8 +7006,7 @@
   (function() {
     var saved = localStorage.getItem('svl_fs') || 'm';
     function applySize(size) {
-      document.documentElement.classList.remove('fs-s', 'fs-l');
-      if (size === 's') document.documentElement.classList.add('fs-s');
+      document.documentElement.classList.remove('fs-l');
       if (size === 'l') document.documentElement.classList.add('fs-l');
       document.querySelectorAll('.fs-btn').forEach(function(b) {
         b.classList.toggle('active', b.dataset.size === size);

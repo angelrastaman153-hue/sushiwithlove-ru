@@ -703,11 +703,12 @@
     }
     .hero-deal-popup-overlay.open { display: block; }
     .hero-deal-popup {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      position: absolute;
+      right: calc(100% + 16px);
+      top: 50%;
+      transform: translateY(-50%);
       width: 280px;
-      max-height: 80vh;
+      max-height: 55vh;
       overflow-y: auto;
       background: var(--surface, #1E1810);
       border: 1px solid rgba(232,168,71,0.25);
@@ -748,7 +749,11 @@
     }
     @media (max-width: 900px) {
       .hero-deal-popup {
+        position: fixed;
+        top: 50%; left: 50%; right: auto;
+        transform: translate(-50%, -50%);
         width: calc(100vw - 48px); max-width: 320px;
+        max-height: 70vh;
       }
     }
 
@@ -5836,29 +5841,7 @@
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();
     var popup = document.getElementById('heroDealPopup');
-    if (popup.classList.contains('open')) {
-      popup.classList.remove('open');
-      return;
-    }
-    if (window.innerWidth > 768) {
-      // Десктоп: ставим слева от виджета акции
-      var heroPromo = document.querySelector('.hero-promo');
-      var r = heroPromo ? heroPromo.getBoundingClientRect() : (btn || document.querySelector('.promo-hint-btn')).getBoundingClientRect();
-      var popupW = 280;
-      var left = r.left - popupW - 16;
-      if (left < 8) left = r.right + 16;
-      var safeTop = 80;
-      var safeBottom = 160;
-      var maxH = window.innerHeight - safeTop - safeBottom;
-      popup.style.left = left + 'px';
-      popup.style.top = safeTop + 'px';
-      popup.style.transform = 'none';
-      popup.style.maxHeight = maxH + 'px';
-    } else {
-      // Мобайл: CSS centering
-      popup.style.cssText = '';
-    }
-    popup.classList.add('open');
+    popup.classList.toggle('open');
   }
 
   function closeHeroDealPopup() {

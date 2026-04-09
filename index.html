@@ -2451,10 +2451,15 @@
       .header-phone { display: none; }
       .burger { display: flex; }
 
+      .hero-screen { height: auto; }
+      .hero { flex: none; }
       .hero .container {
         grid-template-columns: 1fr;
+        height: auto;
+        min-height: 0;
         text-align: center;
         padding-top: 88px;
+        padding-bottom: 24px;
       }
       .hero-visual { display: none; }
       .hero-actions { justify-content: center; }
@@ -2463,6 +2468,7 @@
         position: static;
         margin: 0 auto;
         max-width: 320px;
+        border-radius: var(--radius-lg);
       }
 
       .trust-bar .container {
@@ -6086,13 +6092,13 @@
   // ============================================================
   updateCartUI();
 
-  // На мобайле перемещаем виджет акции после trust-bar
+  // На мобайле перемещаем виджет акции ПОСЛЕ hero-screen (перед промо-секцией)
   if (window.innerWidth <= 768) {
     var _hp = document.querySelector('.hero-promo');
-    var _tb = document.querySelector('.trust-bar');
-    if (_hp && _tb && _tb.parentNode) {
-      _tb.parentNode.insertBefore(_hp, _tb.nextSibling);
-      _hp.style.cssText = 'position:static;margin:0 auto;max-width:320px;width:calc(100% - 32px);border-radius:0 0 var(--radius-lg) var(--radius-lg);border-top:none;';
+    var _hs = document.querySelector('.hero-screen');
+    if (_hp && _hs && _hs.parentNode) {
+      _hs.parentNode.insertBefore(_hp, _hs.nextSibling);
+      _hp.style.cssText = 'position:static;margin:16px auto;max-width:320px;width:calc(100% - 32px);display:block;';
     }
   }
 

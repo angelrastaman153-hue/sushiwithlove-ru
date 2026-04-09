@@ -81,6 +81,7 @@
       opacity: 0;
       transform: translateY(32px);
       transition: opacity 0.65s ease, transform 0.65s ease;
+      will-change: transform, opacity;
     }
     .reveal.visible {
       opacity: 1;
@@ -2551,7 +2552,7 @@
       .toast-container { bottom: 80px; }
 
       .header { height: 72px; }
-      .header .container { justify-content: space-between; gap: 0; padding: 0 16px; }
+      .header .container { position: relative; justify-content: space-between; gap: 0; padding: 0 16px; }
       .logo { gap: 10px; flex: 0 0 auto; }
       .logo-icon { width: 46px; height: 46px; flex-shrink: 0; }
       .logo-text {
@@ -5688,8 +5689,13 @@
   const revealObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        revealObserver.unobserve(entry.target);
+        const el = entry.target;
+        el.classList.add('visible');
+        revealObserver.unobserve(el);
+        el.addEventListener('transitionend', function handler() {
+          el.style.willChange = 'auto';
+          el.removeEventListener('transitionend', handler);
+        }, { once: true });
       }
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });

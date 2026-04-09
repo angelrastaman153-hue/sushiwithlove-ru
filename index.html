@@ -3147,6 +3147,21 @@
 
   <div class="container" style="margin-top:40px" id="menuContainer">
 
+    <!-- Полоска активного фильтра -->
+    <div id="filterActiveBar" style="display:none;align-items:center;gap:10px;padding:0 0 18px;flex-wrap:wrap">
+      <span style="font-size:0.85rem;color:var(--text-2)">Показаны блюда по фильтру:</span>
+      <span id="filterActiveLabel" style="font-size:0.85rem;font-weight:700;color:var(--text)"></span>
+      <button id="filterResetBtn" style="margin-left:4px;padding:3px 12px;border-radius:100px;font-size:0.78rem;font-weight:700;background:transparent;border:1px solid rgba(232,168,71,0.35);color:var(--text-2);cursor:pointer;transition:border-color .2s,color .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='rgba(232,168,71,0.35)';this.style.color='var(--text-2)'">× Сбросить</button>
+    </div>
+
+    <!-- Глобальный empty-state при пустом результате фильтра -->
+    <div id="menuEmptyState" style="display:none;text-align:center;padding:64px 20px 80px">
+      <div style="font-size:2.5rem;margin-bottom:14px">🔍</div>
+      <h4 style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:8px">По выбранному фильтру ничего не найдено</h4>
+      <p style="font-size:0.88rem;color:var(--text-2);margin-bottom:22px">Попробуйте выбрать другой фильтр или сбросить текущий</p>
+      <button id="filterResetBtn2" style="padding:9px 22px;border-radius:100px;font-weight:700;font-size:0.9rem;background:var(--accent);color:#0F0B08;border:none;cursor:pointer">Сбросить фильтр</button>
+    </div>
+
     <!-- ===== Блок 1: Хиты продаж ===== -->
     <div class="menu-group" id="hits">
       <h3 class="menu-group-title">Хиты продаж</h3>
@@ -5339,7 +5354,7 @@
   menuGroups.forEach(g => catObserver.observe(g));
 
   // ============================================================
-  // INGREDIENT FILTER
+  // INGREDIENT FILTER — ГЛОБАЛЬНАЯ ФИЛЬТРАЦИЯ
   // ============================================================
   (function() {
     var TAG_MAP = {
@@ -5351,7 +5366,7 @@
       'Сет ЗАПЕЧЕННЫЙ':                         'курица краб запеченный',
       'Сет ТЕМПУРНЫЙ':                          'лосось креветка курица краб горячий выгодно',
       'Сет ПОПУЛЯРНЫЙ':                         'лосось краб выгодно',
-      'Сет АМУР':                               'лосось креветка краб запеченный компания',
+      'Сет АМУР':                               'лосось креветка краб запеченный',
       'Сет БОЛЬШАЯ КОМПАНИЯ':                   'лосось креветка курица краб запеченный горячий компания',
       'Сет КОРПОРАТИВНЫЙ':                      'курица краб компания',
       'Сет ПО КАЙФУ':                           'креветка курица запеченный выгодно',
@@ -5361,8 +5376,10 @@
       'ЛАЙТ ФИЛАДЕЛЬФИЯ С ОГУРЦОМ':             'лосось',
       'Запечённый с лососем':                   'лосось запеченный',
       'Запечённый Эби Томаго':                  'креветка запеченный',
-      'Запечённый Этна':                        'курица креветка краб запеченный',
+      'Запечённый Этна':                        'курица креветка краб запеченный острый',
       'Горячий с Креветками':                   'креветка горячий',
+      'Сет ЗАПЕЧЕННЫЙ (горячий)':               'курица краб запеченный горячий',
+      'Сет ТЕМПУРНЫЙ (горячий)':                'лосось креветка курица краб горячий',
       'Имбирь 30г':                             'острый',
       'Имбирь 50г':                             'острый',
       'Имбирь 100г':                            'острый',
@@ -5378,56 +5395,123 @@
       'Пицца «Гавайская»':                      'курица',
     };
 
-    // Assign data-tags to every dish card via explicit map
+    // Назначаем data-tags каждой карточке
     document.querySelectorAll('.dish-card').forEach(function(card) {
       card.dataset.tags = TAG_MAP[card.dataset.name] || '';
     });
 
     var activeTag = '';
     var pills = document.querySelectorAll('.filter-pill');
+    var activeBar   = document.getElementById('filterActiveBar');
+    var activeLabel = document.getElementById('filterActiveLabel');
+    var emptyState  = document.getElementById('menuEmptyState');
+    var resetBtn    = document.getElementById('filterResetBtn');
+    var resetBtn2   = document.getElementById('filterResetBtn2');
+
+    // Сбросить всё к исходному виду
+    function resetAll() {
+      document.querySelectorAll('.menu-group').forEach(function(group) {
+        group.style.display = '';
+        // Восстановить подгруппы
+        Array.from(group.querySelectorAll(':scope > div')).forEach(function(d) {
+          d.style.display = '';
+        });
+        // Восстановить карточки
+        group.querySelectorAll('.dish-card').forEach(function(card) {
+          card.style.display = '';
+        });
+      });
+      // Восстановить вкладки
+      document.querySelectorAll('.cat-btn').forEach(function(btn) {
+        btn.style.opacity = '';
+        btn.style.pointerEvents = '';
+      });
+      if (activeBar)  activeBar.style.display  = 'none';
+      if (emptyState) emptyState.style.display = 'none';
+    }
 
     function applyFilter() {
-      document.querySelectorAll('.menu-group').forEach(function(group) {
-        var cards = group.querySelectorAll('.dish-card');
-        var visibleCount = 0;
-        cards.forEach(function(card) {
-          var show = !activeTag || (card.dataset.tags && card.dataset.tags.split(' ').indexOf(activeTag) !== -1);
-          card.style.display = show ? '' : 'none';
-          if (show) visibleCount++;
-        });
+      if (!activeTag) {
+        resetAll();
+        return;
+      }
 
-        // Show/hide empty-state message
-        var emptyMsg = group.querySelector('.filter-empty-msg');
-        if (!emptyMsg) {
-          emptyMsg = document.createElement('p');
-          emptyMsg.className = 'filter-empty-msg';
-          emptyMsg.style.cssText = 'color:var(--text-2);font-size:0.9rem;padding:12px 0;display:none';
-          emptyMsg.textContent = 'Нет позиций по выбранному фильтру';
-          group.appendChild(emptyMsg);
+      var anyVisible = false;
+
+      document.querySelectorAll('.menu-group').forEach(function(group) {
+        // Определяем: есть ли подгруппы (нет прямого .dishes-grid в group)
+        var hasSubgroups = !group.querySelector(':scope > .dishes-grid');
+        var groupVisible = false;
+
+        if (hasSubgroups) {
+          // Обходим каждую подгруппу (прямые div-дети, содержащие .dishes-grid)
+          Array.from(group.querySelectorAll(':scope > div')).filter(function(d) {
+            return d.querySelector('.dishes-grid');
+          }).forEach(function(subgroup) {
+            var subVisible = false;
+            subgroup.querySelectorAll('.dish-card').forEach(function(card) {
+              var tags = (card.dataset.tags || '').split(' ');
+              var show = tags.indexOf(activeTag) !== -1;
+              card.style.display = show ? '' : 'none';
+              if (show) { subVisible = true; groupVisible = true; anyVisible = true; }
+            });
+            subgroup.style.display = subVisible ? '' : 'none';
+          });
+        } else {
+          // Простая группа — только прямые карточки
+          group.querySelectorAll('.dish-card').forEach(function(card) {
+            var tags = (card.dataset.tags || '').split(' ');
+            var show = tags.indexOf(activeTag) !== -1;
+            card.style.display = show ? '' : 'none';
+            if (show) { groupVisible = true; anyVisible = true; }
+          });
         }
-        emptyMsg.style.display = (visibleCount === 0 && activeTag) ? '' : 'none';
+
+        group.style.display = groupVisible ? '' : 'none';
       });
+
+      // Затемнить вкладки пустых разделов
+      document.querySelectorAll('.cat-btn').forEach(function(btn) {
+        var group = document.getElementById(btn.dataset.target);
+        var empty = group && group.style.display === 'none';
+        btn.style.opacity      = empty ? '0.35' : '';
+        btn.style.pointerEvents = empty ? 'none'  : '';
+      });
+
+      // Полоска активного фильтра
+      if (activeBar) {
+        activeBar.style.display = 'flex';
+        if (activeLabel) {
+          var pillLabel = '';
+          pills.forEach(function(p) {
+            if (p.dataset.tag === activeTag) pillLabel = p.textContent.trim();
+          });
+          activeLabel.textContent = pillLabel;
+        }
+      }
+
+      // Глобальный empty-state
+      if (emptyState) emptyState.style.display = anyVisible ? 'none' : '';
+    }
+
+    function setActiveTag(tag) {
+      activeTag = tag;
+      pills.forEach(function(p) {
+        p.classList.toggle('active', p.dataset.tag === activeTag || (activeTag === '' && p.dataset.tag === ''));
+      });
+      applyFilter();
     }
 
     pills.forEach(function(pill) {
       pill.addEventListener('click', function() {
         var tag = pill.dataset.tag;
-        if (tag === activeTag) {
-          // clicking active non-"все" pill deselects
-          activeTag = '';
-        } else {
-          activeTag = tag;
-        }
-        pills.forEach(function(p) {
-          p.classList.toggle('active', p.dataset.tag === activeTag);
-        });
-        // make sure "Все" pill is active when no filter
-        if (!activeTag) {
-          document.querySelector('.filter-pill[data-tag=""]').classList.add('active');
-        }
-        applyFilter();
+        // Клик по активному фильтру или «Все» — сбрасываем
+        setActiveTag((tag === activeTag || tag === '') ? '' : tag);
       });
     });
+
+    if (resetBtn)  resetBtn.addEventListener('click',  function() { setActiveTag(''); });
+    if (resetBtn2) resetBtn2.addEventListener('click', function() { setActiveTag(''); });
   })();
 
   // ============================================================

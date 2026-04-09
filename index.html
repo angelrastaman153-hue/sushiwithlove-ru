@@ -7004,9 +7004,22 @@
       _copyToastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2800);
       if (btn) {
         var orig = btn.textContent;
+        var origFlex = btn.style.flex;
+        var siblings = [];
+        if (btn.parentNode) {
+          Array.prototype.forEach.call(btn.parentNode.children, function(child) {
+            if (child !== btn) { siblings.push(child); child.style.display = 'none'; }
+          });
+        }
         btn.textContent = 'Промокод «' + code + '» скопирован';
         btn.disabled = true;
-        setTimeout(function() { btn.textContent = orig; btn.disabled = false; }, 3000);
+        btn.style.flex = '1 1 100%';
+        setTimeout(function() {
+          btn.textContent = orig;
+          btn.disabled = false;
+          btn.style.flex = origFlex;
+          siblings.forEach(function(s) { s.style.display = ''; });
+        }, 3000);
       }
     }
     function fallback() {

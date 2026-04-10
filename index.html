@@ -4518,13 +4518,21 @@
         <div class="co-block">
           <div class="co-block-title">Способ оплаты</div>
           <div class="payment-opts">
-            <div class="payment-opt" id="coPayCash" onclick="coSelectPayment(2)">
-              <div class="payment-opt-icon">💵</div>
-              <div class="payment-opt-text">
-                <div class="payment-opt-title">Наличные курьеру</div>
-                <div class="payment-opt-sub">Оплата при получении</div>
+            <div>
+              <div class="payment-opt" id="coPayCash" onclick="coSelectPayment(2)">
+                <div class="payment-opt-icon">💵</div>
+                <div class="payment-opt-text">
+                  <div class="payment-opt-title">Наличные курьеру</div>
+                  <div class="payment-opt-sub">Оплата при получении</div>
+                </div>
+                <div class="payment-opt-check"></div>
               </div>
-              <div class="payment-opt-check"></div>
+              <div id="coCashField" style="display:none;padding:10px 14px;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;background:var(--surface-2)">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
+                  <input type="text" id="coCashFrom" class="form-input" placeholder="Сдача с суммы (необязательно)">
+                  <button class="btn btn-ghost" id="coNoCashBtn" onclick="coToggleNoCash()" style="height:44px;white-space:nowrap">Без сдачи</button>
+                </div>
+              </div>
             </div>
             <div class="payment-opt" id="coPayQR" onclick="coSelectPayment(3)">
               <div class="payment-opt-icon">📱</div>
@@ -4533,12 +4541,6 @@
                 <div class="payment-opt-sub">СБП, любой банк</div>
               </div>
               <div class="payment-opt-check"></div>
-            </div>
-          </div>
-          <div id="coCashField" style="display:none;margin-top:12px">
-            <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
-              <input type="text" id="coCashFrom" class="form-input" placeholder="Сдача с суммы (необязательно)">
-              <button class="btn btn-ghost" id="coNoCashBtn" onclick="coToggleNoCash()" style="height:44px;white-space:nowrap">Без сдачи</button>
             </div>
           </div>
         </div>
@@ -7065,7 +7067,10 @@
     coPaymentMethod = method;
     document.getElementById('coPayCash').classList.toggle('selected', method === 2);
     document.getElementById('coPayQR').classList.toggle('selected', method === 3);
-    document.getElementById('coCashField').style.display = method === 2 ? '' : 'none';
+    var cashField = document.getElementById('coCashField');
+    cashField.style.display = method === 2 ? '' : 'none';
+    // Убираем скругление нижних углов карточки когда поле сдачи открыто
+    document.getElementById('coPayCash').style.borderRadius = method === 2 ? '14px 14px 0 0' : '';
   }
 
   function coToggleNoCash() {

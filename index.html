@@ -1757,7 +1757,7 @@
     /* ---- UPSELL GRID («С этим часто берут») ---- */
     .co-upsell-grid-wrap {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 10px;
     }
     .co-upsell-card {
@@ -1858,7 +1858,8 @@
 
     @media (max-width: 600px) {
       .co-addons-grid { grid-template-columns: 1fr 1fr; }
-      .co-upsell-grid-wrap { grid-template-columns: repeat(2, 1fr); }
+      .co-upsell-grid-wrap { grid-template-columns: repeat(3, 1fr); }
+      .co-upsell-card:nth-child(n+7) { display: none; }
     }
 
     .co-summary {
@@ -2475,6 +2476,11 @@
     .footer-links a:hover { color: var(--accent); }
 
     /* кастомный курсор отключён — используется системный */
+
+    /* Скрыть иконки менеджеров паролей (LastPass, 1Password) в полях */
+    [data-lpignore] { background-image: none !important; }
+    #lkBday::-webkit-credentials-auto-fill-button { display: none !important; }
+    #lkBday { background-image: none !important; }
 
     /* ============================================================
        HERO CANVAS (particles)
@@ -4326,7 +4332,7 @@
       </div>
       <div class="form-group" id="lkBdayGroup">
         <label class="form-label">Дата рождения <span style="color:var(--accent)">*</span></label>
-        <input type="date" id="lkBday" class="form-input" min="1936-01-01" max="2012-12-31">
+        <input type="date" id="lkBday" class="form-input" min="1936-01-01" max="2012-12-31" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
         <div style="font-size:0.75rem;color:var(--text-2);margin-top:5px">Нужна для промокодов именинника. После сохранения изменить нельзя.</div>
       </div>
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.88rem;color:var(--text-2);line-height:1.5">
@@ -7125,14 +7131,18 @@
       ], defaultIdx:0 }
   ];
 
-  // «С ЭТИМ ЧАСТО БЕРУТ» — простые карточки
+  // «С ЭТИМ ЧАСТО БЕРУТ» — 10 позиций (5×2 на десктопе, 3×2 на мобильном — 6)
   var CO_UPSELL_GRID = [
-    {id:152, name:'Картофель фри',        price:160, emoji:'🍟'},
-    {id:155, name:'Комбо фри + наггетсы', price:319, emoji:'🍗'},
-    {id:365, name:'Тигровые креветки',    price:369, emoji:'🦐'},
-    {id:355, name:'Моти в ассортименте',  price:219, emoji:'🍡'},
-    {id:142, name:'Кола 0.5',             price:99,  emoji:'🥤'},
-    {id:141, name:'Сок Добрый 1л',        price:199, emoji:'🧃'},
+    {id:152, name:'Картофель фри',             price:160, emoji:'🍟', photo:'photos/extras/fri.jpg'},
+    {id:155, name:'Комбо фри + наггетсы',      price:319, emoji:'🍗', photo:'photos/extras/kombo-fri.jpg'},
+    {id:365, name:'Тигровые креветки',         price:369, emoji:'🦐', photo:'photos/extras/krevetki.jpg'},
+    {id:355, name:'Моти в ассортименте',       price:219, emoji:'🍡', photo:'photos/extras/moti.jpg'},
+    {id:142, name:'Кола 0.5',                  price:99,  emoji:'🥤', photo:'photos/extras/kola.jpg'},
+    {id:141, name:'Сок Добрый 1л',             price:199, emoji:'🧃', photo:'photos/extras/sok.jpg'},
+    {id:86,  name:'Лайт Филадельфия',          price:429, emoji:'🥒', photo:'photos/rolls/roll-layt-filadelfiya.jpg'},
+    {id:32,  name:'Запечённый Эби Томаго',     price:299, emoji:'🦐', photo:'photos/rolls/roll-ebi-tomago.jpg'},
+    {id:63,  name:'Запечённый с лососем',      price:299, emoji:'🍣', photo:'photos/rolls/roll-zap-losos.jpg'},
+    {id:113, name:'Запечённый Этна',           price:499, emoji:'🌋', photo:'photos/rolls/roll-etna.jpg'},
   ];
 
   // ============================================================
@@ -7206,7 +7216,7 @@
       card.className = 'co-upsell-card' + (inCart ? ' in-cart' : '');
       card.innerHTML =
         '<div class="co-upsell-card-img">' +
-          '<img src="photos/' + item.id + '.jpg" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+          '<img src="' + (item.photo || 'photos/' + item.id + '.jpg') + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
           '<div class="co-upsell-card-emoji" style="display:none">' + item.emoji + '</div>' +
         '</div>' +
         '<div class="co-upsell-card-name">' + item.name + '</div>' +
@@ -7704,7 +7714,7 @@
     var bdayDate = new Date(bday);
     var now = new Date();
     var age = now.getFullYear() - bdayDate.getFullYear() - (now < new Date(now.getFullYear(), bdayDate.getMonth(), bdayDate.getDate()) ? 1 : 0);
-    if (age < 14 || age > 90) { err.textContent = 'Укажите корректную дату рождения (от 14 до 90 лет)'; err.style.display = 'block'; document.getElementById('lkBday').focus(); return; }
+    if (age < 14 || age > 90) { err.textContent = 'Укажите корректную дату рождения'; err.style.display = 'block'; document.getElementById('lkBday').focus(); return; }
     if (!consent)          { err.textContent = 'Подтвердите, что это ваш номер телефона';  err.style.display = 'block'; return; }
     // Дату рождения сохраняем отдельно и больше не даём менять
     var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');

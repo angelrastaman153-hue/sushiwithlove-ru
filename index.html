@@ -7006,14 +7006,8 @@
       ], defaultIdx:1 },
     { key:'soeviy', name:'Соевый соус', emoji:'🫙',
       sizes:[
-        {id:129, label:'30 мл', price:25},
-        {id:130, label:'50 мл', price:30},
-        {id:132, label:'100 мл', price:75}
-      ], defaultIdx:1 },
-    { key:'chef_sauce', name:'Соевый от шефа', emoji:'⭐', badge:'Хит',
-      sizes:[
-        {id:133, label:'50 мл', price:50},
-        {id:121, label:'100 мл', price:75}
+        {id:129, label:'40 мл', price:25, name:'Соевый соус'},
+        {id:132, label:'100 мл', price:75, name:'Соевый от шефа', badge:'Хит', emoji:'⭐'}
       ], defaultIdx:0 }
   ];
 
@@ -7041,15 +7035,19 @@
 
       function buildCard() {
         var size = addon.sizes[selIdx];
+        // Размер может переопределять название, эмодзи и бейдж карточки
+        var displayName  = size.name  || addon.name;
+        var displayEmoji = size.emoji || addon.emoji;
+        var displayBadge = size.hasOwnProperty('badge') ? size.badge : addon.badge;
         var sizeButtons = addon.sizes.map(function(s, i) {
           return '<button class="co-addon-size-btn' + (i === selIdx ? ' active' : '') + '" data-idx="' + i + '">' + s.label + '</button>';
         }).join('');
 
         card.innerHTML =
           '<div class="co-addon-header">' +
-            '<span class="co-addon-emoji">' + addon.emoji + '</span>' +
-            '<span class="co-addon-name">' + addon.name + '</span>' +
-            (addon.badge ? '<span class="co-addon-badge">' + addon.badge + '</span>' : '') +
+            '<span class="co-addon-emoji">' + displayEmoji + '</span>' +
+            '<span class="co-addon-name">' + displayName + '</span>' +
+            (displayBadge ? '<span class="co-addon-badge">' + displayBadge + '</span>' : '') +
           '</div>' +
           '<div class="co-addon-sizes">' + sizeButtons + '</div>' +
           '<div class="co-addon-footer">' +
@@ -7068,7 +7066,9 @@
         // Кнопка добавить
         card.querySelector('.co-addon-add-btn').addEventListener('click', function() {
           var s = addon.sizes[selIdx];
-          addToCart({id: s.id, name: addon.name + ' ' + s.label, price: s.price, emoji: addon.emoji});
+          var name = s.name || addon.name;
+          var emoji = s.emoji || addon.emoji;
+          addToCart({id: s.id, name: name + ' ' + s.label, price: s.price, emoji: emoji});
           coRenderItems();
           coUpdateSummary();
         });

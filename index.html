@@ -1693,6 +1693,158 @@
     .co-upsell-name { font-weight: 500; }
     .co-upsell-price { color: var(--text-2); }
     .co-upsell-add { color: var(--accent); font-weight: 700; }
+
+    /* ---- ADDON CARDS (соусы с выбором объёма) ---- */
+    .co-addons-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .co-addon-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--surface);
+    }
+    .co-addon-header { display: flex; align-items: center; gap: 8px; }
+    .co-addon-emoji { font-size: 22px; }
+    .co-addon-name { font-weight: 600; font-size: 0.88rem; }
+    .co-addon-badge {
+      font-size: 0.68rem;
+      background: rgba(232,168,71,0.15);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+      align-self: flex-start;
+      white-space: nowrap;
+    }
+    .co-addon-sizes { display: flex; gap: 5px; flex-wrap: wrap; }
+    .co-addon-size-btn {
+      padding: 4px 10px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      cursor: pointer;
+      background: var(--surface-2);
+      color: var(--text-2);
+      transition: all 0.15s;
+    }
+    .co-addon-size-btn.active {
+      border-color: var(--accent);
+      background: rgba(232,168,71,0.15);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .co-addon-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+    .co-addon-price { color: var(--accent); font-weight: 700; font-size: 0.95rem; }
+    .co-addon-add-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .co-addon-add-btn:hover { background: var(--accent); color: #000; }
+
+    /* ---- UPSELL GRID («С этим часто берут») ---- */
+    .co-upsell-grid-wrap {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .co-upsell-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .co-upsell-card:hover { border-color: rgba(232,168,71,0.4); }
+    .co-upsell-card.in-cart { border-color: var(--accent); background: rgba(232,168,71,0.08); }
+    .co-upsell-card-emoji { font-size: 24px; }
+    .co-upsell-card-name { font-size: 0.75rem; font-weight: 500; color: var(--text); line-height: 1.3; }
+    .co-upsell-card-price { font-size: 0.82rem; color: var(--accent); font-weight: 700; }
+    .co-upsell-card-btn {
+      margin-top: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: none;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .co-upsell-card.in-cart .co-upsell-card-btn { background: var(--accent); color: #000; }
+
+    /* ---- SAVED ADDRESS BADGE ---- */
+    .co-saved-address-badge {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(232,168,71,0.08);
+      border: 1px solid rgba(232,168,71,0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .co-saved-address-text { flex: 1; color: var(--text); line-height: 1.45; }
+    .co-saved-address-change {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+    .co-saved-address-change:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ---- DELIVERY PROGRESS IN CHECKOUT ---- */
+    .co-delivery-progress {
+      background: var(--surface-2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 0.82rem;
+    }
+    .co-delivery-progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .co-delivery-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    @media (max-width: 600px) {
+      .co-addons-grid { grid-template-columns: 1fr 1fr; }
+      .co-upsell-grid-wrap { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .co-summary {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius-lg); padding: 24px;
@@ -3881,7 +4033,7 @@
         </iframe>
         <!-- Кнопка выбора адреса на карте -->
         <button onclick="openMapPicker()" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:10;padding:10px 20px;background:var(--accent);color:#000;font-weight:700;font-size:0.88rem;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.4);white-space:nowrap">
-          📍 Выбрать адрес на карте
+          📍 ПОИСК АДРЕСА НА КАРТЕ
         </button>
       </div>
 
@@ -4122,54 +4274,30 @@
     <div id="cartItemsList"></div>
   </div>
 
-  <div class="upsell" id="cartUpsell" style="display:none">
-    <div class="upsell-title">Часто добавляют к заказу:</div>
-    <div class="upsell-items">
-      <span class="upsell-chip" onclick="addToCart({id:127,name:'Васаби 20г',price:25,emoji:'🌿'})">🌿 Васаби 20г · 25 ₽</span>
-      <span class="upsell-chip" onclick="addToCart({id:138,name:'Васаби 40г',price:45,emoji:'🌿'})">🌿 Васаби 40г · 45 ₽</span>
-      <span class="upsell-chip" onclick="addToCart({id:139,name:'Васаби 60г',price:65,emoji:'🌿'})">🌿 Васаби 60г · 65 ₽</span>
-      <span class="upsell-chip" onclick="addToCart({id:123,name:'Имбирь 30г',price:30,emoji:'🌸'})">🌸 Имбирь 30г · 30 ₽</span>
-      <span class="upsell-chip" onclick="addToCart({id:120,name:'Имбирь 50г',price:50,emoji:'🌸'})">🌸 Имбирь 50г · 50 ₽</span>
-      <span class="upsell-chip" onclick="addToCart({id:128,name:'Имбирь 100г',price:65,emoji:'🌸'})">🌸 Имбирь 100г · 65 ₽</span>
-      <span class="upsell-chip" onclick="addToCart({id:121,name:'Соевый от шефа (100 мл)',price:75,emoji:'⭐'})">⭐ Соевый 100мл · 75 ₽</span>
-    </div>
-  </div>
-
   <div class="cart-footer" id="cartFooter" style="display:none">
-    <div class="delivery-progress">
-      <div class="progress-header">
-        <span>До бесплатной доставки</span>
-        <span id="progressLeft">900 ₽</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-      </div>
-      <div class="progress-note" id="progressNote"></div>
-    </div>
-
     <div class="cart-totals">
       <div class="cart-total-row"><span>Товары</span><span id="cartSubtotal">0 ₽</span></div>
       <div class="cart-total-row"><span>Доставка</span><span id="cartDelivery">–</span></div>
       <div class="cart-total-row total"><span>Итого</span><span id="cartTotal">0 ₽</span></div>
     </div>
 
-    <!-- Промокод в корзине -->
-    <div style="margin-bottom:14px">
-      <div style="display:flex;gap:8px">
-        <input type="text" class="form-input" id="cartPromoInput" placeholder="Промокод" autocomplete="off" data-lpignore="true" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-        <button type="button" class="btn btn-secondary" style="padding:0 16px;flex-shrink:0" onclick="applyPromoFromCart()">Применить</button>
-      </div>
-      <div id="cartPromoMsg" style="margin-top:8px;font-size:0.8rem;display:none"></div>
-    </div>
-
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openCheckoutPage()">
-      Продолжить оформление заказа →
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="openCheckoutPage()">
+      Оформить заказ →
     </button>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px;font-size:0.85rem" onclick="closeCart()">
+      ← Продолжить выбор
+    </button>
+    <!-- Скрытые элементы для совместимости JS -->
+    <input type="hidden" id="cartPromoInput">
+    <div id="cartPromoMsg" style="display:none"></div>
+    <div id="progressFill" style="display:none"></div>
+    <div id="progressLeft" style="display:none"></div>
+    <div id="progressNote" style="display:none"></div>
   </div>
 </div>
 
-<!-- Mobile cart bar -->
-<div class="mobile-cart-bar" id="mobileCartBar" onclick="openCart()">
+<!-- Mobile cart bar — напрямую в checkout -->
+<div class="mobile-cart-bar" id="mobileCartBar" onclick="openCheckoutPage()">
   <div class="mobile-cart-info">
     <div class="mobile-cart-icon">🛒</div>
     <div class="mobile-cart-text" id="mobileCartText">0 позиций</div>
@@ -4247,7 +4375,7 @@
 
     <!-- Header -->
     <div class="checkout-page-header">
-      <button class="back-btn" onclick="closeCheckoutPage(); openCart()">←</button>
+      <button class="back-btn" onclick="coGoBackToMenu()">←</button>
       <div class="checkout-page-title">Оформление заказа</div>
     </div>
 
@@ -4256,13 +4384,7 @@
       <!-- LEFT COLUMN -->
       <div class="checkout-page-left">
 
-        <!-- Ваш заказ -->
-        <div class="co-block">
-          <div class="co-block-title">Ваш заказ</div>
-          <div id="coItemsList"></div>
-        </div>
-
-        <!-- Способ получения -->
+        <!-- БЛОК 1: Способ получения -->
         <div class="co-block">
           <div class="co-block-title">Способ получения</div>
           <div class="co-delivery-toggle">
@@ -4271,19 +4393,33 @@
           </div>
         </div>
 
-        <!-- Адрес доставки -->
+        <!-- БЛОК 2: Адрес доставки -->
         <div class="co-block" id="coAddressBlock">
           <div class="co-block-title">Адрес доставки</div>
-          <div style="display:flex;flex-direction:column;gap:10px">
+          <!-- Сохранённый адрес (бейдж) -->
+          <div id="coSavedAddressBadge" class="co-saved-address-badge" style="display:none">
+            <div class="co-saved-address-text" id="coSavedAddressText"></div>
+            <button class="co-saved-address-change" onclick="coResetAddress()">Изменить</button>
+          </div>
+          <!-- Поля ввода -->
+          <div id="coAddressInputs" style="display:flex;flex-direction:column;gap:10px">
             <div style="position:relative">
               <input type="text" id="coStreet" class="form-input" placeholder="Улица" autocomplete="off" style="width:100%;box-sizing:border-box" oninput="coStreetSuggest(this.value)">
               <div id="coStreetSugg" class="street-suggestions" style="display:none"></div>
             </div>
-            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
               <input type="text" id="coHouse" class="form-input" placeholder="Дом">
-              <input type="text" id="coEntrance" class="form-input" placeholder="Подъезд">
-              <input type="text" id="coFloor" class="form-input" placeholder="Этаж">
-              <input type="text" id="coFlat" class="form-input" placeholder="Кв.">
+              <button class="btn btn-ghost" onclick="openMapPicker()" style="white-space:nowrap;font-size:0.8rem">🗺 На карте</button>
+            </div>
+          </div>
+          <!-- Прогресс до бесплатной доставки -->
+          <div class="co-delivery-progress" id="coDeliveryProgress" style="display:none">
+            <div style="display:flex;justify-content:space-between;color:var(--text-2)">
+              <span id="coDelivProgressLabel">До бесплатной доставки</span>
+              <span id="coDelivProgressLeft" style="color:var(--accent);font-weight:600"></span>
+            </div>
+            <div class="co-delivery-progress-bar">
+              <div class="co-delivery-progress-fill" id="coDelivProgressFill" style="width:0%"></div>
             </div>
           </div>
         </div>
@@ -4300,7 +4436,44 @@
           </div>
         </div>
 
-        <!-- Время -->
+        <!-- БЛОК 3: Промокод -->
+        <div class="co-block">
+          <div class="co-block-title">Промокод</div>
+          <div style="display:flex;gap:10px">
+            <input type="text" id="coPromoInput" class="form-input" placeholder="Введите промокод" style="flex:1;text-transform:uppercase">
+            <button class="btn btn-ghost" onclick="coApplyPromo()" style="flex-shrink:0">Применить</button>
+          </div>
+          <div id="coPromoMsg" style="display:none;margin-top:8px;font-size:0.85rem"></div>
+        </div>
+
+        <!-- БЛОК 4: Ваш заказ -->
+        <div class="co-block">
+          <div class="co-block-title">Ваш заказ</div>
+          <div id="coItemsList"></div>
+        </div>
+
+        <!-- БЛОК 5: Соусы и добавки -->
+        <div class="co-block">
+          <div class="co-block-title">Соусы и добавки к заказу</div>
+          <div class="co-addons-grid" id="coAddonsGrid"></div>
+        </div>
+
+        <!-- БЛОК 6: С этим часто берут -->
+        <div class="co-block">
+          <div class="co-block-title">С этим часто берут</div>
+          <div class="co-upsell-grid-wrap" id="coUpsellGrid"></div>
+        </div>
+
+        <!-- БЛОК 7: Ваши данные -->
+        <div class="co-block">
+          <div class="co-block-title">Ваши данные</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <input type="text" id="coName" class="form-input" placeholder="Ваше имя" autocomplete="given-name">
+            <input type="tel" id="coPhone" class="form-input" placeholder="8 (___) ___-__-__" maxlength="18" inputmode="numeric">
+          </div>
+        </div>
+
+        <!-- БЛОК 8: Время -->
         <div class="co-block">
           <div class="co-block-title">Время получения</div>
           <div class="co-time-options">
@@ -4313,7 +4486,7 @@
           </div>
         </div>
 
-        <!-- Оплата -->
+        <!-- БЛОК 9: Способ оплаты -->
         <div class="co-block">
           <div class="co-block-title">Способ оплаты</div>
           <div class="payment-opts">
@@ -4342,49 +4515,29 @@
           </div>
         </div>
 
-        <!-- Промокод -->
+        <!-- БЛОК 10: Доп. информация -->
         <div class="co-block">
-          <div class="co-block-title">Промокод</div>
-          <div style="display:flex;gap:10px">
-            <input type="text" id="coPromoInput" class="form-input" placeholder="Введите промокод" style="flex:1;text-transform:uppercase">
-            <button class="btn btn-ghost" onclick="coApplyPromo()" style="flex-shrink:0">Применить</button>
-          </div>
-          <div id="coPromoMsg" style="display:none;margin-top:8px;font-size:0.85rem"></div>
-        </div>
-
-        <!-- Ваши данные -->
-        <div class="co-block">
-          <div class="co-block-title">Ваши данные</div>
+          <div class="co-block-title">Дополнительно</div>
           <div style="display:flex;flex-direction:column;gap:10px">
-            <input type="text" id="coName" class="form-input" placeholder="Ваше имя" autocomplete="given-name">
-            <input type="tel" id="coPhone" class="form-input" placeholder="8 (___) ___-__-__" maxlength="18" inputmode="numeric">
-            <textarea id="coComment" class="form-input" rows="2" placeholder="Комментарий к заказу (необязательно)" style="resize:none;width:100%;box-sizing:border-box"></textarea>
-          </div>
-        </div>
-
-        <!-- Палочки -->
-        <div class="co-block">
-          <div class="co-block-title">Палочки для суши</div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:0.88rem;color:var(--text-2)">Количество пар</span>
-            <div style="display:flex;align-items:center;gap:12px">
-              <button class="chopstick-btn" onclick="coChangeChopsticks(-1)">−</button>
-              <span id="coChopstickVal" style="font-weight:700;min-width:20px;text-align:center">1</span>
-              <button class="chopstick-btn" onclick="coChangeChopsticks(1)">+</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+              <input type="text" id="coEntrance" class="form-input" placeholder="Подъезд">
+              <input type="text" id="coFloor" class="form-input" placeholder="Этаж">
+              <input type="text" id="coFlat" class="form-input" placeholder="Кв.">
+              <input type="text" id="coIntercom" class="form-input" placeholder="Домофон">
+            </div>
+            <textarea id="coComment" class="form-input" rows="2" placeholder="Комментарий курьеру (необязательно)" style="resize:none;width:100%;box-sizing:border-box"></textarea>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:0.88rem;color:var(--text-2)">🥢 Палочки (пар)</span>
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="chopstick-btn" onclick="coChangeChopsticks(-1)">−</button>
+                <span id="coChopstickVal" style="font-weight:700;min-width:20px;text-align:center">1</span>
+                <button class="chopstick-btn" onclick="coChangeChopsticks(1)">+</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Допродажи -->
-        <div class="co-block">
-          <div class="co-block-title">Добавить к заказу</div>
-          <div style="font-size:0.75rem;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Соусы и добавки</div>
-          <div class="co-upsell-grid" id="coUpsell1"></div>
-          <div style="font-size:0.75rem;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 10px">Ещё к заказу</div>
-          <div class="co-upsell-grid" id="coUpsell2"></div>
-        </div>
-
-        <!-- Согласия -->
+        <!-- БЛОК 11: Согласия -->
         <div class="co-block">
           <div style="display:flex;flex-direction:column;gap:12px">
             <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text-2);line-height:1.5">
@@ -4403,7 +4556,7 @@
 
       </div><!-- /left -->
 
-      <!-- RIGHT COLUMN -->
+      <!-- RIGHT COLUMN (БЛОК 12: Итог) -->
       <div class="checkout-page-right">
         <div class="co-summary">
           <div class="co-summary-title">Итого</div>
@@ -4430,6 +4583,7 @@
           <div id="coSubmitErr" style="display:none;color:#e05a5a;font-size:0.82rem;margin-bottom:10px;text-align:center"></div>
           <button class="btn btn-primary co-submit-btn" id="coSubmitBtn" onclick="coSubmitOrder()">Оформить заказ →</button>
           <div id="coSummaryTimeHint" style="margin-top:10px;font-size:0.75rem;color:var(--text-2);text-align:center">Оператор свяжется в течение 5 минут</div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px;font-size:0.85rem" onclick="coGoBackToMenu()">← Вернуться в меню</button>
         </div>
       </div><!-- /right -->
 
@@ -4674,6 +4828,11 @@
   let noCashChange = false;
   const FREE_DELIVERY_THRESHOLD = 900;
   const DELIVERY_COST = 100;
+
+  // Сохранённый адрес и промокод между сессиями
+  var savedAddress = JSON.parse(localStorage.getItem('swl_address') || 'null');
+  // структура: { text, street, house, zone }
+  var savedPromo = localStorage.getItem('swl_promo') || '';
 
   function saveCart() {
     localStorage.setItem('swl_cart', JSON.stringify(cart));
@@ -5017,9 +5176,8 @@
   // CART DRAWER
   // ============================================================
   function openCart() {
-    document.getElementById('cartOverlay').classList.add('open');
-    document.getElementById('cartDrawer').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    // Прямо на страницу оформления — без промежуточного drawer
+    openCheckoutPage();
   }
   function closeCart() {
     document.getElementById('cartOverlay').classList.remove('open');
@@ -5027,8 +5185,7 @@
     document.body.style.overflow = '';
   }
   document.getElementById('cartBtn').addEventListener('click', () => {
-    if (document.getElementById('cartDrawer').classList.contains('open')) closeCart();
-    else openCart();
+    openCheckoutPage();
   });
 
   // ============================================================
@@ -5898,7 +6055,7 @@
   // ============================================================
   // PROMO CODE
   // ============================================================
-  var activePromoCode = '';
+  var activePromoCode = savedPromo || '';
 
   var PROMO_DB = {
     '1LOVE': {
@@ -6072,7 +6229,7 @@
   // ИНТЕРАКТИВНАЯ КАРТА — попап выбора адреса (Leaflet + Nominatim)
   // ============================================================
   var _mapPickerInited = false;
-  var _mapCurrentStreet = '', _mapCurrentHouse = '';
+  var _mapCurrentStreet = '', _mapCurrentHouse = '', _mapCurrentZoneDesc = '';
   var _leafletMap = null, _leafletMarker = null;
 
   // ============================================================
@@ -6234,6 +6391,7 @@
       _leafletMarker = L.marker([lat, lng]).addTo(map);
 
       var zoneDesc = _getDeliveryZone(lat, lng);
+      _mapCurrentZoneDesc = zoneDesc;
       var zoneHtml = _formatZonePopup(zoneDesc);
 
       _leafletMarker.bindPopup('<div style="' + ps + '"><div style="color:#888;font-size:0.8rem">Определяем адрес…</div>' + zoneHtml + '</div>', { maxWidth: 280 }).openPopup();
@@ -6263,21 +6421,25 @@
   }
 
   window.applyMapAddress = function() {
-    var streetEl = document.getElementById('street');
-    var houseEl  = document.getElementById('house');
-    if (streetEl) { streetEl.value = _mapCurrentStreet; streetEl.removeAttribute('readonly'); }
-    if (houseEl)  houseEl.value  = _mapCurrentHouse;
+    var label = _mapCurrentStreet + (_mapCurrentHouse ? ', ' + _mapCurrentHouse : '') || 'Адрес не определён';
+
+    // Сохраняем адрес в сессию
+    savedAddress = { text: label, street: _mapCurrentStreet, house: _mapCurrentHouse, zone: _mapCurrentZoneDesc };
+    localStorage.setItem('swl_address', JSON.stringify(savedAddress));
+
+    // Заполняем поля checkout page
+    var coS = document.getElementById('coStreet');
+    var coH = document.getElementById('coHouse');
+    if (coS) coS.value = _mapCurrentStreet;
+    if (coH) coH.value = _mapCurrentHouse;
 
     var banner = document.getElementById('mapSuccessBanner');
     if (banner) banner.style.display = '';
 
     setTimeout(function() {
       closeMapPicker();
-      if (typeof openCart === 'function') openCart();
-      var r = document.getElementById('typeDelivery');
-      if (r) { r.checked = true; toggleAddressSection(true); }
-      showToast('📍', 'Адрес: ' + _mapCurrentStreet + (_mapCurrentHouse ? ', ' + _mapCurrentHouse : ''));
-    }, 1200);
+      showToast('📍 Адрес сохранён', label, 'added');
+    }, 800);
   };
 
   window.mapSearch = function() {
@@ -6575,12 +6737,21 @@
       if (result.ok) {
         msgEl.innerHTML = '<span style="color:#4ade80">✅ ' + result.msg + '</span>';
         activePromoCode = c;
+        savedPromo = c;
+        localStorage.setItem('swl_promo', c);
+        showToast('🎉 Промокод ' + c + ' сохранён', promo.desc, 'promo');
         var ci = document.getElementById('cartPromoInput');
         var oi = document.getElementById('checkoutPromoInput');
+        var coi = document.getElementById('coPromoInput');
         if (ci) ci.value = c;
         if (oi) oi.value = c;
+        if (coi) coi.value = c;
       } else {
         msgEl.innerHTML = '<span style="color:var(--accent)">⚠️ ' + result.reason + '</span>';
+        showToast('🎉 Промокод ' + c + ' сохранён', 'Применится в корзине при выполнении условий', 'promo');
+        savedPromo = c;
+        activePromoCode = c;
+        localStorage.setItem('swl_promo', c);
       }
       return;
     }
@@ -6677,9 +6848,15 @@
     document.getElementById('coChopstickVal').textContent = '1';
     coNoCash = false;
     coPromoDiscount = 0;
-    coActivePromo = activePromoCode || null;
+
+    // Загружаем сохранённый адрес и промокод из localStorage
+    savedAddress = JSON.parse(localStorage.getItem('swl_address') || 'null');
+    savedPromo = localStorage.getItem('swl_promo') || '';
+    coActivePromo = savedPromo || activePromoCode || null;
+
     coRenderItems();
-    coRenderUpsell();
+    coRenderAddons();
+    coRenderUpsellGrid();
     coUpdateSummary();
     coInitDate();
     coGenerateTimeSlots();
@@ -6697,6 +6874,17 @@
       : 'Работаем с 10:00 до 22:00 — перезвоним как откроемся';
     document.getElementById('coPromoMsg').style.display = 'none';
     document.getElementById('coSubmitErr').style.display = 'none';
+
+    // Подставляем сохранённый адрес
+    if (savedAddress) {
+      var coS = document.getElementById('coStreet');
+      var coH = document.getElementById('coHouse');
+      if (coS) coS.value = savedAddress.street || '';
+      if (coH) coH.value = savedAddress.house || '';
+      coShowSavedAddressBadge();
+    }
+
+    // Подставляем промокод
     if (coActivePromo) {
       document.getElementById('coPromoInput').value = coActivePromo;
       coApplyPromo();
@@ -6846,7 +7034,8 @@
 
   function coUpdateSummary() {
     var sub   = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
-    var total = Math.max(0, sub - coPromoDiscount);
+    var delivCost = (typeof coGetDeliveryCostFromZone === 'function') ? coGetDeliveryCostFromZone() : DELIVERY_COST;
+    var total = Math.max(0, sub - coPromoDiscount) + delivCost;
     var count = cart.reduce(function(s,i){ return s + i.qty; }, 0);
     document.getElementById('coSumSubtotal').textContent  = fmt(sub) + ' ₽';
     document.getElementById('coSumTotal').textContent     = fmt(total) + ' ₽';
@@ -6854,47 +7043,226 @@
     var dr = document.getElementById('coSumDiscRow');
     if (coPromoDiscount > 0) { dr.style.display = ''; document.getElementById('coSumDiscount').textContent = '−' + fmt(coPromoDiscount) + ' ₽'; }
     else { dr.style.display = 'none'; }
+    // Доставка
+    var delivEl = document.getElementById('coSumDelivery');
+    var noteEl  = document.getElementById('coDeliveryNote');
+    if (delivEl) {
+      if (savedAddress) {
+        delivEl.textContent = delivCost === 0 ? 'Бесплатно' : fmt(delivCost) + ' ₽';
+        if (noteEl) noteEl.style.display = 'none';
+      } else {
+        delivEl.textContent = 'Уточним';
+        if (noteEl) noteEl.style.display = '';
+      }
+    }
+    // Обновляем прогресс-бар в блоке адреса
+    if (savedAddress) coShowSavedAddressBadge();
   }
 
-  var CO_UPSELL1 = [
-    {id:129, name:'Соевый соус',    price:30,  emoji:'🫙'},
-    {id:121, name:'Соевый от шефа', price:60,  emoji:'🫙'},
-    {id:127, name:'Васаби 20г',     price:50,  emoji:'🌿'},
-    {id:123, name:'Имбирь 30г',     price:40,  emoji:'🫚'},
-  ];
-  var CO_UPSELL2 = [
-    {id:142, name:'Кола 0.5л',      price:120, emoji:'🥤'},
-    {id:141, name:'Сок 1л',         price:130, emoji:'🧃'},
-    {id:601, name:'Вода 0.5л',      price:70,  emoji:'💧'},
-    {id:355, name:'Моти',           price:110, emoji:'🍡'},
-    {id:152, name:'Картофель фри',  price:199, emoji:'🍟'},
-    {id:365, name:'Тигровые креветки', price:299, emoji:'🦐'},
+  // ============================================================
+  // СОУСЫ И ДОБАВКИ — карточки с выбором объёма
+  // ============================================================
+  var CO_ADDONS = [
+    { key:'vasabi', name:'Васаби', emoji:'🌿', badge:'Рекомендуем',
+      sizes:[
+        {id:127, label:'20 г', price:25},
+        {id:138, label:'40 г', price:45},
+        {id:139, label:'60 г', price:65}
+      ], defaultIdx:0 },
+    { key:'imbir', name:'Имбирь маринованный', emoji:'🌸',
+      sizes:[
+        {id:123, label:'30 г', price:30},
+        {id:120, label:'50 г', price:50},
+        {id:128, label:'100 г', price:65}
+      ], defaultIdx:1 },
+    { key:'soeviy', name:'Соевый соус', emoji:'🫙',
+      sizes:[
+        {id:129, label:'30 мл', price:30},  // ЗАГЛУШКА — уточни цены
+        {id:130, label:'50 мл', price:40},  // ЗАГЛУШКА
+        {id:132, label:'100 мл', price:65}  // ЗАГЛУШКА
+      ], defaultIdx:1 },
+    { key:'chef_sauce', name:'Соевый от шефа', emoji:'⭐', badge:'Хит',
+      sizes:[
+        {id:133, label:'50 мл', price:50},  // ЗАГЛУШКА
+        {id:121, label:'100 мл', price:75}
+      ], defaultIdx:0 }
   ];
 
-  function coRenderUpsell() {
-    function render(items, cid) {
-      var c = document.getElementById(cid); c.innerHTML = '';
-      items.forEach(function(item) {
-        var inCart = cart.some(function(x){ return x.id === item.id; });
-        var d = document.createElement('div');
-        d.className = 'co-upsell-item' + (inCart ? ' in-cart' : '');
-        d.id = 'coUp-' + item.id;
-        d.innerHTML = item.emoji + ' <span class="co-upsell-name">' + item.name + '</span> <span class="co-upsell-price"> ' + item.price + '₽</span> <span class="co-upsell-add">' + (inCart ? '✓' : '+') + '</span>';
-        d.onclick = function() {
-          if (cart.some(function(x){ return x.id === item.id; })) {
-            cart = cart.filter(function(x){ return x.id !== item.id; });
-            d.classList.remove('in-cart'); d.querySelector('.co-upsell-add').textContent = '+';
-          } else {
-            addToCart({id:item.id, name:item.name, price:item.price, emoji:item.emoji});
-            d.classList.add('in-cart'); d.querySelector('.co-upsell-add').textContent = '✓';
-          }
+  // «С ЭТИМ ЧАСТО БЕРУТ» — простые карточки
+  var CO_UPSELL_GRID = [
+    {id:152, name:'Картофель фри',        price:160, emoji:'🍟'},
+    {id:155, name:'Комбо фри + наггетсы', price:319, emoji:'🍗'},
+    {id:365, name:'Тигровые креветки',    price:369, emoji:'🦐'},
+    {id:355, name:'Моти в ассортименте',  price:219, emoji:'🍡'},
+    {id:142, name:'Кола 0.5',             price:99,  emoji:'🥤'},
+    {id:141, name:'Сок Добрый 1л',        price:199, emoji:'🧃'},
+  ];
+
+  // ============================================================
+  // ADDON CARDS — соусы и добавки с выбором объёма
+  // ============================================================
+  function coRenderAddons() {
+    var grid = document.getElementById('coAddonsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    CO_ADDONS.forEach(function(addon) {
+      var selIdx = addon.defaultIdx || 0;
+      var card = document.createElement('div');
+      card.className = 'co-addon-card';
+
+      function buildCard() {
+        var size = addon.sizes[selIdx];
+        var sizeButtons = addon.sizes.map(function(s, i) {
+          return '<button class="co-addon-size-btn' + (i === selIdx ? ' active' : '') + '" data-idx="' + i + '">' + s.label + '</button>';
+        }).join('');
+
+        card.innerHTML =
+          '<div class="co-addon-header">' +
+            '<span class="co-addon-emoji">' + addon.emoji + '</span>' +
+            '<span class="co-addon-name">' + addon.name + '</span>' +
+            (addon.badge ? '<span class="co-addon-badge">' + addon.badge + '</span>' : '') +
+          '</div>' +
+          '<div class="co-addon-sizes">' + sizeButtons + '</div>' +
+          '<div class="co-addon-footer">' +
+            '<span class="co-addon-price">' + size.price + ' ₽</span>' +
+            '<button class="co-addon-add-btn">+ Добавить</button>' +
+          '</div>';
+
+        // Обработчики кнопок размера
+        card.querySelectorAll('.co-addon-size-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            selIdx = parseInt(this.dataset.idx);
+            buildCard();
+          });
+        });
+
+        // Кнопка добавить
+        card.querySelector('.co-addon-add-btn').addEventListener('click', function() {
+          var s = addon.sizes[selIdx];
+          addToCart({id: s.id, name: addon.name + ' ' + s.label, price: s.price, emoji: addon.emoji});
+          coRenderItems();
+          coUpdateSummary();
+        });
+      }
+
+      buildCard();
+      grid.appendChild(card);
+    });
+  }
+
+  // ============================================================
+  // UPSELL GRID — «С этим часто берут»
+  // ============================================================
+  function coRenderUpsellGrid() {
+    var grid = document.getElementById('coUpsellGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    CO_UPSELL_GRID.forEach(function(item) {
+      var inCart = cart.some(function(x) { return x.id === item.id; });
+      var card = document.createElement('div');
+      card.className = 'co-upsell-card' + (inCart ? ' in-cart' : '');
+      card.innerHTML =
+        '<div class="co-upsell-card-emoji">' + item.emoji + '</div>' +
+        '<div class="co-upsell-card-name">' + item.name + '</div>' +
+        '<div class="co-upsell-card-price">' + item.price + ' ₽</div>' +
+        '<button class="co-upsell-card-btn">' + (inCart ? '✓ В корзине' : '+ Добавить') + '</button>';
+      card.addEventListener('click', function() {
+        if (cart.some(function(x) { return x.id === item.id; })) {
+          cart = cart.filter(function(x) { return x.id !== item.id; });
+          saveCart(); updateCartUI(); coRenderItems(); coUpdateSummary();
+          card.className = 'co-upsell-card';
+          card.querySelector('.co-upsell-card-btn').textContent = '+ Добавить';
+        } else {
+          addToCart({id: item.id, name: item.name, price: item.price, emoji: item.emoji});
           coRenderItems(); coUpdateSummary();
-        };
-        c.appendChild(d);
+          card.className = 'co-upsell-card in-cart';
+          card.querySelector('.co-upsell-card-btn').textContent = '✓ В корзине';
+        }
       });
+      grid.appendChild(card);
+    });
+  }
+
+  // ============================================================
+  // АДРЕС — бейдж сохранённого адреса
+  // ============================================================
+  function coShowSavedAddressBadge() {
+    var badge = document.getElementById('coSavedAddressBadge');
+    var inputs = document.getElementById('coAddressInputs');
+    var progress = document.getElementById('coDeliveryProgress');
+    if (!savedAddress) {
+      if (badge) badge.style.display = 'none';
+      if (inputs) inputs.style.display = '';
+      return;
     }
-    render(CO_UPSELL1, 'coUpsell1');
-    render(CO_UPSELL2, 'coUpsell2');
+    var cost = coGetDeliveryCostFromZone();
+    var costText = cost === 0 ? 'Бесплатная доставка' : 'Доставка: ' + cost + ' ₽';
+    var textEl = document.getElementById('coSavedAddressText');
+    if (textEl) textEl.innerHTML = '<strong>📍 ' + savedAddress.text + '</strong><br><span style="color:var(--text-2);font-size:0.82rem">' + costText + '</span>';
+    if (badge) badge.style.display = '';
+    if (inputs) inputs.style.display = 'none';
+
+    // Прогресс до бесплатной
+    if (progress && savedAddress.zone) {
+      var freeThreshold = _parseFreeThreshold(savedAddress.zone);
+      if (freeThreshold > 0 && cost > 0) {
+        var sub = getCartTotal();
+        var pct = Math.min(100, (sub / freeThreshold) * 100);
+        var left = freeThreshold - sub;
+        document.getElementById('coDelivProgressFill').style.width = pct + '%';
+        document.getElementById('coDelivProgressLeft').textContent = left > 0 ? 'ещё ' + fmt(left) : 'Бесплатно!';
+        document.getElementById('coDelivProgressLabel').textContent = left > 0
+          ? 'До бесплатной доставки'
+          : '🎉 Бесплатная доставка';
+        progress.style.display = '';
+      } else {
+        progress.style.display = 'none';
+      }
+    }
+  }
+
+  function coResetAddress() {
+    var badge = document.getElementById('coSavedAddressBadge');
+    var inputs = document.getElementById('coAddressInputs');
+    if (badge) badge.style.display = 'none';
+    if (inputs) inputs.style.display = '';
+  }
+
+  // ============================================================
+  // ДОСТАВКА — расчёт стоимости из зоны
+  // ============================================================
+  function _parseFreeThreshold(zoneDesc) {
+    // Парсим: "мин 600р, до 900р - 150р, от 900р - бесплатно"
+    var m = zoneDesc.match(/от\s*(\d+)\s*р[^-]*бесплатно/i);
+    return m ? parseInt(m[1]) : 0;
+  }
+
+  function _parseDelivCost(zoneDesc) {
+    // Берём первое число после "- Xр"
+    var m = zoneDesc.match(/до\s*\d+\s*р[^-]*-\s*(\d+)\s*р/i);
+    return m ? parseInt(m[1]) : DELIVERY_COST;
+  }
+
+  function coGetDeliveryCostFromZone() {
+    if (coDeliveryType === 'self') return 0;
+    if (!savedAddress || !savedAddress.zone) return DELIVERY_COST;
+    var desc = savedAddress.zone;
+    var total = getCartTotal();
+    if (total === 0) return 0;
+    var freeAt = _parseFreeThreshold(desc);
+    if (freeAt > 0 && total >= freeAt) return 0;
+    return _parseDelivCost(desc);
+  }
+
+  // Оставляем coRenderUpsell как заглушку для совместимости
+  function coRenderUpsell() {
+    coRenderAddons();
+    coRenderUpsellGrid();
+  }
+
+  function coGoBackToMenu() {
+    closeCheckoutPage();
+    showToast('🛒 Корзина сохранена', 'Можете продолжить выбор блюд', 'added');
   }
 
   function coInitPhoneMask() {
@@ -7139,6 +7507,10 @@
   // ============================================================
   var _copyToastTimer = null;
   function copyPromoCode(code, btn) {
+    // Сохраняем промокод в сессию при копировании
+    savedPromo = code;
+    activePromoCode = code;
+    localStorage.setItem('swl_promo', code);
     var toast = document.getElementById('copyToast');
     function onCopied() {
       toast.textContent = '✓ Промокод ' + code + ' скопирован в буфер обмена';

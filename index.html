@@ -1763,22 +1763,38 @@
     .co-upsell-card {
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px 10px;
+      overflow: hidden;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
       background: var(--surface);
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 0;
     }
     .co-upsell-card:hover { border-color: rgba(232,168,71,0.4); }
     .co-upsell-card.in-cart { border-color: var(--accent); background: rgba(232,168,71,0.08); }
-    .co-upsell-card-emoji { font-size: 24px; }
-    .co-upsell-card-name { font-size: 0.75rem; font-weight: 500; color: var(--text); line-height: 1.3; }
-    .co-upsell-card-price { font-size: 0.82rem; color: var(--accent); font-weight: 700; }
+    .co-upsell-card-img {
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      overflow: hidden;
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .co-upsell-card-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .co-upsell-card-emoji { font-size: 28px; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    .co-upsell-card-name { font-size: 0.75rem; font-weight: 500; color: var(--text); line-height: 1.3; padding: 8px 8px 2px; }
+    .co-upsell-card-price { font-size: 0.82rem; color: var(--accent); font-weight: 700; padding: 0 8px; }
     .co-upsell-card-btn {
-      margin-top: 4px;
+      margin: 6px 8px 8px;
+      border-radius: 8px;
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--accent);
@@ -7179,7 +7195,10 @@
       var card = document.createElement('div');
       card.className = 'co-upsell-card' + (inCart ? ' in-cart' : '');
       card.innerHTML =
-        '<div class="co-upsell-card-emoji">' + item.emoji + '</div>' +
+        '<div class="co-upsell-card-img">' +
+          '<img src="photos/' + item.id + '.jpg" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+          '<div class="co-upsell-card-emoji" style="display:none">' + item.emoji + '</div>' +
+        '</div>' +
         '<div class="co-upsell-card-name">' + item.name + '</div>' +
         '<div class="co-upsell-card-price">' + item.price + ' ₽</div>' +
         '<button class="co-upsell-card-btn">' + (inCart ? '✓ В корзине' : '+ Добавить') + '</button>';

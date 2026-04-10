@@ -5095,13 +5095,17 @@
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
           ${item.isDeal ? '<div style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-bottom:2px">🔥 Акция дня — скидка 10%</div>' : ''}
-          <div class="cart-item-price">${fmt(item.price * item.qty)} ₽</div>
+          ${item.isGift ? '<div style="font-size:0.72rem;color:#4ade80;font-weight:600;margin-bottom:2px">🎁 Подарок по промокоду</div>' : ''}
+          <div class="cart-item-price">${item.isGift ? '<span style="color:#4ade80">Бесплатно</span>' : fmt(item.price * item.qty) + ' ₽'}</div>
         </div>
-        <div class="qty-control">
-          <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
-          <span class="qty-num">${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty(${item.id}, +1)">+</button>
-        </div>
+        ${item.isGift
+          ? '<div style="font-size:0.8rem;color:var(--text-2);align-self:center">×1</div>'
+          : `<div class="qty-control">
+              <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+              <span class="qty-num">${item.qty}</span>
+              <button class="qty-btn" onclick="changeQty(${item.id}, +1)">+</button>
+             </div>`
+        }
       </div>
     `).join('');
 
@@ -6066,10 +6070,11 @@
     '1LOVE': {
       label: '1LOVE',
       desc: 'Первый заказ — ролл «Филадельфия лайт с огурцом» в подарок (8 шт)',
+      gift: { id: 86, name: 'Филадельфия лайт с огурцом (подарок)', emoji: '🎁', price: 0, isGift: true },
       check: function() {
         var total = getCartTotal();
         if (total < 999) return { ok: false, reason: 'Минимальная сумма заказа 999 ₽. Не хватает ' + (999 - total) + ' ₽.' };
-        return { ok: true, msg: '🎉 Промокод применён! К заказу добавят ролл «Филадельфия лайт с огурцом»' };
+        return { ok: true, msg: '🎉 Промокод применён! Ролл «Филадельфия лайт с огурцом» добавлен в корзину' };
       }
     },
     'BDAY1': {
@@ -6126,11 +6131,32 @@
       var checkoutInput = document.getElementById('checkoutPromoInput');
       if (cartInput) cartInput.value = c;
       if (checkoutInput) checkoutInput.value = c;
+      // Добавить подарок в корзину если есть
+      if (promo.gift) {
+        removePromoGifts(); // убрать предыдущий подарок если был
+        cart.push(Object.assign({}, promo.gift, { qty: 1 }));
+        saveCart();
+        updateCartUI();
+        if (typeof coRenderItems === 'function') coRenderItems();
+        if (typeof coUpdateSummary === 'function') coUpdateSummary();
+      }
     } else {
       msgEl.innerHTML = '<span style="color:var(--accent)">⚠️ <strong>' + promo.desc + '</strong><br>' + result.reason + '</span>';
       inputEl.style.borderColor = 'var(--accent)';
       activePromoCode = '';
+      removePromoGifts();
     }
+  }
+
+  // Удаляет все подарочные позиции из корзины
+  function removePromoGifts() {
+    var had = cart.some(function(x) { return x.isGift; });
+    if (!had) return;
+    cart = cart.filter(function(x) { return !x.isGift; });
+    saveCart();
+    updateCartUI();
+    if (typeof coRenderItems === 'function') coRenderItems();
+    if (typeof coUpdateSummary === 'function') coUpdateSummary();
   }
 
   function applyPromoFromCart() {

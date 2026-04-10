@@ -5308,7 +5308,7 @@
 
   var chopstickCount = 1;
   function changeChopsticks(delta) {
-    chopstickCount = Math.max(0, Math.min(10, chopstickCount + delta));
+    chopstickCount = Math.max(0, chopstickCount + delta);
     document.getElementById('chopstickVal').textContent = chopstickCount;
   }
 
@@ -7275,7 +7275,7 @@
         if (chopQty > 1) { chopQty--; coChopsticks = chopQty; document.getElementById('coChopstickVal') && (document.getElementById('coChopstickVal').textContent = chopQty); buildChopCard(); }
       });
       chopCard.querySelector('.chop-plus').addEventListener('click', function() {
-        if (chopQty < 12) { chopQty++; coChopsticks = chopQty; document.getElementById('coChopstickVal') && (document.getElementById('coChopstickVal').textContent = chopQty); buildChopCard(); }
+        { chopQty++; coChopsticks = chopQty; buildChopCard(); }
       });
       chopCard.querySelector('.chop-add').addEventListener('click', function() {
         // Убираем предыдущие палочки из корзины

@@ -99,7 +99,7 @@ $post = array(
     'apart'  => trim(fp_get($data, 'flat', '')),
     'descr'  => $descr,
     'pay'    => fp_get($data, 'pay', '2'),
-    'person' => max(0, (int) fp_get($data, 'chopsticks', 1)),
+    'person' => min(6, max(0, (int) fp_get($data, 'chopsticks', 1))),
     'point'  => 746,
 );
 

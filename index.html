@@ -4318,12 +4318,16 @@
     </p>
     <div style="display:flex;flex-direction:column;gap:14px">
       <div class="form-group">
-        <label class="form-label">Ваше имя</label>
         <input type="text" id="lkName" class="form-input" placeholder="Как вас зовут?" autocomplete="given-name">
       </div>
       <div class="form-group">
         <label class="form-label">Номер телефона</label>
         <input type="tel" id="lkPhone" class="form-input" placeholder="8 (___) ___-__-__" maxlength="18" autocomplete="tel" inputmode="numeric">
+      </div>
+      <div class="form-group" id="lkBdayGroup">
+        <label class="form-label">Дата рождения <span style="color:var(--accent)">*</span></label>
+        <input type="date" id="lkBday" class="form-input">
+        <div style="font-size:0.75rem;color:var(--text-2);margin-top:5px">Нужна для промокодов именинника. После сохранения изменить нельзя.</div>
       </div>
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.88rem;color:var(--text-2);line-height:1.5">
         <input type="checkbox" id="lkConsent" style="margin-top:2px;accent-color:var(--accent);width:18px;height:18px;flex-shrink:0">
@@ -7651,6 +7655,19 @@
     document.getElementById('lkName').value  = '';
     document.getElementById('lkPhone').value = '';
     document.getElementById('lkConsent').checked = false;
+    // Если дата рождения уже сохранена — подставляем и блокируем поле
+    var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');
+    var bdayInput = document.getElementById('lkBday');
+    if (existing.bday) {
+      bdayInput.value = existing.bday;
+      bdayInput.disabled = true;
+      bdayInput.title = 'Дату рождения нельзя изменить после сохранения';
+      document.querySelector('#lkBdayGroup div').textContent = '⚠️ Дата рождения сохранена и не может быть изменена.';
+    } else {
+      bdayInput.value = '';
+      bdayInput.disabled = false;
+      bdayInput.title = '';
+    }
     lkInitMask();
     setTimeout(function(){ document.getElementById('lkName').focus(); }, 60);
   }
@@ -7667,12 +7684,17 @@
     var name    = document.getElementById('lkName').value.trim();
     var phone   = document.getElementById('lkPhone').value.replace(/\D/g,'');
     var consent = document.getElementById('lkConsent').checked;
+    var bday    = document.getElementById('lkBday').value;
     var err     = document.getElementById('lkError');
     err.style.display = 'none';
-    if (!name)             { err.textContent = 'Введите ваше имя';                          err.style.display = 'block'; document.getElementById('lkName').focus();  return; }
-    if (phone.length < 11) { err.textContent = 'Введите корректный номер телефона';          err.style.display = 'block'; document.getElementById('lkPhone').focus(); return; }
-    if (!consent)          { err.textContent = 'Подтвердите, что это ваш номер телефона';   err.style.display = 'block'; return; }
-    localStorage.setItem(LK_KEY, JSON.stringify({ name: name, phone: phone }));
+    if (!name)             { err.textContent = 'Введите ваше имя';                         err.style.display = 'block'; document.getElementById('lkName').focus();  return; }
+    if (phone.length < 11) { err.textContent = 'Введите корректный номер телефона';         err.style.display = 'block'; document.getElementById('lkPhone').focus(); return; }
+    if (!bday)             { err.textContent = 'Укажите дату рождения — она нужна для промокодов'; err.style.display = 'block'; document.getElementById('lkBday').focus(); return; }
+    if (!consent)          { err.textContent = 'Подтвердите, что это ваш номер телефона';  err.style.display = 'block'; return; }
+    // Дату рождения сохраняем отдельно и больше не даём менять
+    var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');
+    var savedBday = existing.bday || bday; // если уже была сохранена — берём старую
+    localStorage.setItem(LK_KEY, JSON.stringify({ name: name, phone: phone, bday: savedBday }));
     lkUpdateHeader();
     closeLk();
   }

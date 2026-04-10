@@ -7490,7 +7490,7 @@
       chopsticks: coChopsticks, cash_from: cashFrom,
       preorder_date: preDate, preorder_time: preTime,
       order_total: total, promo_code: coActivePromo || '',
-      items: cart.map(function(i){ return {id:i.id, qty:i.qty, price:i.price}; })
+      items: cart.map(function(i){ return {id:i.id, qty:i.qty, price:i.price, name:i.name, isGift:!!i.isGift}; })
     };
     var btn = document.getElementById('coSubmitBtn');
     btn.disabled = true; btn.textContent = 'Отправляем...';

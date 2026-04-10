@@ -103,16 +103,25 @@ $post = array(
     'point'  => 746,
 );
 
+$giftNotes = array();
 foreach (array_values($items) as $i => $item) {
     $art   = (int) fp_get($item, 'id', 0);
     $qty   = max(1, (int) fp_get($item, 'qty', 1));
     $price = fp_get($item, 'price', null);
+    $isGift = !empty($item['isGift']) || (float)$price === 0.0;
     if ($art <= 0) continue;
     $post['product[' . $i . ']']     = $art;
     $post['product_kol[' . $i . ']'] = $qty;
-    if ($price !== null && $price !== '') {
+    if (!$isGift && $price !== null && $price !== '' && (float)$price > 0) {
         $post['product_price[' . $i . ']'] = (float) $price;
     }
+    if ($isGift) {
+        $giftName = isset($item['name']) ? $item['name'] : ('арт.' . $art);
+        $giftNotes[] = '🎁 ПОДАРОК (бесплатно): ' . $giftName . ' × ' . $qty;
+    }
+}
+if (!empty($giftNotes)) {
+    $descr = implode(' | ', array_filter(array_merge(array($descr), $giftNotes)));
 }
 
 $postStr = http_build_query($post);

@@ -5146,6 +5146,9 @@
       var cartItem = cart.find(function(x) { return x.id === item.id; });
       var qty = cartItem ? cartItem.qty : 0;
 
+      // Сохраняем dish-meta перед заменой innerHTML (JS мог переместить её сюда)
+      var meta = footer.querySelector('.dish-meta');
+
       if (qty === 0) {
         footer.innerHTML = '<button class="add-btn">+ В корзину</button>';
         footer.querySelector('.add-btn').addEventListener('click', function() {
@@ -5161,6 +5164,9 @@
         footer.querySelector('.dish-minus').addEventListener('click', function() { changeQty(item.id, -1); });
         footer.querySelector('.dish-plus').addEventListener('click',  function() { changeQty(item.id,  1); });
       }
+
+      // Возвращаем meta обратно (price + weight)
+      if (meta) footer.appendChild(meta);
     });
   }
 

@@ -7031,18 +7031,20 @@
   }
 
   function coApplyPromo() {
-    var code = document.getElementById('coPromoInput').value.trim().toUpperCase();
-    var msg  = document.getElementById('coPromoMsg');
-    msg.style.display = 'block';
+    var input = document.getElementById('coPromoInput');
+    var msg   = document.getElementById('coPromoMsg');
+    // Используем checkPromoCode — он добавляет подарки в корзину
+    checkPromoCode(input.value, input, msg);
+    // Дополнительно считаем скидку для итога (СВ10)
+    var code = input.value.trim().toUpperCase();
     var subtotal = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
-    // Reuse existing promo validation
     var result = validatePromoCode(code, subtotal, coDeliveryType);
     if (result.valid) {
-      coActivePromo = code; coPromoDiscount = result.discount || 0;
-      msg.style.color = '#4caf50'; msg.textContent = '✓ ' + result.message;
+      coActivePromo = code;
+      coPromoDiscount = result.discount || 0;
     } else {
-      coActivePromo = null; coPromoDiscount = 0;
-      msg.style.color = '#e05a5a'; msg.textContent = '✗ ' + result.message;
+      coActivePromo = null;
+      coPromoDiscount = 0;
     }
     coUpdateSummary();
   }

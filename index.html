@@ -2458,40 +2458,7 @@
     .footer-links a { font-size: 0.78rem; color: var(--text-2); transition: color 0.2s; }
     .footer-links a:hover { color: var(--accent); }
 
-    /* ============================================================
-       CUSTOM CURSOR
-    ============================================================ */
-    @media (hover: hover) and (pointer: fine) {
-      body { cursor: none; }
-      a, button, [onclick], .dish-card, .promo-card, .review-card, label { cursor: none; }
-    }
-    .cursor {
-      position: fixed;
-      top: 0; left: 0;
-      pointer-events: none;
-      z-index: 9999;
-      mix-blend-mode: difference;
-    }
-    .cursor-dot {
-      position: absolute;
-      width: 8px; height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: transform 0.1s, width 0.2s, height 0.2s, opacity 0.2s;
-    }
-    .cursor-ring {
-      position: absolute;
-      width: 36px; height: 36px;
-      border: 1.5px solid rgba(232,168,71,0.7);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: transform 0.08s, width 0.25s cubic-bezier(0.4,0,0.2,1), height 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.25s;
-    }
-    .cursor.hovering .cursor-dot { width: 16px; height: 16px; }
-    .cursor.hovering .cursor-ring { width: 60px; height: 60px; opacity: 0.5; }
-    .cursor.clicking .cursor-dot { transform: translate(-50%,-50%) scale(0.7); }
-    @media (hover: none) { .cursor { display: none; } }
+    /* кастомный курсор отключён — используется системный */
 
     /* ============================================================
        HERO CANVAS (particles)
@@ -3006,11 +2973,7 @@
   <p class="gp-important">Обращение принимается в течение часа после получения заказа и при сохранении 90% блюда.</p>
 </div>
 
-<!-- Custom cursor -->
-<div class="cursor" id="cursor">
-  <div class="cursor-ring" id="cursorRing"></div>
-  <div class="cursor-dot" id="cursorDot"></div>
-</div>
+
 
 <!-- ============================================================
      HEADER
@@ -6468,41 +6431,7 @@
       });
   };
 
-  // ============================================================
-  // CUSTOM CURSOR
-  // ============================================================
-  (function() {
-    const cursor = document.getElementById('cursor');
-    const dot    = document.getElementById('cursorDot');
-    const ring   = document.getElementById('cursorRing');
-    if (!cursor || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-
-    let mx = 0, my = 0, rx = 0, ry = 0;
-
-    document.addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      dot.style.left  = mx + 'px';
-      dot.style.top   = my + 'px';
-    });
-
-    // ring follows with lag
-    function animRing() {
-      rx += (mx - rx) * 0.12;
-      ry += (my - ry) * 0.12;
-      ring.style.left = rx + 'px';
-      ring.style.top  = ry + 'px';
-      requestAnimationFrame(animRing);
-    }
-    animRing();
-
-    const hoverTargets = 'a, button, [onclick], .dish-card, .promo-card, .review-card, label, .upsell-chip, .payment-opt, .cat-btn';
-    document.querySelectorAll(hoverTargets).forEach(el => {
-      el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
-      el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
-    });
-    document.addEventListener('mousedown', () => cursor.classList.add('clicking'));
-    document.addEventListener('mouseup',   () => cursor.classList.remove('clicking'));
-  })();
+  // кастомный курсор отключён — используется системный
 
   // ============================================================
   // HERO PARTICLES

@@ -4504,8 +4504,9 @@
             <button class="co-time-btn" id="coTimeScheduled" onclick="coSetTimeMode('scheduled')">📅 На дату и время</button>
           </div>
           <div id="coTimeSlotsWrap" style="display:none">
-            <input type="date" id="coDate" class="form-input" style="max-width:220px;margin-bottom:12px">
+            <input type="date" id="coDate" class="form-input" style="max-width:220px;margin-bottom:12px" onchange="coGenerateTimeSlots()">
             <div class="co-time-slots" id="coTimeSlots"></div>
+            <textarea id="coTimeComment" class="form-input" rows="2" placeholder="Уточните время или пожелания (необязательно)" style="resize:none;width:100%;box-sizing:border-box;margin-top:10px"></textarea>
           </div>
         </div>
 
@@ -6996,6 +6997,7 @@
     var del  = document.getElementById('coSumDelivery');
     if (type === 'self') { del.textContent = 'Бесплатно'; note.style.display = 'none'; }
     else                 { del.textContent = 'Уточним';   note.style.display = ''; }
+    coGenerateTimeSlots();
     coUpdateSummary();
   }
 
@@ -7009,15 +7011,34 @@
 
   function coInitDate() {
     var inp = document.getElementById('coDate');
-    var d = new Date(); d.setDate(d.getDate() + 1);
-    inp.value = d.toISOString().split('T')[0];
-    inp.min = new Date().toISOString().split('T')[0];
+    var today = new Date().toISOString().split('T')[0];
+    inp.value = today;
+    inp.min = today;
   }
 
   function coGenerateTimeSlots() {
     var c = document.getElementById('coTimeSlots');
     c.innerHTML = '';
-    for (var m = 11*60; m <= 21*60+30; m += 30) {
+    coSelectedSlot = null;
+
+    var dateInp = document.getElementById('coDate');
+    var selectedDate = dateInp ? dateInp.value : '';
+    var now = new Date();
+    var today = now.toISOString().split('T')[0];
+    var isToday = selectedDate === today;
+
+    // Диапазон зависит от типа получения
+    var isSelf = coDeliveryType === 'self';
+    var startMin = isSelf ? (10*60+30) : 11*60;   // самовывоз 10:30, доставка 11:00
+    var endMin   = isSelf ? 22*60       : (22*60+30); // самовывоз до 22:00, доставка до 22:30
+
+    // Для сегодня — только слоты не раньше чем через 1 час
+    var minAllowed = isToday ? (now.getHours()*60 + now.getMinutes() + 60) : 0;
+
+    var hasSlots = false;
+    for (var m = startMin; m <= endMin; m += 30) {
+      if (isToday && m < minAllowed) continue;
+      hasSlots = true;
       var h = Math.floor(m/60), min = m%60;
       var lbl = String(h).padStart(2,'0') + ':' + String(min).padStart(2,'0');
       (function(label) {
@@ -7029,6 +7050,10 @@
         };
         c.appendChild(btn);
       })(lbl);
+    }
+
+    if (!hasSlots) {
+      c.innerHTML = '<div style="color:var(--text-2);font-size:0.85rem;padding:4px 0">На сегодня слотов нет — выберите другую дату</div>';
     }
   }
 
@@ -7427,12 +7452,18 @@
       floor    = document.getElementById('coFloor').value.trim();
       flat     = document.getElementById('coFlat').value.trim();
     }
-    var comment  = document.getElementById('coComment').value.trim();
-    // Добавляем пометку оператору если использован промокод на первый заказ
+    var commentParts = [];
+    // Пометка промокода первого заказа
     if (coActivePromo === '1LOVE') {
-      var firstOrderNote = '⚠️ ПРОМОКОД 1LOVE (первый заказ) — проверьте в базе FrontPad, что этот номер телефона (' + document.getElementById('coPhone').value.trim() + ') ранее не заказывал. Если заказывал — промокод не действует.';
-      comment = comment ? firstOrderNote + '\n' + comment : firstOrderNote;
+      commentParts.push('⚠️ ПРОМОКОД 1LOVE (первый заказ) — проверьте в базе FrontPad, что этот номер телефона (' + document.getElementById('coPhone').value.trim() + ') ранее не заказывал. Если заказывал — промокод не действует.');
     }
+    // Пожелание по времени
+    var timeComment = (document.getElementById('coTimeComment') || {}).value;
+    if (timeComment && timeComment.trim()) commentParts.push('Время: ' + timeComment.trim());
+    // Основной комментарий курьеру
+    var mainComment = document.getElementById('coComment').value.trim();
+    if (mainComment) commentParts.push(mainComment);
+    var comment = commentParts.join('\n');
     var cashFrom = (coPaymentMethod === 2 && !coNoCash) ? document.getElementById('coCashFrom').value.trim() : (coNoCash ? 'Без сдачи' : '');
     var preDate  = coTimeMode === 'scheduled' ? document.getElementById('coDate').value : '';
     var preTime  = coTimeMode === 'scheduled' ? (coSelectedSlot || '') : '';

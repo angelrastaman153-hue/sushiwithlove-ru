@@ -5126,6 +5126,45 @@
     document.getElementById('summarySubtotal').textContent = fmt(total);
     document.getElementById('summaryDelivery').textContent = delivery === 0 ? 'Бесплатно' : fmt(delivery);
     document.getElementById('summaryTotal').textContent = fmt(total + delivery);
+
+    refreshDishBtns();
+  }
+
+  // Переключение кнопок «+ В корзину» ↔ «− qty +» на карточках блюд
+  function refreshDishBtns() {
+    document.querySelectorAll('.dish-footer').forEach(function(footer) {
+      // Первый проход: парсим item из onclick и сохраняем в data-item
+      if (!footer.dataset.item) {
+        var btn = footer.querySelector('.add-btn');
+        if (!btn) return;
+        var m = btn.getAttribute('onclick').match(/addToCart\((\{[^)]+\})\)/);
+        if (!m) return;
+        try {
+          var item = (new Function('return ' + m[1]))();
+          footer.dataset.item = JSON.stringify(item);
+        } catch(e) { return; }
+      }
+
+      var item = JSON.parse(footer.dataset.item);
+      var cartItem = cart.find(function(x) { return x.id === item.id; });
+      var qty = cartItem ? cartItem.qty : 0;
+
+      if (qty === 0) {
+        footer.innerHTML = '<button class="add-btn">+ В корзину</button>';
+        footer.querySelector('.add-btn').addEventListener('click', function() {
+          addToCart(item);
+        });
+      } else {
+        footer.innerHTML =
+          '<div class="qty-control">' +
+            '<button class="qty-btn dish-minus">−</button>' +
+            '<span class="qty-num">' + qty + '</span>' +
+            '<button class="qty-btn dish-plus">+</button>' +
+          '</div>';
+        footer.querySelector('.dish-minus').addEventListener('click', function() { changeQty(item.id, -1); });
+        footer.querySelector('.dish-plus').addEventListener('click',  function() { changeQty(item.id,  1); });
+      }
+    });
   }
 
   function pluralize(n, one, few, many) {

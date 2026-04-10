@@ -2499,6 +2499,20 @@
       background: rgba(255,255,255,0.05);
       display: none;
     }
+    .promo-active-badge {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #4ade80;
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.25);
+      border-radius: 8px;
+      padding: 7px 12px;
+      margin-top: 10px;
+    }
+    .promo-card[data-active] .promo-active-badge { display: flex; }
 
     .promo-extra {
       font-size: 0.8rem;
@@ -3192,7 +3206,7 @@
     <div class="promo-grid stagger-grid">
 
       <!-- Карточка 1: Первый заказ -->
-      <div class="promo-card reveal">
+      <div class="promo-card reveal" data-promo="1LOVE">
         <div class="promo-img">
           <img src="photos/promo/promo-1love.jpg.png" alt="Промокод 1LOVE" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p1">🎁</div>
@@ -3204,6 +3218,7 @@
             <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           </div>
           <div class="promo-desc">К заказу от 999 ₽ — ролл «Филадельфия лайт с огурцом» в подарок</div>
+          <div class="promo-active-badge">✓ Промокод добавлен в корзину</div>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -3213,7 +3228,7 @@
       </div>
 
       <!-- Карточка 2: Именинникам -->
-      <div class="promo-card reveal reveal-delay-1">
+      <div class="promo-card reveal reveal-delay-1" data-promo="BDAY1,BDAY2">
         <div class="promo-img">
           <img src="photos/promo/promo-bday.jpg.png" alt="Промокод именинникам" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p2">🎂</div>
@@ -3225,6 +3240,7 @@
             <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           </div>
           <div class="promo-desc">Подарок к заказу в день рождения</div>
+          <div class="promo-active-badge">✓ Промокод добавлен в корзину</div>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -3238,7 +3254,7 @@
       </div>
 
       <!-- Карточка 3: Самовывоз -->
-      <div class="promo-card reveal reveal-delay-2">
+      <div class="promo-card reveal reveal-delay-2" data-promo="СВ10">
         <div class="promo-img">
           <img src="photos/promo/promo-sv10.jpg.png" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p3">🚶</div>
@@ -3250,6 +3266,7 @@
             <button class="promo-hint-btn" aria-label="Условия акции">?</button>
           </div>
           <div class="promo-desc">Заберите заказ выгоднее</div>
+          <div class="promo-active-badge">✓ Промокод добавлен в корзину</div>
         </div>
         <div class="promo-tip">
           <button class="promo-tip-close">✕</button>
@@ -6236,6 +6253,7 @@
   // INIT
   // ============================================================
   updateCartUI();
+  refreshPromoBadges();
 
   // На мобайле перемещаем виджет акции ПОСЛЕ hero-screen (перед промо-секцией)
   if (window.innerWidth <= 768) {
@@ -7502,12 +7520,22 @@
   // ============================================================
   // КОПИРОВАНИЕ ПРОМОКОДА
   // ============================================================
+  function refreshPromoBadges() {
+    document.querySelectorAll('.promo-card[data-promo]').forEach(function(card) {
+      var codes = card.dataset.promo.split(',');
+      var isActive = savedPromo && codes.indexOf(savedPromo) !== -1;
+      if (isActive) card.setAttribute('data-active', '1');
+      else card.removeAttribute('data-active');
+    });
+  }
+
   var _copyToastTimer = null;
   function copyPromoCode(code, btn) {
     // Сохраняем промокод в сессию при копировании
     savedPromo = code;
     activePromoCode = code;
     localStorage.setItem('swl_promo', code);
+    refreshPromoBadges();
     var toast = document.getElementById('copyToast');
     function onCopied() {
       toast.textContent = '✓ Промокод ' + code + ' скопирован в буфер обмена';

@@ -4326,7 +4326,7 @@
       </div>
       <div class="form-group" id="lkBdayGroup">
         <label class="form-label">Дата рождения <span style="color:var(--accent)">*</span></label>
-        <input type="date" id="lkBday" class="form-input">
+        <input type="date" id="lkBday" class="form-input" min="1936-01-01" max="2012-12-31">
         <div style="font-size:0.75rem;color:var(--text-2);margin-top:5px">Нужна для промокодов именинника. После сохранения изменить нельзя.</div>
       </div>
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.88rem;color:var(--text-2);line-height:1.5">
@@ -7367,6 +7367,11 @@
       flat     = document.getElementById('coFlat').value.trim();
     }
     var comment  = document.getElementById('coComment').value.trim();
+    // Добавляем пометку оператору если использован промокод на первый заказ
+    if (coActivePromo === '1LOVE') {
+      var firstOrderNote = '⚠️ ПРОМОКОД 1LOVE (первый заказ) — проверьте в базе FrontPad, что этот номер телефона (' + document.getElementById('coPhone').value.trim() + ') ранее не заказывал. Если заказывал — промокод не действует.';
+      comment = comment ? firstOrderNote + '\n' + comment : firstOrderNote;
+    }
     var cashFrom = (coPaymentMethod === 2 && !coNoCash) ? document.getElementById('coCashFrom').value.trim() : (coNoCash ? 'Без сдачи' : '');
     var preDate  = coTimeMode === 'scheduled' ? document.getElementById('coDate').value : '';
     var preTime  = coTimeMode === 'scheduled' ? (coSelectedSlot || '') : '';
@@ -7690,6 +7695,10 @@
     if (!name)             { err.textContent = 'Введите ваше имя';                         err.style.display = 'block'; document.getElementById('lkName').focus();  return; }
     if (phone.length < 11) { err.textContent = 'Введите корректный номер телефона';         err.style.display = 'block'; document.getElementById('lkPhone').focus(); return; }
     if (!bday)             { err.textContent = 'Укажите дату рождения — она нужна для промокодов'; err.style.display = 'block'; document.getElementById('lkBday').focus(); return; }
+    var bdayDate = new Date(bday);
+    var now = new Date();
+    var age = now.getFullYear() - bdayDate.getFullYear() - (now < new Date(now.getFullYear(), bdayDate.getMonth(), bdayDate.getDate()) ? 1 : 0);
+    if (age < 14 || age > 90) { err.textContent = 'Укажите корректную дату рождения (от 14 до 90 лет)'; err.style.display = 'block'; document.getElementById('lkBday').focus(); return; }
     if (!consent)          { err.textContent = 'Подтвердите, что это ваш номер телефона';  err.style.display = 'block'; return; }
     // Дату рождения сохраняем отдельно и больше не даём менять
     var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');

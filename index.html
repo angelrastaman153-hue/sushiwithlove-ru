@@ -4431,6 +4431,16 @@
               <div class="co-delivery-progress-fill" id="coDelivProgressFill" style="width:0%"></div>
             </div>
           </div>
+          <!-- Подъезд, этаж, кв., домофон, комментарий -->
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+              <input type="text" id="coEntrance" class="form-input" placeholder="Подъезд">
+              <input type="text" id="coFloor" class="form-input" placeholder="Этаж">
+              <input type="text" id="coFlat" class="form-input" placeholder="Кв.">
+              <input type="text" id="coIntercom" class="form-input" placeholder="Домофон">
+            </div>
+            <textarea id="coComment" class="form-input" rows="2" placeholder="Комментарий курьеру (необязательно)" style="resize:none;width:100%;box-sizing:border-box"></textarea>
+          </div>
         </div>
 
         <!-- Самовывоз -->
@@ -4523,28 +4533,6 @@
             <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
               <input type="text" id="coCashFrom" class="form-input" placeholder="Сдача с суммы (необязательно)">
               <button class="btn btn-ghost" id="coNoCashBtn" onclick="coToggleNoCash()" style="height:44px;white-space:nowrap">Без сдачи</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- БЛОК 10: Доп. информация -->
-        <div class="co-block">
-          <div class="co-block-title">Дополнительно</div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
-              <input type="text" id="coEntrance" class="form-input" placeholder="Подъезд">
-              <input type="text" id="coFloor" class="form-input" placeholder="Этаж">
-              <input type="text" id="coFlat" class="form-input" placeholder="Кв.">
-              <input type="text" id="coIntercom" class="form-input" placeholder="Домофон">
-            </div>
-            <textarea id="coComment" class="form-input" rows="2" placeholder="Комментарий курьеру (необязательно)" style="resize:none;width:100%;box-sizing:border-box"></textarea>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:0.88rem;color:var(--text-2)">🥢 Палочки (пар)</span>
-              <div style="display:flex;align-items:center;gap:12px">
-                <button class="chopstick-btn" onclick="coChangeChopsticks(-1)">−</button>
-                <span id="coChopstickVal" style="font-weight:700;min-width:20px;text-align:center">1</span>
-                <button class="chopstick-btn" onclick="coChangeChopsticks(1)">+</button>
-              </div>
             </div>
           </div>
         </div>
@@ -6095,6 +6083,8 @@
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = 'toast';
+    toast.style.cursor = 'pointer';
+    toast.onclick = function() { openCheckoutPage(); };
     const icons = { added: '✅', promo: '🎉', error: '⚠️' };
     toast.innerHTML = `
       <div class="toast-icon">${icons[type] || '✅'}</div>
@@ -6311,7 +6301,7 @@
   // ============================================================
   var _mapPickerInited = false;
   var _mapCurrentStreet = '', _mapCurrentHouse = '', _mapCurrentZoneDesc = '';
-  var _leafletMap = null, _leafletMarker = null;
+  var _leafletMap = null, _leafletMarker = null, _mapPlaceMarkerFn = null;
 
   // ============================================================
   // DELIVERY ZONES DATA
@@ -6499,6 +6489,7 @@
     map.on('click', function(e) {
       _placeMarker(parseFloat(e.latlng.lat.toFixed(6)), parseFloat(e.latlng.lng.toFixed(6)));
     });
+    _mapPlaceMarkerFn = _placeMarker;
   }
 
   window.applyMapAddress = function() {
@@ -6530,7 +6521,7 @@
     if (!q) return;
     var btn = input.nextElementSibling;
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
-    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(q) + '&format=json&limit=1&accept-language=ru&countrycodes=ru&viewbox=63.5,56.5,68.0,54.5')
+    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курган ' + q) + '&format=json&limit=1&accept-language=ru&countrycodes=ru&bounded=1&viewbox=63.5,56.5,68.0,54.5')
       .then(function(r) { return r.json(); })
       .then(function(results) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
@@ -6540,8 +6531,7 @@
         }
         var lat = parseFloat(results[0].lat), lng = parseFloat(results[0].lon);
         _leafletMap.setView([lat, lng], 16);
-        // find _placeMarker — call map click equivalent
-        _leafletMap.fire('click', { latlng: { lat: lat, lng: lng } });
+        if (_mapPlaceMarkerFn) _mapPlaceMarkerFn(lat, lng);
       })
       .catch(function() {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
@@ -6892,7 +6882,7 @@
     document.getElementById('coLayout').style.display = '';
     document.getElementById('coSuccessScreen').style.display = 'none';
     coChopsticks = 1;
-    document.getElementById('coChopstickVal').textContent = '1';
+
     coNoCash = false;
     coPromoDiscount = 0;
 
@@ -7059,7 +7049,6 @@
 
   function coChangeChopsticks(d) {
     coChopsticks = Math.max(0, coChopsticks + d);
-    document.getElementById('coChopstickVal').textContent = coChopsticks;
   }
 
   function coApplyPromo() {
@@ -7218,7 +7207,6 @@
         '<div class="co-addon-header">' +
           '<span class="co-addon-emoji">🥢</span>' +
           '<span class="co-addon-name">Палочки</span>' +
-          '<span class="co-addon-badge" style="background:rgba(74,222,128,0.12);color:#4ade80">до 6 пар бесплатно</span>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:12px;margin:6px 0">' +
           '<button class="co-addon-size-btn chop-minus">−</button>' +

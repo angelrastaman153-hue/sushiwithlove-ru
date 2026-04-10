@@ -5077,19 +5077,16 @@
     // Items list
     const list = document.getElementById('cartItemsList');
     const empty = document.getElementById('cartEmpty');
-    const upsell = document.getElementById('cartUpsell');
     const footer = document.getElementById('cartFooter');
 
     if (count === 0) {
       empty.style.display = 'flex';
       list.innerHTML = '';
-      upsell.style.display = 'none';
       footer.style.display = 'none';
       return;
     }
 
     empty.style.display = 'none';
-    upsell.style.display = 'block';
     footer.style.display = 'block';
 
     list.innerHTML = cart.map(item => `

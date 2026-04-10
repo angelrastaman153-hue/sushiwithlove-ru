@@ -4444,6 +4444,9 @@
             <button class="btn btn-ghost" onclick="coApplyPromo()" style="flex-shrink:0">Применить</button>
           </div>
           <div id="coPromoMsg" style="display:none;margin-top:8px;font-size:0.85rem"></div>
+          <div id="coPromoFirstOrderNote" style="display:none;margin-top:6px;font-size:0.78rem;color:var(--text-2);background:rgba(232,168,71,0.07);border:1px solid rgba(232,168,71,0.2);border-radius:8px;padding:8px 12px;line-height:1.5">
+            ℹ️ Промокод сработает только если вы заказываете у нас впервые. Оператор проверит это при подтверждении заказа.
+          </div>
         </div>
 
         <!-- БЛОК 4: Ваш заказ -->
@@ -7066,6 +7069,9 @@
       coActivePromo = null;
       coPromoDiscount = 0;
     }
+    // Показываем пометку для промокода первого заказа
+    var firstOrderNote = document.getElementById('coPromoFirstOrderNote');
+    if (firstOrderNote) firstOrderNote.style.display = (coActivePromo === '1LOVE') ? 'block' : 'none';
     coUpdateSummary();
   }
 

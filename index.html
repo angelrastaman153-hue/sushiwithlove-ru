@@ -5964,7 +5964,7 @@
     if (oldEl)  oldEl.textContent  = deal.oldPrice + ' ₽';
     if (newEl)  newEl.textContent  = deal.price + ' ₽';
     if (btn) btn.onclick = function() {
-      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, emoji: deal.emoji });
+      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji });
     };
 
     // Заполняем попап
@@ -5992,7 +5992,7 @@
     if (popupOld) popupOld.textContent = deal.oldPrice + ' ₽';
     if (popupNew) popupNew.textContent = deal.price + ' ₽';
     if (popupBtn) popupBtn.onclick = function() {
-      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, emoji: deal.emoji });
+      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji });
       closeHeroDealPopup();
     };
   })();
@@ -6017,7 +6017,7 @@
       var btn = card.querySelector('.add-btn');
       if (btn) {
         btn.onclick = function() {
-          addToCart({ id: deal.id, name: deal.name + ' (акция дня −10%)', price: deal.price, emoji: deal.emoji, isDeal: true });
+          addToCart({ id: deal.id, name: deal.name + ' (акция дня −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
         };
       }
     });
@@ -6970,7 +6970,10 @@
           '<span class="co-qty-val" id="coQty-' + item.id + '">' + item.qty + '</span>' +
           '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',1)">+</button>' +
         '</div>' +
-        '<div class="co-item-price" id="coPrice-' + item.id + '">' + fmt(item.price * item.qty) + ' ₽</div>';
+        '<div class="co-item-price" id="coPrice-' + item.id + '">' +
+          (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + ' ₽</span>' : '') +
+          '<span>' + fmt(item.price * item.qty) + ' ₽</span>' +
+        '</div>';
       list.appendChild(d);
     });
   }
@@ -6987,7 +6990,7 @@
       var qEl = document.getElementById('coQty-' + id);
       var pEl = document.getElementById('coPrice-' + id);
       if (qEl) qEl.textContent = item.qty;
-      if (pEl) pEl.textContent = fmt(item.price * item.qty) + ' ₽';
+      if (pEl) pEl.innerHTML = (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + ' ₽</span>' : '') + '<span>' + fmt(item.price * item.qty) + ' ₽</span>';
     }
     updateCartUI();
     coUpdateSummary();

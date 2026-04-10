@@ -4058,7 +4058,7 @@
             <input id="mapSearchInput" type="text" placeholder="Введите улицу и дом, например: Гоголя 7" autocomplete="off"
               style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:#2a1f14;color:var(--text-1);font-family:Manrope,sans-serif;font-size:0.88rem;outline:none"
               onkeydown="if(event.key==='Enter')mapSearch()">
-            <button onclick="mapSearch()" style="padding:9px 14px;background:var(--accent);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;white-space:nowrap">Найти</button>
+            <button id="mapSearchBtn" onclick="mapSearch()" style="padding:9px 14px;background:var(--accent);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;white-space:nowrap">Найти</button>
           </div>
           <div id="deliveryMap" style="width:100%;height:380px;flex-shrink:0;"></div>
           <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;font-size:0.75rem;color:var(--text-2)">
@@ -6318,7 +6318,41 @@
   // ============================================================
   var _mapPickerInited = false;
   var _mapCurrentStreet = '', _mapCurrentHouse = '', _mapCurrentZoneDesc = '';
-  var _leafletMap = null, _leafletMarker = null, _mapPlaceMarkerFn = null;
+  var _leafletMap = null, _leafletMarker = null;
+  var _mapPopupStyle = 'font-family:Manrope,sans-serif;min-width:190px;text-align:center';
+
+  function _mapPlaceMarker(lat, lng) {
+    if (!_leafletMap) return;
+    if (_leafletMarker) _leafletMap.removeLayer(_leafletMarker);
+    _leafletMarker = L.marker([lat, lng]).addTo(_leafletMap);
+
+    var zoneDesc = _getDeliveryZone(lat, lng);
+    _mapCurrentZoneDesc = zoneDesc;
+    var zoneHtml = _formatZonePopup(zoneDesc);
+    var ps = _mapPopupStyle;
+
+    _leafletMarker.bindPopup('<div style="' + ps + '"><div style="color:#888;font-size:0.8rem">Определяем адрес…</div>' + zoneHtml + '</div>', { maxWidth: 280 }).openPopup();
+
+    fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json&accept-language=ru&zoom=18')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var a = data.address || {};
+        _mapCurrentStreet = a.road || a.pedestrian || a.footway || a.path || '';
+        _mapCurrentHouse  = a.house_number || '';
+        var label = _mapCurrentStreet + (_mapCurrentHouse ? ', ' + _mapCurrentHouse : '') || 'Адрес не определён';
+        _leafletMarker.setPopupContent(
+          '<div style="' + ps + '">'
+          + '<div style="font-weight:700;font-size:0.9rem;margin-bottom:4px">' + label + '</div>'
+          + zoneHtml
+          + '<button onclick="applyMapAddress()" style="margin-top:8px;padding:8px 16px;background:#E8A847;border:none;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;width:100%">📍 Доставить сюда</button>'
+          + '</div>'
+        );
+        _leafletMarker.openPopup();
+      })
+      .catch(function() {
+        if (_leafletMarker) _leafletMarker.setPopupContent('<div style="' + ps + '">Не удалось определить адрес</div>' + zoneHtml);
+      });
+  }
 
   // ============================================================
   // DELIVERY ZONES DATA
@@ -6472,41 +6506,9 @@
       }).addTo(map);
     });
 
-    var ps = 'font-family:Manrope,sans-serif;min-width:190px;text-align:center';
-
-    function _placeMarker(lat, lng) {
-      if (_leafletMarker) map.removeLayer(_leafletMarker);
-      _leafletMarker = L.marker([lat, lng]).addTo(map);
-
-      var zoneDesc = _getDeliveryZone(lat, lng);
-      _mapCurrentZoneDesc = zoneDesc;
-      var zoneHtml = _formatZonePopup(zoneDesc);
-
-      _leafletMarker.bindPopup('<div style="' + ps + '"><div style="color:#888;font-size:0.8rem">Определяем адрес…</div>' + zoneHtml + '</div>', { maxWidth: 280 }).openPopup();
-
-      fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json&accept-language=ru&zoom=18')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          var a = data.address || {};
-          _mapCurrentStreet = a.road || a.pedestrian || a.footway || a.path || '';
-          _mapCurrentHouse  = a.house_number || '';
-          var label = _mapCurrentStreet + (_mapCurrentHouse ? ', ' + _mapCurrentHouse : '') || 'Адрес не определён';
-          _leafletMarker.setPopupContent(
-            '<div style="' + ps + '">'
-            + '<div style="font-weight:700;font-size:0.9rem;margin-bottom:4px">' + label + '</div>'
-            + zoneHtml
-            + '<button onclick="applyMapAddress()" style="margin-top:8px;padding:8px 16px;background:#E8A847;border:none;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;width:100%">📍 Доставить сюда</button>'
-            + '</div>'
-          );
-          _leafletMarker.openPopup();
-        })
-        .catch(function() { _leafletMarker.setPopupContent('<div style="' + ps + '">Не удалось определить адрес</div>' + zoneHtml); });
-    }
-
     map.on('click', function(e) {
-      _placeMarker(parseFloat(e.latlng.lat.toFixed(6)), parseFloat(e.latlng.lng.toFixed(6)));
+      _mapPlaceMarker(parseFloat(e.latlng.lat.toFixed(6)), parseFloat(e.latlng.lng.toFixed(6)));
     });
-    _mapPlaceMarkerFn = _placeMarker;
   }
 
   window.applyMapAddress = function() {
@@ -6533,12 +6535,12 @@
 
   window.mapSearch = function() {
     var input = document.getElementById('mapSearchInput');
-    if (!input || !_leafletMap) return;
-    var q = input.value.trim();
+    var q = input ? input.value.trim() : '';
     if (!q) return;
-    var btn = input.nextElementSibling;
+    if (!_leafletMap) { showToast('⚠️', 'Карта ещё загружается, подождите секунду'); return; }
+    var btn = document.getElementById('mapSearchBtn');
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
-    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курган ' + q) + '&format=json&limit=1&accept-language=ru&countrycodes=ru')
+    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курган ' + q) + '&format=json&limit=5&accept-language=ru&countrycodes=ru')
       .then(function(r) { return r.json(); })
       .then(function(results) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
@@ -6547,12 +6549,12 @@
           return;
         }
         var lat = parseFloat(results[0].lat), lng = parseFloat(results[0].lon);
-        _leafletMap.setView([lat, lng], 16);
-        if (_mapPlaceMarkerFn) _mapPlaceMarkerFn(lat, lng);
+        _leafletMap.setView([lat, lng], 17);
+        _mapPlaceMarker(lat, lng);
       })
       .catch(function() {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
-        showToast('⚠️', 'Ошибка поиска');
+        showToast('⚠️', 'Ошибка поиска — проверьте интернет');
       });
   };
 

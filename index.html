@@ -6490,6 +6490,14 @@
     var mapEl = document.getElementById('deliveryMap');
     if (!mapEl || mapEl._leaflet_id) return;
 
+    // Фикс: дефолтная иконка Leaflet не грузится с CDN — задаём явно
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
+
     var map = L.map('deliveryMap', { zoomControl: true }).setView([55.4507, 65.3535], 12);
     _leafletMap = map;
     // Светлые тайлы Carto Voyager (нейтральные, хорошо читаются)
@@ -6543,7 +6551,7 @@
     var statusEl = document.getElementById('mapSearchStatus');
     function setStatus(msg, color) {
       if (!statusEl) return;
-      statusEl.style.display = msg ? '' : 'none';
+      statusEl.style.display = msg ? 'block' : 'none';
       statusEl.style.color = color || 'var(--text-2)';
       statusEl.textContent = msg;
     }

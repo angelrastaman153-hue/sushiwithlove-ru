@@ -6295,7 +6295,7 @@
   // INIT
   // ============================================================
   updateCartUI();
-  refreshPromoBadges();
+  if (typeof refreshPromoBadges === 'function') refreshPromoBadges();
 
   // На мобайле перемещаем виджет акции ПОСЛЕ hero-screen (перед промо-секцией)
   if (window.innerWidth <= 768) {

@@ -4054,11 +4054,14 @@
             <span style="font-weight:700;font-size:0.95rem">📍 Укажите адрес доставки</span>
             <button onclick="closeMapPicker()" style="font-size:1.4rem;color:var(--text-2);line-height:1;background:none;border:none;cursor:pointer">✕</button>
           </div>
-          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px">
-            <input id="mapSearchInput" type="text" placeholder="Введите улицу и дом, например: Гоголя 7" autocomplete="off"
-              style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:#2a1f14;color:var(--text-1);font-family:Manrope,sans-serif;font-size:0.88rem;outline:none"
-              onkeydown="if(event.key==='Enter')mapSearch()">
-            <button id="mapSearchBtn" onclick="mapSearch()" style="padding:9px 14px;background:var(--accent);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;white-space:nowrap">Найти</button>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;gap:8px">
+              <input id="mapSearchInput" type="text" placeholder="Введите улицу и дом, например: Гоголя 7" autocomplete="off"
+                style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:#2a1f14;color:var(--text-1);font-family:Manrope,sans-serif;font-size:0.88rem;outline:none"
+                onkeydown="if(event.key==='Enter')mapSearch()">
+              <button id="mapSearchBtn" onclick="mapSearch()" style="padding:9px 14px;background:var(--accent);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;white-space:nowrap">Найти</button>
+            </div>
+            <div id="mapSearchStatus" style="display:none;margin-top:6px;font-size:0.8rem;color:var(--text-2);padding:0 2px"></div>
           </div>
           <div id="deliveryMap" style="width:100%;height:380px;flex-shrink:0;"></div>
           <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;font-size:0.75rem;color:var(--text-2)">
@@ -6537,24 +6540,33 @@
     var input = document.getElementById('mapSearchInput');
     var q = input ? input.value.trim() : '';
     if (!q) return;
-    if (!_leafletMap) { showToast('⚠️', 'Карта ещё загружается, подождите секунду'); return; }
+    var statusEl = document.getElementById('mapSearchStatus');
+    function setStatus(msg, color) {
+      if (!statusEl) return;
+      statusEl.style.display = msg ? '' : 'none';
+      statusEl.style.color = color || 'var(--text-2)';
+      statusEl.textContent = msg;
+    }
+    if (!_leafletMap) { setStatus('⚠️ Карта ещё загружается, подождите секунду', '#f87171'); return; }
     var btn = document.getElementById('mapSearchBtn');
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
+    setStatus('Ищем адрес…', 'var(--text-2)');
     fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курган ' + q) + '&format=json&limit=5&accept-language=ru&countrycodes=ru')
       .then(function(r) { return r.json(); })
       .then(function(results) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
         if (!results || !results.length) {
-          showToast('⚠️', 'Адрес не найден — попробуйте иначе');
+          setStatus('⚠️ Адрес не найден — попробуйте иначе', '#f87171');
           return;
         }
         var lat = parseFloat(results[0].lat), lng = parseFloat(results[0].lon);
-        _leafletMap.setView([lat, lng], 17);
+        setStatus('📍 Найдено: ' + (results[0].display_name || lat + ', ' + lng), '#4ade80');
+        _leafletMap.setView([lat, lng], 17, { animate: false });
         _mapPlaceMarker(lat, lng);
       })
-      .catch(function() {
+      .catch(function(err) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
-        showToast('⚠️', 'Ошибка поиска — проверьте интернет');
+        setStatus('⚠️ Ошибка: ' + (err && err.message ? err.message : 'проверьте интернет'), '#f87171');
       });
   };
 

@@ -81,6 +81,10 @@
     .reveal-delay-2 { transition-delay: 0.2s; }
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
+    /* trust-items: только fade (без translateY) — GPU layers от transform
+       конфликтуют с position:fixed шапкой на iOS Safari */
+    .trust-item.reveal { transform: none; will-change: opacity; transition: opacity 0.65s ease; }
+    .trust-item.reveal.visible { transform: none; }
 
     @media (prefers-reduced-motion: reduce) {
       .reveal { opacity: 1; transform: none; transition: none; }
@@ -2799,6 +2803,10 @@
       .trust-icon { display: none; }
       .trust-item { justify-content: center; }
       .trust-num { font-size: 1.5rem; white-space: nowrap; }
+      /* На мобайле trust-items: только opacity-fade, без translateY.
+         translateY + will-change:transform создаёт GPU layers → конфликт с fixed шапкой */
+      .trust-item.reveal { transform: none; will-change: opacity; }
+      .trust-item.reveal.visible { transform: none; }
 
       .promo-grid {
         grid-template-columns: 1fr;

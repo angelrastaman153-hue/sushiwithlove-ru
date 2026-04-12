@@ -5058,6 +5058,27 @@
   const FREE_DELIVERY_THRESHOLD = 900;
   const DELIVERY_COST = 100;
 
+  // ID позиций, на которые НЕ распространяется скидка СВ10 (самовывоз)
+  // Исключены: напитки, соусы, десерты, палочки
+  var PROMO_EXCLUDED_IDS = {
+    142:1, 141:1,           // Напитки: Кола, Сок
+    121:1, 172:1,           // Соевый от шефа (50мл, 100мл)
+    123:1, 120:1, 128:1,   // Имбирь (30г, 50г, 100г)
+    127:1, 138:1, 139:1,   // Васаби (20г, 40г, 60г)
+    129:1, 130:1, 132:1, 133:1, // Соусы из addons
+    355:1,                  // Моти (десерт)
+    604:1                   // Палочки
+  };
+
+  // Сумма позиций, на которые действует скидка СВ10
+  function getDiscountableTotal() {
+    return cart.reduce(function(s, i) {
+      if (i.isGift) return s;
+      if (PROMO_EXCLUDED_IDS[i.id]) return s;
+      return s + i.price * i.qty;
+    }, 0);
+  }
+
   // Сохранённый адрес и промокод между сессиями
   var savedAddress = JSON.parse(localStorage.getItem('swl_address') || 'null');
   // структура: { text, street, house, zone }
@@ -6552,8 +6573,9 @@
     // Для СВ10 проверяем deliveryType напрямую
     if (c === 'СВ10') {
       if (deliveryType !== 'self') return { valid: false, message: 'Промокод действует только при самовывозе' };
-      var disc = Math.round(subtotal * 0.1);
-      return { valid: true, message: '🏪 Скидка 10% при самовывозе — −' + fmt(disc), discount: disc };
+      var discBase = getDiscountableTotal();
+      var disc = Math.round(discBase * 0.1);
+      return { valid: true, message: '🏪 Скидка 10% на сеты, роллы, пиццу и горячее — −' + fmt(disc), discount: disc };
     }
     var result = promo.check();
     if (result.ok) return { valid: true, message: result.msg, discount: 0 };
@@ -7329,6 +7351,25 @@
     if (mBtn) mBtn.disabled = !checked;
   }
 
+  function coItemPriceHtml(item) {
+    // Подарки
+    if (item.isGift) {
+      return (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice) + '</span>' : '')
+           + '<span style="color:#4ade80;font-weight:600">Бесплатно</span>';
+    }
+    var origTotal = item.price * item.qty;
+    // Проверяем — действует ли промо-скидка на этот товар
+    var hasSv10 = (coActivePromo === 'СВ10' && coDeliveryType === 'self' && !PROMO_EXCLUDED_IDS[item.id]);
+    if (hasSv10) {
+      var discTotal = Math.round(origTotal * 0.9);
+      return '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(origTotal) + '</span>'
+           + '<span style="color:#4caf50;font-weight:700">' + fmt(discTotal) + '</span>';
+    }
+    // Обычная цена (возможно item.originalPrice от другого промо — подарок)
+    return (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + '</span>' : '')
+         + '<span>' + fmt(origTotal) + '</span>';
+  }
+
   function coRenderItems() {
     var list = document.getElementById('coItemsList');
     list.innerHTML = '';
@@ -7351,10 +7392,7 @@
               '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',1)">+</button>' +
             '</div>'
         ) +
-        '<div class="co-item-price" id="coPrice-' + item.id + '">' +
-          (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice) + '</span>' : '') +
-          (item.isGift ? '<span style="color:#4ade80;font-weight:600">Бесплатно</span>' : '<span>' + fmt(item.price * item.qty) + '</span>') +
-        '</div>';
+        '<div class="co-item-price" id="coPrice-' + item.id + '">' + coItemPriceHtml(item) + '</div>';
       list.appendChild(d);
     });
   }
@@ -7371,7 +7409,7 @@
       var qEl = document.getElementById('coQty-' + id);
       var pEl = document.getElementById('coPrice-' + id);
       if (qEl) qEl.textContent = item.qty;
-      if (pEl) pEl.innerHTML = (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + '</span>' : '') + '<span>' + fmt(item.price * item.qty) + '</span>';
+      if (pEl) pEl.innerHTML = coItemPriceHtml(item);
     }
     updateCartUI();
     coUpdateSummary();
@@ -7395,7 +7433,9 @@
     // Если введён промокод СВ10 — перепроверяем при смене типа доставки
     var promoInput = document.getElementById('coPromoInput');
     if (promoInput && promoInput.value.trim().toUpperCase() === 'СВ10') {
-      coApplyPromo();
+      coApplyPromo(); // пересчитывает скидку и вызывает coRenderItems
+    } else {
+      coRenderItems(); // обновить отображение цен (скидки могли пропасть/появиться)
     }
   }
 
@@ -7486,7 +7526,7 @@
     checkPromoCode(input.value, input, msg);
     // Дополнительно считаем скидку для итога (СВ10)
     var code = input.value.trim().toUpperCase();
-    var subtotal = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+    var subtotal = getDiscountableTotal(); // только скидываемые позиции
     var result = validatePromoCode(code, subtotal, coDeliveryType);
     if (result.valid) {
       coActivePromo = code;

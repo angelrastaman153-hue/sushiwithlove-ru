@@ -5,6 +5,11 @@
  * ЧТОБЫ ОБНОВИТЬ МЕНЮ: добавь/измени объекты в MENU_ITEMS
  * ЧТОБЫ ОБНОВИТЬ ЦЕНЫ: меняй поле price у нужного товара
  * ЧТОБЫ ДОБАВИТЬ ПРОМОКОД: добавь в PROMO_CODES
+ *
+ * ВАЖНО: поле id — внутренний ID для логики приложения (корзина, upsell).
+ *        поле fpArticle — реальный артикул FrontPad для отправки заказа.
+ *        Маппинг взят из frontpad_articles.md (таблица «Позиции меню → Артикул FP»).
+ *        Позиции с fpArticle: 0 — артикул не уточнён, уточнить в FP.
  */
 
 // ─── Настройки доставки ───────────────────────────────────────────────────────
@@ -15,12 +20,11 @@ const CONFIG = {
   pickupAddress:'г. Курган, ул. Гоголя, 7',
   pickupTime:   '~30 минут',
   workHours:    '10:00–22:00',
-  freeDeliveryFrom: 900,   // ₽ — порог бесплатной доставки (совпадает с сайтом)
+  freeDeliveryFrom: 900,   // ₽ — порог бесплатной доставки
   minOrderDelivery: 600,   // ₽ — минимальная сумма для доставки
   minOrderPickup:   300,   // ₽ — минимальная сумма для самовывоза
   defaultDeliveryTime: 45, // минут
-  frontpadPoint: 746,      // ID точки в Frontpad (из order.php сайта)
-  // DaData API (подсказки адресов) — вставь свой ключ:
+  frontpadPoint: 746,      // ID точки в Frontpad
   dadataKey: 'ВСТАВЬ_КЛЮЧ_DADATA',
 };
 
@@ -31,15 +35,16 @@ const DELIVERY_ZONES = [
   { name: 'Рябково',       cost: 100, time: '50–60 мин', minOrder: 800  },
   { name: 'За кольцевой',  cost: 150, time: '60–75 мин', minOrder: 1000 },
 ];
-// Если адрес не распознан — стандартная доставка:
 const DEFAULT_DELIVERY = { cost: 100, time: '45–60 мин', minOrder: 600 };
 
 // ─── Промокоды ────────────────────────────────────────────────────────────────
-// type: 'percent' — скидка в процентах, 'fixed' — фиксированная сумма
+// Актуальные коды синхронизированы с реальными условиями FrontPad.
+// Скидка по коду передаётся в order.php как promo_code — финальную проверку делает оператор.
 const PROMO_CODES = {
-  'СВ10':  { type: 'percent', value: 10, desc: 'Скидка 10%' },
-  '1LOVE': { type: 'percent', value: 15, desc: 'Скидка 15% на первый заказ' },
-  'BDAY':  { type: 'fixed',   value: 200, desc: 'Скидка 200 ₽ в день рождения' },
+  'СВ10':  { type: 'percent', value: 10, desc: 'Скидка 10% при самовывозе' },
+  '1LOVE': { type: 'percent', value: 10, desc: 'Скидка на первый заказ — проверяется оператором' },
+  'BDAY1': { type: 'percent', value: 10, desc: 'Скидка в день рождения (до)' },
+  'BDAY2': { type: 'percent', value: 10, desc: 'Скидка в день рождения (после)' },
 };
 
 // ─── Категории ────────────────────────────────────────────────────────────────
@@ -53,13 +58,14 @@ const CATEGORIES = [
 ];
 
 // ─── Меню ─────────────────────────────────────────────────────────────────────
+// id        — внутренний ID (корзина, upsell, навигация)
+// fpArticle — артикул FrontPad (отправляется в order.php)
 // badge: 'hit' | 'new' | 'sale' | null
-// upsell: массив id товаров для блока "Часто берут вместе"
 const MENU_ITEMS = [
 
   // ── Хиты ──────────────────────────────────────────────────────────────────
   {
-    id: 1, category: 'hits',
+    id: 1, fpArticle: 198, category: 'hits',
     name: 'Сет ДОБРО',
     desc: 'Роллы с лососем, тунцом, авокадо, огурцом и сливочным сыром',
     weight: '640 г · 32 шт', price: 890,
@@ -68,7 +74,7 @@ const MENU_ITEMS = [
     upsell: [101, 102, 201],
   },
   {
-    id: 2, category: 'hits',
+    id: 2, fpArticle: 144, category: 'hits',
     name: '2 сета по цене 1',
     desc: 'Бархатный + Темпурный — выгоднее вдвоём',
     weight: '800 г · 40 шт', price: 1290,
@@ -77,7 +83,7 @@ const MENU_ITEMS = [
     upsell: [201, 202, 101],
   },
   {
-    id: 3, category: 'hits',
+    id: 3, fpArticle: 111, category: 'hits',
     name: 'Сет ВЫГОДНЫЙ',
     desc: 'Классические роллы с лососем, крем-сыром и авокадо',
     weight: '560 г · 28 шт', price: 750,
@@ -86,7 +92,7 @@ const MENU_ITEMS = [
     upsell: [101, 201, 301],
   },
   {
-    id: 4, category: 'hits',
+    id: 4, fpArticle: 143, category: 'hits',
     name: 'Сет ПЛЯЖНЫЙ',
     desc: 'Лёгкие роллы с огурцом, авокадо и рисом',
     weight: '520 г · 26 шт', price: 690,
@@ -95,7 +101,7 @@ const MENU_ITEMS = [
     upsell: [201, 202, 301],
   },
   {
-    id: 5, category: 'hits',
+    id: 5, fpArticle: 115, category: 'hits',
     name: 'Сет КОМБО',
     desc: 'Микс из роллов и суши — лосось, угорь, тунец, авокадо',
     weight: '680 г · 34 шт', price: 990,
@@ -104,7 +110,7 @@ const MENU_ITEMS = [
     upsell: [101, 102, 201],
   },
   {
-    id: 6, category: 'hits',
+    id: 6, fpArticle: 10, category: 'hits',
     name: 'Сет ВОСТОРГ',
     desc: 'Праздничный набор с лососем, икрой тобико и крем-сыром',
     weight: '720 г · 36 шт', price: 1190,
@@ -113,7 +119,7 @@ const MENU_ITEMS = [
     upsell: [202, 101, 302],
   },
   {
-    id: 7, category: 'hits',
+    id: 7, fpArticle: 3, category: 'hits',
     name: 'Сет ЗАПЕЧЁННЫЙ',
     desc: 'Запечённые роллы с лососем, майонезом и сыром',
     weight: '600 г · 30 шт', price: 890,
@@ -122,7 +128,7 @@ const MENU_ITEMS = [
     upsell: [101, 201, 301],
   },
   {
-    id: 8, category: 'hits',
+    id: 8, fpArticle: 5, category: 'hits',
     name: 'Сет ТЕМПУРНЫЙ',
     desc: 'Роллы в хрустящем темпурном кляре с лососем и огурцом',
     weight: '580 г · 29 шт', price: 790,
@@ -133,7 +139,7 @@ const MENU_ITEMS = [
 
   // ── Сеты ──────────────────────────────────────────────────────────────────
   {
-    id: 11, category: 'sets',
+    id: 11, fpArticle: 12, category: 'sets',
     name: 'Сет ПОПУЛЯРНЫЙ',
     desc: 'Роллы с лососем и огурцом — хит у постоянных гостей',
     weight: '480 г · 24 шт', price: 590,
@@ -142,7 +148,7 @@ const MENU_ITEMS = [
     upsell: [201, 101, 301],
   },
   {
-    id: 12, category: 'sets',
+    id: 12, fpArticle: 574, category: 'sets',
     name: 'Сет АМУР',
     desc: 'Романтический набор: лосось, авокадо, мягкий сыр',
     weight: '520 г · 26 шт', price: 690,
@@ -151,7 +157,7 @@ const MENU_ITEMS = [
     upsell: [202, 101, 302],
   },
   {
-    id: 13, category: 'sets',
+    id: 13, fpArticle: 406, category: 'sets',
     name: 'Сет БОЛЬШАЯ КОМПАНИЯ',
     desc: 'Большой набор для компании 4–6 человек: роллы, суши, гункан',
     weight: '1480 г · 74 шт', price: 1690,
@@ -160,7 +166,7 @@ const MENU_ITEMS = [
     upsell: [201, 202, 302],
   },
   {
-    id: 14, category: 'sets',
+    id: 14, fpArticle: 285, category: 'sets',
     name: 'Сет КОРПОРАТИВНЫЙ',
     desc: 'Офисный заказ на 6–8 человек: ассорти роллов и суши',
     weight: '1960 г · 98 шт', price: 1990,
@@ -169,7 +175,7 @@ const MENU_ITEMS = [
     upsell: [201, 202, 302],
   },
   {
-    id: 15, category: 'sets',
+    id: 15, fpArticle: 320, category: 'sets',
     name: 'Сет ПО КАЙФУ',
     desc: 'Вечерний набор: лосось, угорь, авокадо, огурец',
     weight: '640 г · 32 шт', price: 890,
@@ -178,7 +184,7 @@ const MENU_ITEMS = [
     upsell: [201, 301, 101],
   },
   {
-    id: 16, category: 'sets',
+    id: 16, fpArticle: 1, category: 'sets',
     name: 'Сет ТОПЧИК',
     desc: 'Новинка: необычные сочетания вкусов для гурманов',
     weight: '600 г · 30 шт', price: 990,
@@ -189,7 +195,7 @@ const MENU_ITEMS = [
 
   // ── Роллы ─────────────────────────────────────────────────────────────────
   {
-    id: 21, category: 'rolls',
+    id: 21, fpArticle: 95, category: 'rolls',
     name: 'Филадельфия классическая',
     desc: 'Лосось, огурец, сливочный сыр, рис, нори',
     weight: '280 г · 8 шт', price: 490,
@@ -198,7 +204,7 @@ const MENU_ITEMS = [
     upsell: [101, 201, 301],
   },
   {
-    id: 22, category: 'rolls',
+    id: 22, fpArticle: 86, category: 'rolls',
     name: 'Лайт Филадельфия',
     desc: 'Лёгкая версия: лосось, огурец, сыр — без нори снаружи',
     weight: '260 г · 8 шт', price: 390,
@@ -207,18 +213,18 @@ const MENU_ITEMS = [
     upsell: [101, 201, 301],
   },
   {
-    id: 23, category: 'rolls',
+    id: 23, fpArticle: 306, category: 'rolls',
     name: 'Чикен Каппа',
     desc: 'Курица, огурец, сливочный сыр, соус терияки',
     weight: '260 г · 8 шт', price: 350,
     badge: null,
-    img: null, // фото пока нет — будет отображён градиент
+    img: null,
     upsell: [101, 201, 301],
   },
 
   // ── Горячие ───────────────────────────────────────────────────────────────
   {
-    id: 31, category: 'hot',
+    id: 31, fpArticle: 63, category: 'hot',
     name: 'Зап. с лососем',
     desc: 'Запечённый ролл с лососем, майонезом и сыром',
     weight: '280 г · 8 шт', price: 490,
@@ -227,7 +233,7 @@ const MENU_ITEMS = [
     upsell: [101, 102, 201],
   },
   {
-    id: 32, category: 'hot',
+    id: 32, fpArticle: 32, category: 'hot',
     name: 'Зап. ЭБИ Томаго',
     desc: 'Запечённый ролл с тигровой креветкой, икрой тобико',
     weight: '280 г · 8 шт', price: 450,
@@ -236,7 +242,7 @@ const MENU_ITEMS = [
     upsell: [101, 201, 302],
   },
   {
-    id: 33, category: 'hot',
+    id: 33, fpArticle: 315, category: 'hot',
     name: 'Гор. с креветками',
     desc: 'Горячий ролл с тигровыми креветками и сливочным соусом',
     weight: '300 г · 8 шт', price: 470,
@@ -245,7 +251,7 @@ const MENU_ITEMS = [
     upsell: [101, 201, 302],
   },
   {
-    id: 34, category: 'hot',
+    id: 34, fpArticle: 113, category: 'hot',
     name: 'Зап. ЭТНА',
     desc: 'Острый запечённый ролл с лососем и соусом спайси',
     weight: '280 г · 8 шт', price: 480,
@@ -256,7 +262,7 @@ const MENU_ITEMS = [
 
   // ── Напитки ───────────────────────────────────────────────────────────────
   {
-    id: 201, category: 'drinks',
+    id: 201, fpArticle: 142, category: 'drinks',
     name: 'Кола 0.5 л',
     desc: 'Coca-Cola, охлаждённая',
     weight: '500 мл', price: 99,
@@ -265,7 +271,7 @@ const MENU_ITEMS = [
     upsell: [],
   },
   {
-    id: 202, category: 'drinks',
+    id: 202, fpArticle: 141, category: 'drinks',
     name: 'Сок 1 л',
     desc: 'Добрый — яблоко, мультифрукт или апельсин-манго',
     weight: '1000 мл', price: 199,
@@ -274,7 +280,7 @@ const MENU_ITEMS = [
     upsell: [],
   },
   {
-    id: 203, category: 'drinks',
+    id: 203, fpArticle: 0, category: 'drinks', // ❓ артикул не уточнён — проверить в FP
     name: 'Лимонад AquAlania',
     desc: 'Слива, груша, смородина или барбарис — на выбор',
     weight: '500 мл', price: 199,
@@ -285,7 +291,7 @@ const MENU_ITEMS = [
 
   // ── Добавки ───────────────────────────────────────────────────────────────
   {
-    id: 101, category: 'extras',
+    id: 101, fpArticle: 121, category: 'extras',
     name: 'Соевый соус',
     desc: 'Классический соевый соус от шефа, 100 мл',
     weight: '100 мл', price: 60,
@@ -294,7 +300,7 @@ const MENU_ITEMS = [
     upsell: [],
   },
   {
-    id: 102, category: 'extras',
+    id: 102, fpArticle: 123, category: 'extras',
     name: 'Имбирь',
     desc: 'Маринованный имбирь',
     weight: '30 г', price: 50,
@@ -303,7 +309,7 @@ const MENU_ITEMS = [
     upsell: [],
   },
   {
-    id: 103, category: 'extras',
+    id: 103, fpArticle: 127, category: 'extras',
     name: 'Васаби',
     desc: 'Паста васаби',
     weight: '15 г', price: 50,
@@ -312,7 +318,7 @@ const MENU_ITEMS = [
     upsell: [],
   },
   {
-    id: 301, category: 'extras',
+    id: 301, fpArticle: 152, category: 'extras',
     name: 'Картофель фри',
     desc: 'Хрустящий картофель фри, порция',
     weight: '150 г', price: 150,
@@ -321,7 +327,7 @@ const MENU_ITEMS = [
     upsell: [201],
   },
   {
-    id: 302, category: 'extras',
+    id: 302, fpArticle: 155, category: 'extras',
     name: 'Комбо фри + наггетсы',
     desc: 'Картофель фри и куриные наггетсы',
     weight: '300 г', price: 250,
@@ -330,7 +336,7 @@ const MENU_ITEMS = [
     upsell: [201],
   },
   {
-    id: 303, category: 'extras',
+    id: 303, fpArticle: 365, category: 'extras',
     name: 'Тигровые креветки',
     desc: 'Тигровые креветки в соусе, 5 шт',
     weight: '150 г', price: 350,
@@ -339,7 +345,7 @@ const MENU_ITEMS = [
     upsell: [101, 201],
   },
   {
-    id: 304, category: 'extras',
+    id: 304, fpArticle: 355, category: 'extras',
     name: 'Моти ассорти',
     desc: 'Японские рисовые пирожные — клубника, манго, шоколад',
     weight: '150 г · 3 шт', price: 150,

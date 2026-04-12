@@ -671,7 +671,7 @@ async function handleSubmitOrder() {
     deliveryType: App.deliveryType,
     address: App.deliveryType === 'pickup' ? CONFIG.pickupAddress : App.orderAddress,
     promoCode: Cart.getPromo(),
-    items: items.map(({ item, qty }) => ({ id: item.id, name: item.name, qty, price: item.price })),
+    items: items.map(({ item, qty }) => ({ id: item.id, fpArticle: item.fpArticle, name: item.name, qty, price: item.price })),
     subtotal:  totals.subtotal,
     delivery:  totals.deliveryCost,
     discount:  totals.discount,
@@ -745,7 +745,8 @@ async function submitOrder(orderData) {
     preorder_time: '',
     order_total: orderData.total,
     promo_code: orderData.promoCode || '',
-    items: orderData.items.map(i => ({ id: i.id, qty: i.qty, price: i.price })),
+    // fpArticle — реальный артикул FrontPad из data.js (не внутренний id)
+    items: orderData.items.map(i => ({ id: i.fpArticle || i.id, qty: i.qty, price: i.price })),
   };
 
   const res = await fetch('../order.php', {

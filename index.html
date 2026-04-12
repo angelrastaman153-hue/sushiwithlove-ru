@@ -706,9 +706,15 @@
 
     /* Кнопка ? и попап у виджета акции дня */
     .hero-promo-name-row {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+      position: relative;
+      margin-bottom: 10px;
     }
-    .hero-promo-name-row .hero-promo-offer { margin-bottom: 0; min-width: 0; flex: 1 1 0; word-break: break-word; }
+    .hero-promo-name-row .hero-promo-offer { margin-bottom: 0; }
+    .hero-promo-name-row .promo-hint-btn {
+      position: absolute;
+      top: 0;
+      right: -8px;
+    }
     .hero-deal-popup-overlay {
       position: fixed; inset: 0; z-index: 1350;
       background: rgba(0,0,0,0.55);
@@ -3256,7 +3262,7 @@
       <div class="hero-promo-label">⏱ Акция до конца дня</div>
       <div class="hero-promo-name-row">
         <div class="hero-promo-offer" id="heroDealName">–</div>
-        <button class="promo-hint-btn" onclick="toggleHeroDealPopup(event, this)" aria-label="Состав сета" style="flex-shrink:0">?</button>
+        <button class="promo-hint-btn" onclick="toggleHeroDealPopup(event, this)" aria-label="Состав сета">?</button>
       </div>
 
       <!-- Попап с карточкой сета -->

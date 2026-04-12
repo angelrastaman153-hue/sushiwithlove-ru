@@ -4258,6 +4258,7 @@
               <button id="mapSearchBtn" onclick="mapSearch()" style="padding:9px 14px;background:var(--accent);color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:8px;cursor:pointer;white-space:nowrap">Найти</button>
             </div>
             <div id="mapSearchStatus" style="display:none;margin-top:6px;font-size:0.8rem;color:var(--text-2);padding:0 2px"></div>
+            <div id="mapSearchResults" style="display:none;margin-top:6px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#1a130a"></div>
           </div>
           <div id="deliveryMap" style="width:100%;height:380px;flex-shrink:0;position:relative;z-index:0;"></div>
           <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;font-size:0.75rem;color:var(--text-2)">
@@ -6862,20 +6863,52 @@
     }
     if (!_leafletMap) { setStatus('⚠️ Карта ещё загружается, подождите секунду', '#f87171'); return; }
     var btn = document.getElementById('mapSearchBtn');
+    var resultsEl = document.getElementById('mapSearchResults');
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
+    if (resultsEl) resultsEl.style.display = 'none';
     setStatus('Ищем адрес…', 'var(--text-2)');
-    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курганская область ' + q) + '&format=json&limit=5&accept-language=ru&countrycodes=ru&viewbox=62.5,54.5,68.0,57.0&bounded=1')
+    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курганская область ' + q) + '&format=json&limit=7&accept-language=ru&countrycodes=ru&viewbox=62.5,54.5,68.0,57.0&bounded=1')
       .then(function(r) { return r.json(); })
       .then(function(results) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }
         if (!results || !results.length) {
-          setStatus('⚠️ Адрес не найден — попробуйте иначе', '#f87171');
+          setStatus('⚠️ Адрес не найден — уточните запрос: «Кетово Ленина 23»', '#f87171');
           return;
         }
-        var lat = parseFloat(results[0].lat), lng = parseFloat(results[0].lon);
-        setStatus('📍 Найдено: ' + (results[0].display_name || lat + ', ' + lng), '#4ade80');
-        _leafletMap.setView([lat, lng], 17, { animate: false });
-        _mapPlaceMarker(lat, lng);
+        // Если один результат — сразу показываем на карте
+        if (results.length === 1) {
+          var lat = parseFloat(results[0].lat), lng = parseFloat(results[0].lon);
+          setStatus('📍 ' + results[0].display_name, '#4ade80');
+          _leafletMap.setView([lat, lng], 17, { animate: false });
+          _mapPlaceMarker(lat, lng);
+          return;
+        }
+        // Несколько результатов — показываем список для выбора
+        setStatus('Найдено несколько адресов — выберите нужный:', 'var(--text-2)');
+        if (resultsEl) {
+          resultsEl.innerHTML = '';
+          results.forEach(function(item) {
+            var parts = item.display_name.split(',');
+            // Краткий адрес: "ул. Ленина, 23, Кетово, Курганский район"
+            var short = parts.slice(0, 4).map(function(s){ return s.trim(); }).join(', ');
+            var row = document.createElement('div');
+            row.style.cssText = 'padding:9px 12px;cursor:pointer;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.15s';
+            row.textContent = short;
+            row.onmouseover = function(){ this.style.background='rgba(232,168,71,0.1)'; };
+            row.onmouseout  = function(){ this.style.background=''; };
+            row.onclick = function() {
+              var lat = parseFloat(item.lat), lng = parseFloat(item.lon);
+              setStatus('📍 ' + short, '#4ade80');
+              resultsEl.style.display = 'none';
+              _leafletMap.setView([lat, lng], 17, { animate: false });
+              _mapPlaceMarker(lat, lng);
+            };
+            resultsEl.appendChild(row);
+          });
+          // Убираем border у последнего
+          if (resultsEl.lastChild) resultsEl.lastChild.style.borderBottom = 'none';
+          resultsEl.style.display = 'block';
+        }
       })
       .catch(function(err) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }

@@ -7787,9 +7787,13 @@
   }
 
   function _parseDelivCost(zoneDesc) {
-    // Берём первое число после "- Xр"
+    // Формат 1: "до 900р - 150р" (центральные зоны с градацией по сумме)
     var m = zoneDesc.match(/до\s*\d+\s*р[^-]*-\s*(\d+)\s*р/i);
-    return m ? parseInt(m[1]) : DELIVERY_COST;
+    if (m) return parseInt(m[1]);
+    // Формат 2: "доставка - 750 руб." (пригороды с фиксированной ценой)
+    var m2 = zoneDesc.match(/доставка\s*[–\-]\s*(\d+)\s*руб/i);
+    if (m2) return parseInt(m2[1]);
+    return DELIVERY_COST;
   }
 
   function coGetDeliveryCostFromZone() {

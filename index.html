@@ -5314,7 +5314,7 @@
           <div class="cart-item-name">${item.name}</div>
           ${item.isDeal ? '<div style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-bottom:2px">🔥 Акция дня — скидка 10%</div>' : ''}
           ${item.isGift ? '<div style="font-size:0.72rem;color:#4ade80;font-weight:600;margin-bottom:2px">🎁 Подарок по промокоду</div>' : ''}
-          <div class="cart-item-price">${item.isGift ? '<span style="color:#4ade80">Бесплатно</span>' : fmt(item.price * item.qty)}</div>
+          <div class="cart-item-price">${item.isGift ? (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:3px">' + fmt(item.originalPrice) + '</span>' : '') + '<span style="color:#4ade80">Бесплатно</span>' : fmt(item.price * item.qty)}</div>
         </div>
         ${item.isGift
           ? '<div style="font-size:0.8rem;color:var(--text-2);align-self:center">×1</div>'
@@ -6322,19 +6322,24 @@
     'BDAY1': {
       label: 'BDAY1',
       desc: 'Именинник — ролл «Лава с шиитаке» в подарок при заказе от 999 ₽',
+      gift: { id: 407, name: 'Лава с шиитаке', emoji: '🌋', price: 0, originalPrice: 299, isGift: true },
       check: function() {
         var total = getCartTotal();
         if (total < 999) return { ok: false, reason: 'Минимальная сумма заказа 999 ₽. Не хватает ' + (999 - total) + ' ₽.' };
-        return { ok: true, msg: '🎂 Промокод применён! К заказу добавят ролл «Лава с шиитаке»' };
+        return { ok: true, msg: '🎂 Промокод применён! Ролл «Лава с шиитаке» добавлен в корзину' };
       }
     },
     'BDAY2': {
       label: 'BDAY2',
       desc: 'Именинник — набор «Праздничный» в подарок при заказе от 1 999 ₽',
+      gifts: [
+        { id: 407, name: 'Лава с шиитаке', emoji: '🌋', price: 0, originalPrice: 299, isGift: true },
+        { id: 500, name: 'Калифорния классическая', emoji: '🍣', price: 0, originalPrice: 339, isGift: true }
+      ],
       check: function() {
         var total = getCartTotal();
         if (total < 1999) return { ok: false, reason: 'Минимальная сумма заказа 1 999 ₽. Не хватает ' + (1999 - total) + ' ₽.' };
-        return { ok: true, msg: '🎂 Промокод применён! К заказу добавят набор «Праздничный»' };
+        return { ok: true, msg: '🎂 Промокод применён! «Лава с шиитаке» и «Калифорния классическая» добавлены в корзину' };
       }
     },
     'СВ10': {
@@ -6373,10 +6378,16 @@
       var checkoutInput = document.getElementById('checkoutPromoInput');
       if (cartInput) cartInput.value = c;
       if (checkoutInput) checkoutInput.value = c;
-      // Добавить подарок в корзину если есть
-      if (promo.gift) {
-        removePromoGifts(); // убрать предыдущий подарок если был
-        cart.push(Object.assign({}, promo.gift, { qty: 1 }));
+      // Добавить подарок(и) в корзину если есть
+      if (promo.gift || promo.gifts) {
+        removePromoGifts(); // убрать предыдущие подарки если были
+        if (promo.gift) {
+          cart.push(Object.assign({}, promo.gift, { qty: 1 }));
+        } else {
+          promo.gifts.forEach(function(g) {
+            cart.push(Object.assign({}, g, { qty: 1 }));
+          });
+        }
         saveCart();
         updateCartUI();
         if (typeof coRenderItems === 'function') coRenderItems();
@@ -7187,15 +7198,18 @@
       d.dataset.id = item.id;
       d.innerHTML =
         '<div class="co-item-emoji">' + (item.emoji || '🍱') + '</div>' +
-        '<div class="co-item-name">' + item.name + '</div>' +
-        '<div class="co-item-qty">' +
-          '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',-1)">−</button>' +
-          '<span class="co-qty-val" id="coQty-' + item.id + '">' + item.qty + '</span>' +
-          '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',1)">+</button>' +
-        '</div>' +
+        '<div class="co-item-name">' + item.name + (item.isGift ? ' <span style="font-size:0.72rem;color:#4ade80;font-weight:600">🎁 Подарок</span>' : '') + '</div>' +
+        (item.isGift
+          ? '<div style="font-size:0.8rem;color:var(--text-2);align-self:center;padding:0 4px">×1</div>'
+          : '<div class="co-item-qty">' +
+              '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',-1)">−</button>' +
+              '<span class="co-qty-val" id="coQty-' + item.id + '">' + item.qty + '</span>' +
+              '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',1)">+</button>' +
+            '</div>'
+        ) +
         '<div class="co-item-price" id="coPrice-' + item.id + '">' +
-          (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + '</span>' : '') +
-          '<span>' + fmt(item.price * item.qty) + '</span>' +
+          (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice) + '</span>' : '') +
+          (item.isGift ? '<span style="color:#4ade80;font-weight:600">Бесплатно</span>' : '<span>' + fmt(item.price * item.qty) + '</span>') +
         '</div>';
       list.appendChild(d);
     });

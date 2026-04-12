@@ -7149,6 +7149,8 @@
     document.getElementById('coConsent').checked = true;
     document.getElementById('coConsentWarn').style.display = 'none';
     document.getElementById('coSubmitBtn').disabled = false;
+    var _mBtn = document.getElementById('coMobileBarBtn');
+    if (_mBtn) _mBtn.disabled = false;
     var _h = new Date().getHours();
     var _hint = document.getElementById('coSummaryTimeHint');
     if (_hint) _hint.textContent = (_h >= 10 && _h < 22)
@@ -7250,6 +7252,9 @@
     var del  = document.getElementById('coSumDelivery');
     if (type === 'self') { del.textContent = 'Бесплатно'; note.style.display = 'none'; }
     else                 { del.textContent = 'Уточним';   note.style.display = ''; }
+    // Название способа оплаты наличными
+    var cashTitle = document.querySelector('#coPayCash .payment-opt-title');
+    if (cashTitle) cashTitle.textContent = type === 'self' ? 'Наличные' : 'Наличные курьеру';
     coGenerateTimeSlots();
     coUpdateSummary();
     // Если введён промокод СВ10 — перепроверяем при смене типа доставки

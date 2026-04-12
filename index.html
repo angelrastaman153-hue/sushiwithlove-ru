@@ -1131,12 +1131,12 @@
       overflow: hidden;
     }
     .dish-hover-overlay .dho-ingredients {
-      font-size: 0.85rem;
+      font-size: 0.9em;
       color: #c8b99a;
       line-height: 1.55;
     }
     .dish-hover-overlay .dho-taste {
-      font-size: 0.95rem;
+      font-size: 1em;
       color: #fff;
       line-height: 1.5;
       font-style: italic;
@@ -2758,17 +2758,6 @@
     @media (hover: none) {
       .dish-info-btn { display: flex; }
       .dish-card.desc-open .dish-hover-overlay { opacity: 1; pointer-events: auto; }
-      /* Убираем обрезку текста когда описание открыто */
-      .dish-card.desc-open,
-      .dish-card.desc-open .dish-img {
-        overflow: visible;
-      }
-      .dish-card.desc-open .dish-hover-overlay {
-        aspect-ratio: auto;
-        height: auto;
-        justify-content: flex-start;
-        padding: 16px 20px;
-      }
     }
 
     /* ============================================================
@@ -6037,6 +6026,18 @@
       }
 
       card.appendChild(overlay);
+
+      // Авто-подгонка шрифта: уменьшаем пока контент не влезет в квадрат
+      requestAnimationFrame(function() {
+        var maxSize = 15; // px
+        var minSize = 8;
+        var cur = maxSize;
+        overlay.style.fontSize = cur + 'px';
+        while (overlay.scrollHeight > overlay.clientHeight + 2 && cur > minSize) {
+          cur -= 0.5;
+          overlay.style.fontSize = cur + 'px';
+        }
+      });
 
       // Кнопка «ℹ» — рядом с названием блюда (только на мобиле)
       var infoBtn = document.createElement('button');

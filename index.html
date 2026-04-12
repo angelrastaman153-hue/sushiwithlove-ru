@@ -2787,6 +2787,9 @@
         grid-template-columns: 1fr 1fr;
         gap: 20px;
       }
+      .trust-icon { display: none; }
+      .trust-item { justify-content: center; }
+      .trust-num { font-size: 1.5rem; white-space: nowrap; }
 
       .promo-grid {
         grid-template-columns: 1fr;
@@ -2819,20 +2822,17 @@
       .toast-container { bottom: 80px; }
 
       .header { height: 72px; }
-      .header .container { position: relative; justify-content: space-between; gap: 0; padding: 0 16px; }
-      .logo { gap: 10px; flex: 0 0 auto; }
+      .header .container { position: relative; justify-content: center; gap: 0; padding: 0 16px; }
+      .logo { gap: 8px; flex: 0 0 auto; }
       .logo-icon { width: 46px; height: 46px; flex-shrink: 0; }
       .logo-text {
-        position: absolute;
-        left: 72px;
-        right: 72px;
-        text-align: center;
+        position: static;
         transform: none;
-        font-size: 1.35rem;
+        font-size: 1.15rem;
         letter-spacing: 0.04em;
         white-space: nowrap;
-        pointer-events: none;
       }
+      .header-right { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
       .cart-btn { display: none; }
       .search-btn { display: none; }
       .burger { flex-shrink: 0; }

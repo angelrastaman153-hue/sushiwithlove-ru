@@ -831,6 +831,9 @@
       font-weight: 600;
       color: var(--accent);
       line-height: 1;
+      min-width: 5rem;
+      display: inline-block;
+      font-variant-numeric: tabular-nums;
     }
     .trust-label { font-size: 0.8rem; color: var(--text-2); line-height: 1.4; margin-top: 2px; }
     .trust-item > div { text-align: center; }
@@ -4967,6 +4970,9 @@
      JAVASCRIPT
 ============================================================ -->
 <script>
+  // Нормализуем размер шрифта — игнорируем системные настройки браузера/телефона
+  document.documentElement.style.fontSize = '16px';
+
   // ============================================================
   // CART STATE
   // ============================================================

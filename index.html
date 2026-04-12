@@ -6864,7 +6864,7 @@
     var btn = document.getElementById('mapSearchBtn');
     if (btn) { btn.textContent = '…'; btn.disabled = true; }
     setStatus('Ищем адрес…', 'var(--text-2)');
-    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курган ' + q) + '&format=json&limit=5&accept-language=ru&countrycodes=ru')
+    fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent('Курганская область ' + q) + '&format=json&limit=5&accept-language=ru&countrycodes=ru&viewbox=62.5,54.5,68.0,57.0&bounded=1')
       .then(function(r) { return r.json(); })
       .then(function(results) {
         if (btn) { btn.textContent = 'Найти'; btn.disabled = false; }

@@ -5073,8 +5073,9 @@
   // Сумма позиций, на которые действует скидка СВ10
   function getDiscountableTotal() {
     return cart.reduce(function(s, i) {
-      if (i.isGift) return s;
-      if (PROMO_EXCLUDED_IDS[i.id]) return s;
+      if (i.isGift) return s;                // подарки — без скидки
+      if (i.isDeal) return s;                // акция дня итак со скидкой — без стека
+      if (PROMO_EXCLUDED_IDS[i.id]) return s; // напитки, соусы, десерты
       return s + i.price * i.qty;
     }, 0);
   }
@@ -7359,7 +7360,7 @@
     }
     var origTotal = item.price * item.qty;
     // Проверяем — действует ли промо-скидка на этот товар
-    var hasSv10 = (coActivePromo === 'СВ10' && coDeliveryType === 'self' && !PROMO_EXCLUDED_IDS[item.id]);
+    var hasSv10 = (coActivePromo === 'СВ10' && coDeliveryType === 'self' && !PROMO_EXCLUDED_IDS[item.id] && !item.isDeal);
     if (hasSv10) {
       var discTotal = Math.round(origTotal * 0.9);
       return '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(origTotal) + '</span>'

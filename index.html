@@ -7301,7 +7301,7 @@
     coInitDate();
     coGenerateTimeSlots();
     coInitPhoneMask();
-    coSetDelivery('delivery');
+    coSetDelivery(localStorage.getItem('swl_delivery_type') || 'delivery');
     coSetTimeMode('soon');
     coSelectPayment(2);
     document.getElementById('coConsent').checked = true;
@@ -7418,6 +7418,7 @@
 
   function coSetDelivery(type) {
     coDeliveryType = type;
+    localStorage.setItem('swl_delivery_type', type);
     document.getElementById('coBtnDelivery').classList.toggle('active', type === 'delivery');
     document.getElementById('coBtnSelf').classList.toggle('active', type === 'self');
     document.getElementById('coAddressBlock').style.display = type === 'delivery' ? '' : 'none';

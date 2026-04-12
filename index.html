@@ -1624,7 +1624,7 @@
       background: var(--bg);
       z-index: 1300;
       overflow-y: auto;
-      overflow-x: clip;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       display: none;
     }
@@ -1980,17 +1980,23 @@
       */
       .checkout-page-inner {
         width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
         padding: 0 12px 90px;
-        overflow-x: clip; /* clip (не hidden) — работает с overflow-y:auto */
+        overflow-x: hidden;
       }
+
+      /* Левая колонка — не шире 100% */
+      .checkout-page-left { max-width: 100%; overflow-x: hidden; }
 
       /* Все блоки — не шире родителя */
       .co-block {
         padding: 14px 12px;
         margin-bottom: 10px;
         width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
+        overflow-x: hidden;
       }
 
       /* Flex-дети: min-width:0 → могут сжиматься ниже своего контента */
@@ -2037,6 +2043,28 @@
         justify-content: center;
       }
     }
+
+    /* Подсказки улиц */
+    .street-suggestions {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      z-index: 200;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .suggestion-item {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: var(--surface-2); }
 
     /* Базовые стили рядов (десктоп) */
     .co-promo-row {
@@ -7200,7 +7228,7 @@
     ov.scrollTop = 0;
     document.getElementById('coLayout').style.display = '';
     document.getElementById('coSuccessScreen').style.display = 'none';
-    coChopsticks = null;
+    coChopsticks = 0; // По умолчанию — без приборов
 
     coNoCash = false;
     coPromoDiscount = 0;
@@ -7595,7 +7623,7 @@
       chopCard.innerHTML =
         '<div class="co-addon-header">' +
           '<span class="co-addon-emoji">🥢</span>' +
-          '<span class="co-addon-name">Палочки <span style="color:var(--danger)">*</span></span>' +
+          '<span class="co-addon-name">Палочки</span>' +
         '</div>' +
         '<div style="font-size:0.72rem;color:var(--text-2);margin-bottom:6px">0 = без приборов</div>' +
         '<div style="display:flex;align-items:center;gap:12px;margin:4px 0">' +
@@ -7857,7 +7885,6 @@
     if (phone.length < 11) { coShowErr('Введите корректный номер телефона');          document.getElementById('coPhone').focus(); return; }
     if (!consent)          { coShowErr('Необходимо согласие на обработку данных');                                                return; }
     if (!cart.length)      { coShowErr('Корзина пуста');                                                                         return; }
-    if (coChopsticks === null) { coShowErr('Укажите количество палочек (0 = без приборов) и нажмите «Подтвердить»'); return; }
     var street = '', home = '', entrance = '', floor = '', flat = '';
     if (coDeliveryType === 'delivery') {
       street   = document.getElementById('coStreet').value.trim();

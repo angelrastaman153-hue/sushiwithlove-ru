@@ -1576,6 +1576,8 @@
       background: var(--bg);
       z-index: 1300;
       overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
       display: none;
     }
     .checkout-page-overlay.open { display: block; }
@@ -1882,9 +1884,19 @@
       .checkout-page-right { position: static; }
     }
     @media (max-width: 768px) {
-      .checkout-page-inner { padding: 0 16px 60px; }
+      .checkout-page-inner { padding: 0 12px 80px; }
       .checkout-page-title { font-size: 1.3rem; }
-      .co-block { padding: 16px; }
+      .co-block { padding: 14px 12px; }
+      /* Все flex/grid-ряды — в колонку */
+      .co-delivery-toggle { flex-direction: column; }
+      .co-time-options { flex-direction: column; }
+      /* 4 поля адреса → 2×2 */
+      .co-entrance-grid { grid-template-columns: 1fr 1fr !important; }
+      /* Соусы — 1 колонка на очень узком */
+      .co-addons-grid { grid-template-columns: 1fr; }
+      /* «С этим часто берут» — 2 колонки */
+      .co-upsell-grid-wrap { grid-template-columns: repeat(2, 1fr); }
+      .co-upsell-card:nth-child(n+7) { display: none; }
     }
 
     /* ============================================================
@@ -4441,7 +4453,7 @@
           </div>
           <!-- Подъезд, этаж, кв., домофон, комментарий -->
           <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+            <div class="co-entrance-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
               <input type="text" id="coEntrance" class="form-input" placeholder="Подъезд">
               <input type="text" id="coFloor" class="form-input" placeholder="Этаж">
               <input type="text" id="coFlat" class="form-input" placeholder="Кв.">
@@ -5153,7 +5165,7 @@
           <div class="cart-item-name">${item.name}</div>
           ${item.isDeal ? '<div style="font-size:0.72rem;color:var(--accent);font-weight:600;margin-bottom:2px">🔥 Акция дня — скидка 10%</div>' : ''}
           ${item.isGift ? '<div style="font-size:0.72rem;color:#4ade80;font-weight:600;margin-bottom:2px">🎁 Подарок по промокоду</div>' : ''}
-          <div class="cart-item-price">${item.isGift ? '<span style="color:#4ade80">Бесплатно</span>' : fmt(item.price * item.qty) + ' ₽'}</div>
+          <div class="cart-item-price">${item.isGift ? '<span style="color:#4ade80">Бесплатно</span>' : fmt(item.price * item.qty)}</div>
         </div>
         ${item.isGift
           ? '<div style="font-size:0.8rem;color:var(--text-2);align-self:center">×1</div>'
@@ -6249,7 +6261,7 @@
     if (c === 'СВ10') {
       if (deliveryType !== 'self') return { valid: false, message: 'Промокод действует только при самовывозе' };
       var disc = Math.round(subtotal * 0.1);
-      return { valid: true, message: '🏪 Скидка 10% при самовывозе — −' + fmt(disc) + ' ₽', discount: disc };
+      return { valid: true, message: '🏪 Скидка 10% при самовывозе — −' + fmt(disc), discount: disc };
     }
     var result = promo.check();
     if (result.ok) return { valid: true, message: result.msg, discount: 0 };
@@ -7004,8 +7016,8 @@
           '<button class="co-qty-btn" onclick="coChangeQty(' + item.id + ',1)">+</button>' +
         '</div>' +
         '<div class="co-item-price" id="coPrice-' + item.id + '">' +
-          (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + ' ₽</span>' : '') +
-          '<span>' + fmt(item.price * item.qty) + ' ₽</span>' +
+          (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + '</span>' : '') +
+          '<span>' + fmt(item.price * item.qty) + '</span>' +
         '</div>';
       list.appendChild(d);
     });
@@ -7023,7 +7035,7 @@
       var qEl = document.getElementById('coQty-' + id);
       var pEl = document.getElementById('coPrice-' + id);
       if (qEl) qEl.textContent = item.qty;
-      if (pEl) pEl.innerHTML = (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + ' ₽</span>' : '') + '<span>' + fmt(item.price * item.qty) + ' ₽</span>';
+      if (pEl) pEl.innerHTML = (item.originalPrice ? '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.8rem;margin-right:4px">' + fmt(item.originalPrice * item.qty) + '</span>' : '') + '<span>' + fmt(item.price * item.qty) + '</span>';
     }
     updateCartUI();
     coUpdateSummary();
@@ -7152,18 +7164,18 @@
     var delivCost = (typeof coGetDeliveryCostFromZone === 'function') ? coGetDeliveryCostFromZone() : DELIVERY_COST;
     var total = Math.max(0, sub - coPromoDiscount) + delivCost;
     var count = cart.reduce(function(s,i){ return s + i.qty; }, 0);
-    document.getElementById('coSumSubtotal').textContent  = fmt(sub) + ' ₽';
-    document.getElementById('coSumTotal').textContent     = fmt(total) + ' ₽';
+    document.getElementById('coSumSubtotal').textContent  = fmt(sub);
+    document.getElementById('coSumTotal').textContent     = fmt(total);
     document.getElementById('coSummaryCount').textContent = count + ' ' + pluralize(count,'позиция','позиции','позиций');
     var dr = document.getElementById('coSumDiscRow');
-    if (coPromoDiscount > 0) { dr.style.display = ''; document.getElementById('coSumDiscount').textContent = '−' + fmt(coPromoDiscount) + ' ₽'; }
+    if (coPromoDiscount > 0) { dr.style.display = ''; document.getElementById('coSumDiscount').textContent = '−' + fmt(coPromoDiscount); }
     else { dr.style.display = 'none'; }
     // Доставка
     var delivEl = document.getElementById('coSumDelivery');
     var noteEl  = document.getElementById('coDeliveryNote');
     if (delivEl) {
       if (savedAddress) {
-        delivEl.textContent = delivCost === 0 ? 'Бесплатно' : fmt(delivCost) + ' ₽';
+        delivEl.textContent = delivCost === 0 ? 'Бесплатно' : fmt(delivCost);
         if (noteEl) noteEl.style.display = 'none';
       } else {
         delivEl.textContent = 'Уточним';
@@ -7545,10 +7557,10 @@
             var row = document.createElement('div');
             row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:0.9rem';
             row.innerHTML = '<span style="color:var(--text-1)">' + (i.emoji || '🍱') + ' ' + i.name + (i.qty > 1 ? ' × ' + i.qty : '') + '</span>'
-              + '<span style="font-weight:600;white-space:nowrap;color:' + (i.isGift ? '#4ade80' : 'var(--accent)') + '">' + (i.isGift ? 'Подарок' : fmt(i.price * i.qty) + ' ₽') + '</span>';
+              + '<span style="font-weight:600;white-space:nowrap;color:' + (i.isGift ? '#4ade80' : 'var(--accent)') + '">' + (i.isGift ? 'Подарок' : fmt(i.price * i.qty)) + '</span>';
             itemsEl.appendChild(row);
           });
-          if (totalEl) totalEl.innerHTML = '<span>Итого</span><span style="color:var(--accent)">' + fmt(orderTotal) + ' ₽</span>';
+          if (totalEl) totalEl.innerHTML = '<span>Итого</span><span style="color:var(--accent)">' + fmt(orderTotal) + '</span>';
         }
         var h = new Date().getHours();
         var msgEl = document.getElementById('coSuccessMsg');

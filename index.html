@@ -6349,10 +6349,14 @@
       label: 'СВ10',
       desc: 'Скидка 10% при самовывозе. Выберите «Самовывоз» в способе получения.',
       check: function() {
-        var deliveryEl = document.querySelector('input[name="delivery_type"]:checked');
-        var dtype = deliveryEl ? deliveryEl.value : 'delivery';
+        // Проверяем и новую переменную checkout-страницы, и старый radio
+        var dtype = (typeof coDeliveryType !== 'undefined') ? coDeliveryType : 'delivery';
+        if (dtype === 'delivery') {
+          var deliveryEl = document.querySelector('input[name="delivery_type"]:checked');
+          if (deliveryEl) dtype = deliveryEl.value;
+        }
         if (dtype !== 'self') return { ok: false, reason: 'Промокод действует только при самовывозе. Выберите «Самовывоз» в способе получения.' };
-        return { ok: true, msg: '🏪 Промокод применён! Скидка 10% на самовывоз учтена.' };
+        return { ok: true, msg: '🏪 Промокод применён! Скидка 10% при самовывозе учтена.' };
       }
     }
   };
@@ -7248,6 +7252,11 @@
     else                 { del.textContent = 'Уточним';   note.style.display = ''; }
     coGenerateTimeSlots();
     coUpdateSummary();
+    // Если введён промокод СВ10 — перепроверяем при смене типа доставки
+    var promoInput = document.getElementById('coPromoInput');
+    if (promoInput && promoInput.value.trim().toUpperCase() === 'СВ10') {
+      coApplyPromo();
+    }
   }
 
   function coSetTimeMode(mode) {
@@ -7361,7 +7370,12 @@
     var delivCost = (typeof coGetDeliveryCostFromZone === 'function') ? coGetDeliveryCostFromZone() : DELIVERY_COST;
     var total = Math.max(0, sub - coPromoDiscount) + delivCost;
     var count = cart.reduce(function(s,i){ return s + i.qty; }, 0);
-    document.getElementById('coSumSubtotal').textContent  = fmt(sub);
+    var subEl = document.getElementById('coSumSubtotal');
+    if (coPromoDiscount > 0) {
+      subEl.innerHTML = '<span style="text-decoration:line-through;color:var(--text-2);font-size:0.85em;margin-right:6px">' + fmt(sub) + '</span><span style="color:#4caf50;font-weight:700">' + fmt(sub - coPromoDiscount) + '</span>';
+    } else {
+      subEl.textContent = fmt(sub);
+    }
     document.getElementById('coSumTotal').textContent     = fmt(total);
     document.getElementById('coSummaryCount').textContent = count + ' ' + pluralize(count,'позиция','позиции','позиций');
     var dr = document.getElementById('coSumDiscRow');

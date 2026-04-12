@@ -680,6 +680,8 @@
       border-radius: var(--radius-lg);
       padding: 14px 18px;
       max-width: 230px;
+      max-height: calc(100% - 48px);
+      overflow: hidden;
       z-index: 3;
     }
     .hero-promo-label {
@@ -694,8 +696,9 @@
       font-size: 1.05rem;
       color: var(--text);
       margin-bottom: 8px;
-      overflow-wrap: break-word;
-      word-break: break-word;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .hero-timer {
       font-size: 1.3rem;
@@ -704,6 +707,13 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.05em;
     }
+    /* При А+ шрифте — фиксируем размеры внутри карточки (rem растёт, а карточка — нет) */
+    html.fs-l .hero-promo-label { font-size: 0.58rem; }
+    html.fs-l .hero-promo-offer { font-size: 0.875rem; }
+    html.fs-l .hero-timer { font-size: 1.08rem; }
+    html.fs-l #heroDealOldPrice { font-size: 0.7rem !important; }
+    html.fs-l #heroDealNewPrice { font-size: 0.92rem !important; }
+    html.fs-l #heroDealBtn { font-size: 0.7rem !important; padding: 6px 0 !important; }
 
     /* Кнопка ? и попап у виджета акции дня */
     .hero-promo-name-row {

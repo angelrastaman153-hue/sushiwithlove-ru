@@ -1576,7 +1576,7 @@
       background: var(--bg);
       z-index: 1300;
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: clip;
       -webkit-overflow-scrolling: touch;
       display: none;
     }
@@ -1925,13 +1925,45 @@
       .co-mobile-bar { display: flex; }
       .checkout-page-right { display: none; }
 
-      /* Внутренние отступы с учётом нижней панели (~80px) */
-      .checkout-page-inner { padding: 0 12px 90px; overflow-x: hidden; }
-      .checkout-page-title { font-size: 1.2rem; }
-      .co-block { padding: 14px 12px; margin-bottom: 10px; }
+      /* ── ГЛАВНЫЙ ФИКС OVERFLOW ──────────────────────────────
+         width:100% + box-sizing:border-box = контент НЕ выходит за экран.
+         Overflow-x: hidden + overflow-y: auto — CSS баг в браузерах:
+         overflow-y:auto сбрасывает overflow-x:hidden → используем clip.
+      */
+      .checkout-page-inner {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 12px 90px;
+        overflow-x: clip; /* clip (не hidden) — работает с overflow-y:auto */
+      }
 
-      /* Кнопки получения и времени — в ряд, полная ширина */
-      .co-delivery-btn, .co-time-btn { font-size: 0.82rem; padding: 10px 8px; }
+      /* Все блоки — не шире родителя */
+      .co-block {
+        padding: 14px 12px;
+        margin-bottom: 10px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      /* Flex-дети: min-width:0 → могут сжиматься ниже своего контента */
+      .co-delivery-toggle > *,
+      .co-time-options > * {
+        min-width: 0;
+        flex: 1 1 0;
+        font-size: 0.8rem;
+        padding: 10px 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Grid-дети: min-width:0 → ячейки не расширяют сетку */
+      .co-upsell-grid-wrap > *,
+      .co-addons-grid > * { min-width: 0; }
+
+      /* Заголовок */
+      .checkout-page-title { font-size: 1.2rem; }
+
       /* 4 поля адреса → 2×2 */
       .co-entrance-grid { grid-template-columns: 1fr 1fr !important; }
 
@@ -1941,6 +1973,9 @@
       /* «С этим часто берут» — 2 колонки */
       .co-upsell-grid-wrap { grid-template-columns: repeat(2, 1fr); }
       .co-upsell-card:nth-child(n+7) { display: none; }
+
+      /* Все инпуты — полная ширина, не вылезают */
+      .form-input { width: 100%; box-sizing: border-box; }
     }
 
     /* ============================================================

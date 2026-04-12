@@ -731,7 +731,8 @@
     .hero-deal-popup {
       position: absolute;
       right: calc(100% + 16px);
-      bottom: 0;
+      top: 0;
+      bottom: auto;
       width: 280px;
       max-height: calc(100vh - 200px);
       overflow-y: auto;
@@ -745,7 +746,7 @@
     .hero-deal-popup.open { display: block; }
     .hero-deal-popup-img {
       width: 100%;
-      aspect-ratio: 1;
+      aspect-ratio: 4/3;
       background: var(--surface-2) center/cover no-repeat;
       display: flex; align-items: center; justify-content: center;
       font-size: 52px;
@@ -785,7 +786,7 @@
         margin-top: 12px;
         border-radius: 12px;
       }
-      .hero-deal-popup-img { aspect-ratio: 1; }
+      .hero-deal-popup-img { aspect-ratio: 4/3; }
     }
 
     .hero-scroll {

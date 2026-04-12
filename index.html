@@ -1306,6 +1306,7 @@
     [data-name="Моти в ассортименте"]      .dish-img { background-image: url('photos/extras/moti.jpg'); }
     [data-name="Кола бутылка 0.5"]         .dish-img { background-image: url('photos/extras/kola.jpg'); }
     [data-name="Сок Добрый 1л"]            .dish-img { background-image: url('photos/extras/sok.jpg'); }
+    [data-name="Лимонад AquAlania 0.5"]    .dish-img { background-image: url('photos/extras/lemonad.jpg'); }
 
     /* Скрываем плейсхолдер там где есть фото */
     [data-name="Соевый от шефа (100 мл)"]  .dish-img-ph,
@@ -1320,7 +1321,8 @@
     [data-name="Тигровые креветки с соусом"] .dish-img-ph,
     [data-name="Моти в ассортименте"]      .dish-img-ph,
     [data-name="Кола бутылка 0.5"]         .dish-img-ph,
-    [data-name="Сок Добрый 1л"]            .dish-img-ph { display: none; }
+    [data-name="Сок Добрый 1л"]            .dish-img-ph,
+    [data-name="Лимонад AquAlania 0.5"]    .dish-img-ph { display: none; }
 
     .dish-img-ph {
       width: 100%; height: 100%;
@@ -4149,6 +4151,16 @@
           <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:141,name:'Сок Добрый 1л',price:199,emoji:'🧃'})">+ В корзину</button></div>
         </div>
 
+        <div class="dish-card reveal reveal-delay-2" data-id="603" data-name="Лимонад AquAlania 0.5" data-price="199" data-emoji="🍹">
+          <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🍹</div></div>
+          <div class="dish-body">
+            <div class="dish-name">Лимонад AquAlania</div>
+            <div class="dish-composition">Слива, груша, смородина или барбарис — натуральный лимонад из Северной Осетии</div>
+            <div class="dish-meta"><span class="dish-weight">0.5 л</span><span class="dish-price">199 ₽</span></div>
+          </div>
+          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:603,name:'Лимонад AquAlania 0.5',price:199,emoji:'🍹'})">+ В корзину</button></div>
+        </div>
+
       </div>
     </div>
 
@@ -5061,7 +5073,7 @@
   // ID позиций, на которые НЕ распространяется скидка СВ10 (самовывоз)
   // Исключены: напитки, соусы, десерты, палочки
   var PROMO_EXCLUDED_IDS = {
-    142:1, 141:1,           // Напитки: Кола, Сок
+    142:1, 141:1, 603:1,    // Напитки: Кола, Сок, Лимонад AquAlania
     121:1, 172:1,           // Соевый от шефа (50мл, 100мл)
     123:1, 120:1, 128:1,   // Имбирь (30г, 50г, 100г)
     127:1, 138:1, 139:1,   // Васаби (20г, 40г, 60г)
@@ -6126,7 +6138,8 @@
       ],
       // Напитки
       'Кола бутылка 0.5': ['', 'Освежающий газированный напиток к роллам, сетам и закускам.'],
-      'Сок Добрый 1л': ['Яблоко, апельсин или мультифрукт.', 'Сок в ассортименте — более мягкий и привычный вкус к заказу.']
+      'Сок Добрый 1л': ['Яблоко, апельсин или мультифрукт.', 'Сок в ассортименте — более мягкий и привычный вкус к заказу.'],
+      'Лимонад AquAlania 0.5': ['Слива, груша, смородина или барбарис — на ваш выбор.', 'Натуральный лимонад из Северной Осетии на основе родниковой воды, производится в ассортименте 4 вкусов.']
     };
 
     document.querySelectorAll('.dish-card[data-name]').forEach(function(card) {
@@ -7618,6 +7631,7 @@
     {id:355, name:'Моти в ассортименте',       price:219, emoji:'🍡', photo:'photos/extras/moti.jpg'},
     {id:142, name:'Кола 0.5',                  price:99,  emoji:'🥤', photo:'photos/extras/kola.jpg'},
     {id:141, name:'Сок Добрый 1л',             price:199, emoji:'🧃', photo:'photos/extras/sok.jpg'},
+    {id:603, name:'Лимонад AquAlania',         price:199, emoji:'🍹', photo:'photos/extras/lemonad.jpg'},
     {id:86,  name:'Лайт Филадельфия',          price:429, emoji:'🥒', photo:'photos/rolls/roll-layt-filadelfiya.jpg'},
     {id:32,  name:'Запечённый Эби Томаго',     price:299, emoji:'🦐', photo:'photos/rolls/roll-ebi-tomago.jpg'},
     {id:63,  name:'Запечённый с лососем',      price:299, emoji:'🍣', photo:'photos/rolls/roll-zap-losos.jpg'},

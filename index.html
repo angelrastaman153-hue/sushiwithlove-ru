@@ -4878,15 +4878,15 @@
         </div>
 
         <div class="form-section">
-          <div class="form-section-title">Палочки</div>
+          <div class="form-section-title">Палочки <span style="color:var(--danger)">*</span></div>
           <div class="form-field">
-            <label class="form-label">Количество пар</label>
+            <label class="form-label">Количество пар палочек</label>
             <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
               <button type="button" class="chopstick-btn" onclick="changeChopsticks(-1)">−</button>
-              <span id="chopstickVal" style="min-width:28px;text-align:center;font-weight:700;font-size:1.1rem">1</span>
+              <span id="chopstickVal" style="min-width:80px;text-align:center;font-weight:700;font-size:1rem;color:var(--danger)">не выбрано</span>
               <button type="button" class="chopstick-btn" onclick="changeChopsticks(1)">+</button>
-              <span style="font-size:0.8rem;color:var(--text-2);margin-left:4px">пара палочек</span>
             </div>
+            <div style="font-size:0.75rem;color:var(--text-2);margin-top:4px">0 = без приборов</div>
           </div>
         </div>
 
@@ -5442,10 +5442,14 @@
     if (s) s.style.display = show ? '' : 'none';
   }
 
-  var chopstickCount = 1;
+  var chopstickCount = null;
   function changeChopsticks(delta) {
-    chopstickCount = Math.max(0, chopstickCount + delta);
-    document.getElementById('chopstickVal').textContent = chopstickCount;
+    if (chopstickCount === null) chopstickCount = delta > 0 ? 1 : 0;
+    else chopstickCount = Math.max(0, chopstickCount + delta);
+    var el = document.getElementById('chopstickVal');
+    if (!el) return;
+    if (chopstickCount === 0) { el.textContent = '0 — без приборов'; el.style.color = 'var(--text)'; }
+    else { el.textContent = chopstickCount; el.style.color = 'var(--text)'; }
   }
 
   // Preorder: set min date to today
@@ -5476,6 +5480,12 @@
       return;
     }
     if (cart.length === 0) { showToast('⚠️', 'Корзина пуста'); return; }
+    if (chopstickCount === null) {
+      var chopEl = document.getElementById('chopstickVal');
+      if (chopEl) { chopEl.style.color = 'var(--danger)'; chopEl.closest('.form-field').scrollIntoView({behavior:'smooth',block:'center'}); }
+      showToast('⚠️', 'Укажите количество палочек', 'error');
+      return;
+    }
 
     // Проверка согласия на обработку персональных данных
     var consentCheck = document.getElementById('consentCheck');
@@ -7055,7 +7065,7 @@
   var coSelectedSlot = null;
   var coPaymentMethod = 2;
   var coNoCash = false;
-  var coChopsticks = 1;
+  var coChopsticks = null;
   var coActivePromo = null;
   var coPromoDiscount = 0;
 
@@ -7070,7 +7080,7 @@
     ov.scrollTop = 0;
     document.getElementById('coLayout').style.display = '';
     document.getElementById('coSuccessScreen').style.display = 'none';
-    coChopsticks = 1;
+    coChopsticks = null;
 
     coNoCash = false;
     coPromoDiscount = 0;
@@ -7428,47 +7438,54 @@
     // Карточка палочек: до 6 пар бесплатно, свыше — 5 ₽/пара (id:604)
     var chopCard = document.createElement('div');
     chopCard.className = 'co-addon-card';
-    var chopQty = coChopsticks || 1;
+    var chopQty = coChopsticks; // null = не выбрано
     function buildChopCard() {
-      var free = Math.min(chopQty, 6);
-      var paid = Math.max(0, chopQty - 6);
+      var isNull = chopQty === null;
+      var paid = !isNull ? Math.max(0, chopQty - 6) : 0;
       var price = paid * 5;
-      var priceLabel = price === 0 ? 'Бесплатно' : price + ' ₽';
+      var priceLabel = isNull ? '—' : (price === 0 ? 'Бесплатно' : price + ' ₽');
+      var qtyDisplay = isNull
+        ? '<span style="color:var(--danger);font-size:0.85rem">не выбрано</span>'
+        : (chopQty === 0
+            ? '<span style="font-size:0.8rem">без приборов</span>'
+            : '<span style="font-weight:700">' + chopQty + '</span>');
       chopCard.innerHTML =
         '<div class="co-addon-header">' +
           '<span class="co-addon-emoji">🥢</span>' +
-          '<span class="co-addon-name">Палочки</span>' +
+          '<span class="co-addon-name">Палочки <span style="color:var(--danger)">*</span></span>' +
         '</div>' +
-        '<div style="display:flex;align-items:center;gap:12px;margin:6px 0">' +
+        '<div style="font-size:0.72rem;color:var(--text-2);margin-bottom:6px">0 = без приборов</div>' +
+        '<div style="display:flex;align-items:center;gap:12px;margin:4px 0">' +
           '<button class="co-addon-size-btn chop-minus">−</button>' +
-          '<span style="font-weight:700;min-width:24px;text-align:center">' + chopQty + '</span>' +
+          '<span style="min-width:80px;text-align:center">' + qtyDisplay + '</span>' +
           '<button class="co-addon-size-btn chop-plus">+</button>' +
-          '' +
         '</div>' +
-        '<div class="co-addon-footer">' +
+        '<div class="co-addon-footer" style="margin-top:8px">' +
           '<span class="co-addon-price">' + priceLabel + '</span>' +
-          '<button class="co-addon-add-btn chop-add">Применить</button>' +
+          '<button class="co-addon-add-btn chop-add"' + (isNull ? ' disabled style="opacity:0.45"' : '') + '>Подтвердить</button>' +
         '</div>';
 
       chopCard.querySelector('.chop-minus').addEventListener('click', function() {
-        if (chopQty > 1) { chopQty--; coChopsticks = chopQty; document.getElementById('coChopstickVal') && (document.getElementById('coChopstickVal').textContent = chopQty); buildChopCard(); }
+        if (chopQty === null) chopQty = 0;
+        else chopQty = Math.max(0, chopQty - 1);
+        coChopsticks = chopQty; buildChopCard();
       });
       chopCard.querySelector('.chop-plus').addEventListener('click', function() {
-        { chopQty++; coChopsticks = chopQty; buildChopCard(); }
+        if (chopQty === null) chopQty = 1;
+        else chopQty++;
+        coChopsticks = chopQty; buildChopCard();
       });
       chopCard.querySelector('.chop-add').addEventListener('click', function() {
-        // Убираем предыдущие палочки из корзины
+        if (chopQty === null) return;
         cart = cart.filter(function(x) { return x.id !== 604 && x.name !== 'Палочки (бесплатно)'; });
         if (paid > 0) {
           cart.push({id: 604, name: 'Палочки', emoji: '🥢', price: 5, qty: paid});
         }
         coChopsticks = chopQty;
-        saveCart();
-        coRenderItems();
-        coUpdateSummary();
+        saveCart(); coRenderItems(); coUpdateSummary();
         var btn = chopCard.querySelector('.chop-add');
-        btn.textContent = '✓ Добавлено';
-        setTimeout(function() { btn.textContent = 'Применить'; }, 1500);
+        btn.textContent = '✓ Подтверждено';
+        setTimeout(function() { btn.textContent = 'Подтвердить'; }, 1500);
       });
     }
     buildChopCard();
@@ -7651,6 +7668,7 @@
     if (phone.length < 11) { coShowErr('Введите корректный номер телефона');          document.getElementById('coPhone').focus(); return; }
     if (!consent)          { coShowErr('Необходимо согласие на обработку данных');                                                return; }
     if (!cart.length)      { coShowErr('Корзина пуста');                                                                         return; }
+    if (coChopsticks === null) { coShowErr('Укажите количество палочек (0 = без приборов) и нажмите «Подтвердить»'); return; }
     var street = '', home = '', entrance = '', floor = '', flat = '';
     if (coDeliveryType === 'delivery') {
       street   = document.getElementById('coStreet').value.trim();

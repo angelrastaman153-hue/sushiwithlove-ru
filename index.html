@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Доставка суши в Кургане — Sushi with Love · За 45 минут</title>
+  <!-- v2026-04-12-BDAY-GIFTS -->
   <meta name="description" content="Суши с Любовью — доставка роллов и суши по Кургану с 2015 года. Бесплатная доставка от 1000 ₽. Заказ по телефону 66-20-70 или онлайн. Ежедневно 10:00–22:00.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -6308,6 +6309,7 @@
   // ============================================================
   var activePromoCode = savedPromo || '';
 
+  window.SITE_VERSION = 'v3-bday-gifts';
   var PROMO_DB = {
     '1LOVE': {
       label: '1LOVE',
@@ -7349,6 +7351,8 @@
     var firstOrderNote = document.getElementById('coPromoFirstOrderNote');
     if (firstOrderNote) firstOrderNote.style.display = (coActivePromo === '1LOVE') ? 'block' : 'none';
     coUpdateSummary();
+    // Гарантируем перерисовку списка (подарки могли добавиться в checkPromoCode)
+    coRenderItems();
   }
 
   function coUpdateSummary() {

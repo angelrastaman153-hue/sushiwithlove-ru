@@ -827,7 +827,6 @@
       font-weight: 600;
       color: var(--accent);
       line-height: 1;
-      min-width: 5rem;
       display: inline-block;
       font-variant-numeric: tabular-nums;
     }
@@ -6062,13 +6061,17 @@
       const decimal = parseInt(el.dataset.decimal || '0');
       const suffix = el.dataset.suffix || '';
       const prefix = el.dataset.prefix || '';
+      const fmt = v => decimal > 0 ? v.toFixed(decimal) : el.dataset.noformat ? String(Math.floor(v)) : Math.floor(v).toLocaleString('ru-RU');
+      // Показываем конечное значение чтобы зафиксировать ширину ДО анимации
+      el.textContent = prefix + fmt(target) + suffix;
+      el.style.minWidth = el.getBoundingClientRect().width + 'px';
+      el.textContent = prefix + fmt(0) + suffix;
       const duration = 1800;
       const start = performance.now();
       function step(now) {
         const progress = Math.min((now - start) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        const value = target * eased;
-        el.textContent = prefix + (decimal > 0 ? value.toFixed(decimal) : el.dataset.noformat ? String(Math.floor(value)) : Math.floor(value).toLocaleString('ru-RU')) + suffix;
+        el.textContent = prefix + fmt(target * eased) + suffix;
         if (progress < 1) requestAnimationFrame(step);
       }
       requestAnimationFrame(step);

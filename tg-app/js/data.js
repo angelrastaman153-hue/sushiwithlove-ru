@@ -280,7 +280,7 @@ const MENU_ITEMS = [
     upsell: [],
   },
   {
-    id: 203, fpArticle: 0, category: 'drinks', // ❓ артикул не уточнён — проверить в FP
+    id: 203, fpArticle: 603, category: 'drinks',
     name: 'Лимонад AquAlania',
     desc: 'Слива, груша, смородина или барбарис — на выбор',
     weight: '500 мл', price: 199,

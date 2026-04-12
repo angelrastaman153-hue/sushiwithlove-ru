@@ -4173,10 +4173,15 @@
           <div class="dish-img ph-2"><div class="dish-img-ph ph-2">🧃</div></div>
           <div class="dish-body">
             <div class="dish-name">Сок Добрый</div>
-            <div class="dish-composition">Яблоко, апельсин или мультифрукт — на ваш выбор</div>
+            <div class="dish-composition">Натуральный сок в большой упаковке — хватит на всю компанию</div>
+            <div class="flavor-picker" id="sokFlavorPicker">
+              <button class="flavor-btn active" onclick="sokSelectFlavor(this,'Яблоко')">Яблоко</button>
+              <button class="flavor-btn" onclick="sokSelectFlavor(this,'Мультифрут')">Мультифрут</button>
+              <button class="flavor-btn" onclick="sokSelectFlavor(this,'Апельсин-манго')">Апельсин-манго</button>
+            </div>
             <div class="dish-meta"><span class="dish-weight">1 л</span><span class="dish-price">199 ₽</span></div>
           </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:141,name:'Сок Добрый 1л',price:199,emoji:'🧃'})">+ В корзину</button></div>
+          <div class="dish-footer"><button class="add-btn" onclick="sokAddToCart()">+ В корзину</button></div>
         </div>
 
         <div class="dish-card reveal reveal-delay-2" data-id="603" data-name="Лимонад AquAlania 0.5" data-price="199" data-emoji="🍹">
@@ -6383,6 +6388,17 @@
       }
     });
   })();
+
+  // ---- Сок Добрый: выбор вкуса ----
+  var _sokFlavor = 'Яблоко';
+  function sokSelectFlavor(btn, flavor) {
+    _sokFlavor = flavor;
+    document.querySelectorAll('#sokFlavorPicker .flavor-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  function sokAddToCart() {
+    addToCart({ id: 141, name: 'Сок Добрый 1л — ' + _sokFlavor, price: 199, emoji: '🧃' });
+  }
 
   // ---- Лимонад AquAlania: выбор вкуса ----
   var _aquaFlavor = 'Слива';

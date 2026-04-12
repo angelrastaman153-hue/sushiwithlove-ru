@@ -673,18 +673,80 @@ async function handleSubmitOrder() {
 }
 
 /**
- * Отправка заказа
- * ЗАГЛУШКА — замени на реальный API вызов Frontpad или своего бэкенда
- * ВАЖНО: secret key Frontpad НЕЛЬЗЯ хранить в браузере — используй бэкенд-прокси
+ * Отправка заказа через order.php (тот же PHP-прокси, что на основном сайте)
+ * Secret key Frontpad хранится на сервере в order.php — в браузер не попадает.
+ *
+ * Формат payload совпадает с основным сайтом (index.html → submitOrder).
+ * point: 746 — ID точки в Frontpad.
  */
 async function submitOrder(orderData) {
-  // Симуляция отправки (удали и замени на реальный fetch):
-  await new Promise(r => setTimeout(r, 1500));
-  console.log('Заказ отправлен:', orderData);
-  // Пример реального вызова:
-  // const res = await fetch('/api/order', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(orderData) });
-  // if (!res.ok) throw new Error('HTTP ' + res.status);
-  // return await res.json();
+  // Определяем время суток для пометки предзаказа (UTC+5, Курган)
+  const now = new Date();
+  const localMinutes = (now.getUTCHours() * 60 + now.getUTCMinutes() + 5 * 60) % (24 * 60);
+  const isClosed = localMinutes < 10 * 60 || localMinutes >= 22 * 60;
+
+  let comment = orderData.comment || '';
+  if (isClosed) {
+    const note = '⏰ ПРЕДЗАКАЗ (Mini App) — принято в нерабочее время, перезвонить после 10:00';
+    comment = comment ? note + '. ' + comment : note;
+  } else {
+    // Помечаем источник заказа
+    const note = '📱 Заказ из Telegram Mini App';
+    comment = comment ? note + '. ' + comment : note;
+  }
+
+  // Маппинг способа оплаты: совпадает с основным сайтом
+  // 1 = онлайн картой, 2 = наличные, 3 = картой курьеру
+  const payMap = { online: '1', cash: '2', card: '3' };
+
+  // Разбиваем адрес на улицу и дом
+  let street = '', home = '';
+  if (orderData.deliveryType === 'delivery' && orderData.address) {
+    const parts = orderData.address.split(',');
+    street = (parts[0] || '').trim();
+    home   = (parts[1] || '').replace(/д\.?\s*/i, '').trim();
+  }
+
+  const payload = {
+    name:          orderData.name,
+    phone:         orderData.phone,
+    delivery_type: orderData.deliveryType === 'pickup' ? 'pickup' : 'delivery',
+    street,
+    home,
+    entrance: '',
+    floor:    '',
+    flat:     orderData.address?.match(/кв\.?\s*(\d+)/i)?.[1] || '',
+    comment,
+    pay:      payMap[orderData.payment] || '2',
+    point:    CONFIG.frontpadPoint,
+    cash_from: '',
+    chopsticks: orderData.chopsticks || 0,
+    preorder_date: '',
+    preorder_time: '',
+    order_total: orderData.total,
+    promo_code: orderData.promoCode || '',
+    items: orderData.items.map(i => ({ id: i.id, qty: i.qty, price: i.price })),
+  };
+
+  const res = await fetch('../order.php', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  let result;
+  try { result = JSON.parse(text); } catch(e) {
+    console.error('order.php вернул не JSON:', text);
+    throw new Error('Ошибка сервера');
+  }
+
+  if (!result.ok) {
+    console.error('Ошибка Frontpad:', result);
+    throw new Error(result.error || 'Ошибка оформления заказа');
+  }
+
+  return result;
 }
 
 // ─── Экран: успех ─────────────────────────────────────────────────────────────

@@ -180,6 +180,14 @@
     <div class="form-group">
       <label class="form-label">Способ оплаты</label>
       <div class="payment-options" id="payment-options">
+        <label class="payment-option" onclick="selectPayment(this,'online')">
+          <input type="radio" name="payment" value="online">
+          <div class="payment-icon">💳</div>
+          <div>
+            <div class="payment-label">Онлайн картой</div>
+            <div class="payment-desc">Оплата по ссылке от оператора</div>
+          </div>
+        </label>
         <label class="payment-option selected" onclick="selectPayment(this,'cash')">
           <input type="radio" name="payment" value="cash" checked>
           <div class="payment-icon">💵</div>
@@ -190,7 +198,7 @@
         </label>
         <label class="payment-option" onclick="selectPayment(this,'card')">
           <input type="radio" name="payment" value="card">
-          <div class="payment-icon">💳</div>
+          <div class="payment-icon">🖥️</div>
           <div>
             <div class="payment-label">Картой курьеру</div>
             <div class="payment-desc">Терминал у курьера</div>

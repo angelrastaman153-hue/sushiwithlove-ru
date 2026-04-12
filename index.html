@@ -8034,7 +8034,9 @@
       items: cart.map(function(i){ return {id:i.id, qty:i.qty, price:i.price, name:i.name, isGift:!!i.isGift}; })
     };
     var btn = document.getElementById('coSubmitBtn');
+    var mBtn = document.getElementById('coMobileBarBtn');
     btn.disabled = true; btn.textContent = 'Отправляем...';
+    if (mBtn) { mBtn.disabled = true; mBtn.textContent = 'Отправляем...'; }
     fetch('order.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
     .then(function(r){ return r.json(); })
     .then(function(res) {
@@ -8070,13 +8072,15 @@
           }
         }
       } else {
-        errEl.textContent = 'Ошибка. Позвоните нам: 8-922-578-2070'; errEl.style.display = 'block';
+        coShowErr('Ошибка. Позвоните нам: 8-922-578-2070');
         btn.disabled = false; btn.textContent = 'Оформить заказ →';
+        if (mBtn) { mBtn.disabled = false; mBtn.textContent = 'Оформить заказ →'; }
       }
     })
     .catch(function() {
-      errEl.textContent = 'Нет связи. Позвоните нам: 8-922-578-2070'; errEl.style.display = 'block';
+      coShowErr('Нет связи. Позвоните нам: 8-922-578-2070');
       btn.disabled = false; btn.textContent = 'Оформить заказ →';
+      if (mBtn) { mBtn.disabled = false; mBtn.textContent = 'Оформить заказ →'; }
     });
   }
 

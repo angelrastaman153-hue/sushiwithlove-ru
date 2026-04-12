@@ -4622,7 +4622,7 @@
               <div id="coStreetSugg" class="street-suggestions" style="display:none"></div>
             </div>
             <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
-              <input type="text" id="coHouse" class="form-input" placeholder="Дом" oninput="coGeoDetect()">
+              <input type="text" id="coHouse" class="form-input" placeholder="Дом">
               <button class="btn btn-ghost" onclick="openMapPicker()" style="white-space:nowrap;font-size:0.8rem">🗺 На карте</button>
             </div>
           </div>
@@ -7922,7 +7922,7 @@
             var streetOnly = parts[0].trim();
             document.getElementById('coStreet').value = streetOnly;
             sugg.style.display = 'none';
-            coDetectZoneByCoords(lat, lng, label);
+            // Зона определяется только через карту («Доставить сюда»)
           };
           sugg.appendChild(d);
         });
@@ -7931,6 +7931,9 @@
       }).catch(function(){});
     }, 300);
   }
+
+  // coGeoDetect и coDetectZoneByCoords оставлены для внутреннего использования
+  // но НЕ вызываются автоматически из текстовых полей — зона определяется только через карту
 
   function coShowErr(msg) {
     var errEl  = document.getElementById('coSubmitErr');

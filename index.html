@@ -1976,6 +1976,30 @@
 
       /* Все инпуты — полная ширина, не вылезают */
       .form-input { width: 100%; box-sizing: border-box; }
+
+      /* Промокод и сдача — в колонку на мобайле */
+      .co-promo-row, .co-cash-row {
+        flex-direction: column;
+      }
+      .co-promo-row .form-input,
+      .co-cash-row .form-input,
+      .co-promo-btn,
+      #coNoCashBtn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Базовые стили рядов (десктоп) */
+    .co-promo-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .co-cash-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     /* ============================================================
@@ -4557,9 +4581,9 @@
         <!-- БЛОК 3: Промокод -->
         <div class="co-block">
           <div class="co-block-title">Промокод</div>
-          <div style="display:flex;gap:10px">
-            <input type="text" id="coPromoInput" class="form-input" placeholder="Введите промокод" style="flex:1;text-transform:uppercase" oninput="var b=this.nextElementSibling;b.textContent='Применить';b.style.color='';b.style.borderColor=''">
-            <button class="btn btn-ghost" onclick="coApplyPromo()" style="flex-shrink:0">Применить</button>
+          <div class="co-promo-row">
+            <input type="text" id="coPromoInput" class="form-input" placeholder="Введите промокод" style="flex:1;min-width:0;text-transform:uppercase" oninput="var b=this.nextElementSibling;b.textContent='Применить';b.style.color='';b.style.borderColor=''">
+            <button class="btn btn-ghost co-promo-btn" onclick="coApplyPromo()">Применить</button>
           </div>
           <div id="coPromoMsg" style="display:none;margin-top:8px;font-size:0.85rem"></div>
           <div id="coPromoFirstOrderNote" style="display:none;margin-top:6px;font-size:0.78rem;color:var(--text-2);background:rgba(232,168,71,0.07);border:1px solid rgba(232,168,71,0.2);border-radius:8px;padding:8px 12px;line-height:1.5">
@@ -4622,9 +4646,9 @@
                 <div class="payment-opt-check"></div>
               </div>
               <div id="coCashField" style="display:none;padding:10px 14px;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;background:var(--surface-2)">
-                <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
-                  <input type="text" id="coCashFrom" class="form-input" placeholder="Сдача с суммы (необязательно)">
-                  <button class="btn btn-ghost" id="coNoCashBtn" onclick="coToggleNoCash()" style="height:44px;white-space:nowrap">Без сдачи</button>
+                <div class="co-cash-row">
+                  <input type="text" id="coCashFrom" class="form-input" placeholder="Сдача с суммы">
+                  <button class="btn btn-ghost" id="coNoCashBtn" onclick="coToggleNoCash()" style="white-space:nowrap">Без сдачи</button>
                 </div>
               </div>
             </div>

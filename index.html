@@ -1231,6 +1231,11 @@
       background-size: cover;
       background-position: center;
     }
+    [data-name="Лимонад AquAlania 0.5"] .dish-img {
+      background-size: contain;
+      background-position: center;
+      background-color: #fff;
+    }
     [data-name="Сет ДОБРО"] .dish-img-ph,
     [data-name="Сет ВЫГОДНЫЙ"] .dish-img-ph,
     [data-name="Сет ПЛЯЖНЫЙ"] .dish-img-ph,
@@ -1355,6 +1360,29 @@
       color: var(--text-2);
       line-height: 1.5;
       flex: 1;
+    }
+    .flavor-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 6px 0 4px;
+    }
+    .flavor-btn {
+      font-size: 0.74rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1.6;
+    }
+    .flavor-btn.active {
+      border-color: var(--accent);
+      background: rgba(232,168,71,0.15);
+      color: var(--accent);
+      font-weight: 600;
     }
     .dish-meta {
       display: flex;
@@ -4155,10 +4183,16 @@
           <div class="dish-img ph-3"><div class="dish-img-ph ph-3">🍹</div></div>
           <div class="dish-body">
             <div class="dish-name">Лимонад AquAlania</div>
-            <div class="dish-composition">Слива, груша, смородина или барбарис — натуральный лимонад из Северной Осетии</div>
+            <div class="dish-composition">Премиальный сильногазированный напиток из Северной Осетии на основе родниковой воды</div>
+            <div class="flavor-picker" id="aquaFlavorPicker">
+              <button class="flavor-btn active" onclick="aquaSelectFlavor(this,'Слива')">Слива</button>
+              <button class="flavor-btn" onclick="aquaSelectFlavor(this,'Груша')">Груша</button>
+              <button class="flavor-btn" onclick="aquaSelectFlavor(this,'Смородина')">Смородина</button>
+              <button class="flavor-btn" onclick="aquaSelectFlavor(this,'Барбарис')">Барбарис</button>
+            </div>
             <div class="dish-meta"><span class="dish-weight">0.5 л</span><span class="dish-price">199 ₽</span></div>
           </div>
-          <div class="dish-footer"><button class="add-btn" onclick="addToCart({id:603,name:'Лимонад AquAlania 0.5',price:199,emoji:'🍹'})">+ В корзину</button></div>
+          <div class="dish-footer"><button class="add-btn" onclick="aquaAddToCart()">+ В корзину</button></div>
         </div>
 
       </div>
@@ -6139,7 +6173,7 @@
       // Напитки
       'Кола бутылка 0.5': ['', 'Освежающий газированный напиток к роллам, сетам и закускам.'],
       'Сок Добрый 1л': ['Яблоко, апельсин или мультифрукт.', 'Сок в ассортименте — более мягкий и привычный вкус к заказу.'],
-      'Лимонад AquAlania 0.5': ['Слива, груша, смородина или барбарис — на ваш выбор.', 'Натуральный лимонад из Северной Осетии на основе родниковой воды, производится в ассортименте 4 вкусов.']
+      'Лимонад AquAlania 0.5': ['Слива, груша, смородина, барбарис — выберите вкус на карточке.', 'Лимонады AquAlania («АкваАлания») — премиальные сильногазированные безалкогольные напитки, производимые в Северной Осетии на основе чистой родниковой воды. Отличаются богатой палитрой вкусов, гармоничным балансом сладости и кислинки.']
     };
 
     document.querySelectorAll('.dish-card[data-name]').forEach(function(card) {
@@ -6349,6 +6383,17 @@
       }
     });
   })();
+
+  // ---- Лимонад AquAlania: выбор вкуса ----
+  var _aquaFlavor = 'Слива';
+  function aquaSelectFlavor(btn, flavor) {
+    _aquaFlavor = flavor;
+    document.querySelectorAll('#aquaFlavorPicker .flavor-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  function aquaAddToCart() {
+    addToCart({ id: 603, name: 'Лимонад AquAlania — ' + _aquaFlavor, price: 199, emoji: '🍹' });
+  }
 
   function toggleHeroDealPopup(e, btn) {
     e && e.stopPropagation();

@@ -7823,15 +7823,37 @@
     }
   }
 
+  // Bounding box Курганской области (lon_min, lat_min, lon_max, lat_max)
+  var KURGAN_BBOX = '&countrycodes=ru&viewbox=62.5,54.5,68.0,57.0&bounded=1';
+
+  // Определить зону по координатам и обновить стоимость доставки
+  function coDetectZoneByCoords(lat, lng, streetLabel) {
+    var zoneDesc = _getDeliveryZone(lat, lng);
+    if (zoneDesc) {
+      savedAddress = {
+        text: streetLabel,
+        street: document.getElementById('coStreet').value.trim() || streetLabel,
+        house: document.getElementById('coHouse').value.trim(),
+        zone: zoneDesc,
+        lat: lat, lng: lng
+      };
+      localStorage.setItem('swl_address', JSON.stringify(savedAddress));
+      coUpdateSummary();
+    } else {
+      if (savedAddress && savedAddress.lat === lat) { savedAddress = null; localStorage.removeItem('swl_address'); }
+      coUpdateSummary();
+    }
+  }
+
   // Геокодинг полного адреса и определение зоны
   function coGeoDetect() {
     var street = document.getElementById('coStreet').value.trim();
     var house  = document.getElementById('coHouse').value.trim();
     if (!street) return;
-    var query = 'Курган ' + street + (house ? ' ' + house : '');
+    var query = 'Курганская область ' + street + (house ? ' ' + house : '');
     clearTimeout(coGeoTimer);
     coGeoTimer = setTimeout(function() {
-      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ru&q=' + encodeURIComponent(query))
+      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1' + KURGAN_BBOX + '&q=' + encodeURIComponent(query))
       .then(function(r){ return r.json(); })
       .then(function(data) {
         if (!data.length) return;
@@ -7846,25 +7868,33 @@
     var sugg = document.getElementById('coStreetSugg');
     if (val.length < 2) { sugg.style.display = 'none'; return; }
     coStreetTimer = setTimeout(function() {
-      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=ru&q=' + encodeURIComponent('Курган ' + val))
+      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6' + KURGAN_BBOX + '&q=' + encodeURIComponent('Курганская область ' + val))
       .then(function(r){ return r.json(); })
       .then(function(data) {
         sugg.innerHTML = '';
         if (!data.length) { sugg.style.display = 'none'; return; }
+        // Фильтруем дубли по первой части display_name, показываем адрес с населённым пунктом
+        var seen = {};
         data.forEach(function(item) {
-          var street = item.display_name.split(',')[0].trim();
+          var parts = item.display_name.split(',');
+          // Строим метку: "ул. Ленина, 23, Кетово" или "ул. Ленина, Курган"
+          var label = parts.slice(0, 3).map(function(s){ return s.trim(); }).join(', ');
+          if (seen[label]) return;
+          seen[label] = true;
           var lat = parseFloat(item.lat), lng = parseFloat(item.lon);
           var d = document.createElement('div');
-          d.className = 'suggestion-item'; d.textContent = street;
+          d.className = 'suggestion-item'; d.textContent = label;
           d.onclick = function() {
-            document.getElementById('coStreet').value = street;
+            // В поле улицы — только улица (первая часть)
+            var streetOnly = parts[0].trim();
+            document.getElementById('coStreet').value = streetOnly;
             sugg.style.display = 'none';
-            // Сразу определяем зону по координатам выбранной улицы
-            coDetectZoneByCoords(lat, lng, street);
+            coDetectZoneByCoords(lat, lng, label);
           };
           sugg.appendChild(d);
         });
-        sugg.style.display = 'block';
+        if (sugg.children.length) sugg.style.display = 'block';
+        else sugg.style.display = 'none';
       }).catch(function(){});
     }, 300);
   }

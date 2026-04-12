@@ -1028,10 +1028,38 @@
       border-color: var(--accent);
     }
 
+    /* Кнопка «Фильтры» на мобиле */
+    #filterToggleBtn {
+      display: none; /* скрыт по умолчанию; JS показывает на мобиле */
+      margin-left: auto;
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #C0A880;
+      border: 1px solid rgba(192,168,128,0.3);
+      background: transparent;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    #filterToggleBtn.active { color: #0F0B08; background: var(--accent); border-color: var(--accent); }
+    @media (max-width: 768px) {
+      #filterToggleBtn { display: flex; align-items: center; gap: 4px; }
+      .cat-btn { padding: 6px 12px; font-size: 0.78rem; }
+      .category-nav .container { padding: 8px 12px; gap: 6px; }
+    }
+
     .filter-bar {
       background: #0F0B08;
       border-top: 1px solid var(--border);
+      overflow: hidden;
+      max-height: 200px;
+      transition: max-height 0.28s ease, opacity 0.22s ease;
+      opacity: 1;
     }
+    .filter-bar.collapsed { max-height: 0; opacity: 0; border-top: none; }
     .filter-bar .container {
       display: flex;
       gap: 6px;
@@ -3466,8 +3494,9 @@
       <button class="cat-btn" data-target="pizza">Пицца</button>
       <button class="cat-btn" data-target="together">Допы</button>
       <button class="cat-btn" data-target="drinks">Напитки</button>
+      <button id="filterToggleBtn" onclick="toggleFilterBar()">⚡ Фильтры ▾</button>
     </div>
-    <div class="filter-bar" id="filterBar">
+    <div class="filter-bar collapsed" id="filterBar">
       <!-- Группа 1: по ингредиенту -->
       <span class="filter-group-label">По ингредиенту</span>
       <div class="container">
@@ -5638,6 +5667,42 @@
   }, { passive: true });
 
   // ============================================================
+  // FILTER BAR TOGGLE (mobile)
+  // ============================================================
+  function toggleFilterBar() {
+    var bar = document.getElementById('filterBar');
+    var btn = document.getElementById('filterToggleBtn');
+    if (!bar) return;
+    var isOpen = !bar.classList.contains('collapsed');
+    if (isOpen) {
+      bar.classList.add('collapsed');
+      btn.classList.remove('active');
+      btn.innerHTML = '⚡ Фильтры ▾';
+    } else {
+      bar.classList.remove('collapsed');
+      btn.classList.add('active');
+      btn.innerHTML = '⚡ Фильтры ▴';
+    }
+  }
+  // На десктопе фильтры всегда открыты
+  (function() {
+    var mq = window.matchMedia('(max-width: 768px)');
+    function onMQ(e) {
+      var bar = document.getElementById('filterBar');
+      var btn = document.getElementById('filterToggleBtn');
+      if (!e.matches) {
+        // Десктоп — показываем фильтры, скрываем кнопку
+        bar.classList.remove('collapsed');
+        if (btn) btn.style.display = 'none';
+      } else {
+        // Мобиле — кнопка видна, фильтры свёрнуты (если не активен фильтр)
+        if (btn) btn.style.display = '';
+      }
+    }
+    mq.addEventListener('change', onMQ);
+    onMQ(mq);
+  })();
+
   // CATEGORY NAV
   // ============================================================
   const catBtns = document.querySelectorAll('.cat-btn');
@@ -5836,6 +5901,15 @@
         p.classList.toggle('active', p.dataset.tag === activeTag || (activeTag === '' && p.dataset.tag === ''));
       });
       applyFilter();
+      // На мобиле: если выбран фильтр — открыть панель, чтобы тег был виден
+      if (tag && window.matchMedia('(max-width: 768px)').matches) {
+        var bar = document.getElementById('filterBar');
+        var btn = document.getElementById('filterToggleBtn');
+        if (bar && bar.classList.contains('collapsed')) {
+          bar.classList.remove('collapsed');
+          if (btn) { btn.classList.add('active'); btn.innerHTML = '⚡ Фильтры ▴'; }
+        }
+      }
     }
 
     pills.forEach(function(pill) {

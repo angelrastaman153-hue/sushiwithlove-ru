@@ -1633,27 +1633,27 @@
       background: rgba(232,168,71,0.1); color: var(--accent);
     }
     .co-item {
-      display: flex; align-items: center; gap: 12px;
+      display: flex; align-items: center; gap: 10px;
       padding: 10px 0; border-bottom: 1px solid var(--border);
     }
     .co-item:last-child { border-bottom: none; }
     .co-item-emoji {
-      font-size: 22px; width: 40px; height: 40px;
+      font-size: 20px; width: 36px; height: 36px;
       border-radius: 8px; background: var(--surface-2);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .co-item-name { flex: 1; font-size: 0.88rem; font-weight: 500; }
+    .co-item-name { flex: 1; min-width: 0; font-size: 0.85rem; font-weight: 500; }
     .co-item-price {
-      font-size: 0.88rem; font-weight: 700;
-      color: var(--accent); min-width: 64px; text-align: right;
+      font-size: 0.85rem; font-weight: 700;
+      color: var(--accent); white-space: nowrap; flex-shrink: 0; text-align: right;
     }
-    .co-item-qty { display: flex; align-items: center; gap: 8px; }
+    .co-item-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .co-qty-btn {
-      width: 26px; height: 26px; border-radius: 6px;
+      width: 28px; height: 28px; border-radius: 6px;
       border: 1px solid var(--border); background: var(--surface-2);
-      color: var(--text); font-size: 0.95rem; cursor: pointer;
+      color: var(--text); font-size: 1rem; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: var(--transition);
+      transition: var(--transition); flex-shrink: 0;
     }
     .co-qty-btn:hover { border-color: var(--accent); color: var(--accent); }
     .co-qty-val { min-width: 18px; text-align: center; font-weight: 600; font-size: 0.88rem; }
@@ -7043,6 +7043,9 @@
 
   function openCheckoutPage() {
     closeCart();
+    // Сбрасываем системный размер шрифта к стандарту (16px),
+    // чтобы корзина не масштабировалась при увеличенном шрифте на телефоне
+    document.documentElement.style.fontSize = '16px';
     var ov = document.getElementById('checkoutPageOverlay');
     ov.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -7101,6 +7104,8 @@
   function closeCheckoutPage() {
     document.getElementById('checkoutPageOverlay').classList.remove('open');
     document.body.style.overflow = '';
+    // Восстанавливаем системный размер шрифта
+    document.documentElement.style.fontSize = '';
   }
 
   function coConsentChanged() {

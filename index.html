@@ -2756,7 +2756,18 @@
     }
     @media (hover: none) {
       .dish-info-btn { display: flex; }
-      .dish-card.desc-open .dish-hover-overlay { opacity: 1; }
+      .dish-card.desc-open .dish-hover-overlay { opacity: 1; pointer-events: auto; }
+      /* Убираем обрезку текста когда описание открыто */
+      .dish-card.desc-open,
+      .dish-card.desc-open .dish-img {
+        overflow: visible;
+      }
+      .dish-card.desc-open .dish-hover-overlay {
+        aspect-ratio: auto;
+        height: auto;
+        justify-content: flex-start;
+        padding: 16px 20px;
+      }
     }
 
     /* ============================================================

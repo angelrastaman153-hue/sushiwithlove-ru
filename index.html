@@ -6278,7 +6278,7 @@
     if (oldEl)  oldEl.textContent  = deal.oldPrice + ' ₽';
     if (newEl)  newEl.textContent  = deal.price + ' ₽';
     if (btn) btn.onclick = function() {
-      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji });
+      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
     };
 
     // Заполняем попап
@@ -6306,7 +6306,7 @@
     if (popupOld) popupOld.textContent = deal.oldPrice + ' ₽';
     if (popupNew) popupNew.textContent = deal.price + ' ₽';
     if (popupBtn) popupBtn.onclick = function() {
-      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji });
+      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
       closeHeroDealPopup();
     };
   })();

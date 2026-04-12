@@ -23,6 +23,23 @@ const App = {
   scrollspyObserver: null,   // IntersectionObserver для категорий
 };
 
+// ─── Обёртки для кнопок Telegram (SDK onClick additive — нужен offClick) ──────
+const _btnHandlers = { main: null, back: null };
+
+function setMainBtnHandler(fn) {
+  if (!tg) return;
+  if (_btnHandlers.main) tg.MainButton.offClick(_btnHandlers.main);
+  _btnHandlers.main = fn || null;
+  if (fn) tg.MainButton.onClick(fn);
+}
+
+function setBackBtnHandler(fn) {
+  if (!tg) return;
+  if (_btnHandlers.back) tg.BackButton.offClick(_btnHandlers.back);
+  _btnHandlers.back = fn || null;
+  if (fn) tg.BackButton.onClick(fn);
+}
+
 // ─── Инициализация ────────────────────────────────────────────────────────────
 async function init() {
   if (tg) {
@@ -87,9 +104,10 @@ function navigateTo(screenId, pushHistory = true) {
   if (tg) {
     if (App.screenHistory.length > 0 && screenId !== 'success') {
       tg.BackButton.show();
-      tg.BackButton.onClick(navigateBack);
+      setBackBtnHandler(navigateBack);
     } else {
       tg.BackButton.hide();
+      setBackBtnHandler(null);
     }
   }
 
@@ -113,20 +131,22 @@ function updateMainButton() {
     if (count > 0) {
       tg.MainButton.setText(`🛒 Корзина · ${count} · ${formatPrice(total)}`);
       tg.MainButton.show();
-      tg.MainButton.onClick(openCartSheet);
+      setMainBtnHandler(openCartSheet);
     } else {
       tg.MainButton.hide();
+      setMainBtnHandler(null);
     }
   } else if (App.currentScreen === 'address') {
     tg.MainButton.setText('Далее →');
     tg.MainButton.show();
-    tg.MainButton.onClick(handleAddressNext);
+    setMainBtnHandler(handleAddressNext);
   } else if (App.currentScreen === 'details') {
     tg.MainButton.setText(`Оформить заказ · ${formatPrice(total)}`);
     tg.MainButton.show();
-    tg.MainButton.onClick(handleSubmitOrder);
+    setMainBtnHandler(handleSubmitOrder);
   } else if (App.currentScreen === 'success') {
     tg.MainButton.hide();
+    setMainBtnHandler(null);
   }
 }
 
@@ -346,7 +366,7 @@ function openProductSheet(itemId) {
 
   if (tg) {
     tg.BackButton.show();
-    tg.BackButton.onClick(() => closeSheet('sheet-product'));
+    setBackBtnHandler(() => closeSheet('sheet-product'));
   }
 }
 
@@ -379,9 +399,9 @@ function openCartSheet() {
   openSheet('sheet-cart');
   if (tg) {
     tg.MainButton.setText(`Оформить заказ · ${formatPrice(Cart.getTotals(App.deliveryCost).total)}`);
-    tg.MainButton.onClick(handleCheckoutFromCart);
+    setMainBtnHandler(handleCheckoutFromCart);
     tg.BackButton.show();
-    tg.BackButton.onClick(() => closeSheet('sheet-cart'));
+    setBackBtnHandler(() => closeSheet('sheet-cart'));
   }
 }
 
@@ -785,7 +805,12 @@ function closeSheet(sheetId) {
   if (tg) {
     tg.BackButton.hide();
     // Восстанавливаем BackButton для экрана если нужно
-    if (App.screenHistory.length > 0) tg.BackButton.show();
+    if (App.screenHistory.length > 0) {
+      tg.BackButton.show();
+      setBackBtnHandler(navigateBack);
+    } else {
+      setBackBtnHandler(null);
+    }
   }
   updateMainButton();
 }
@@ -793,6 +818,15 @@ function closeSheet(sheetId) {
 let swipeStartY = 0;
 function addSwipeToClose(sheet, callback) {
   const handle = sheet.querySelector('.sheet-handle');
+  const el = handle || sheet;
+
+  // Удаляем предыдущие слушатели через сохранённые ссылки
+  if (el._swipe) {
+    el.removeEventListener('touchstart', el._swipe.start);
+    el.removeEventListener('touchmove',  el._swipe.move);
+    el.removeEventListener('touchend',   el._swipe.end);
+  }
+
   const startHandler = e => { swipeStartY = (e.touches?.[0] || e).clientY; };
   const moveHandler  = e => {
     const dy = (e.touches?.[0] || e).clientY - swipeStartY;
@@ -803,14 +837,11 @@ function addSwipeToClose(sheet, callback) {
     sheet.style.transform = '';
     if (dy > 80) callback();
   };
-  // Удаляем старые слушатели (пересоздание)
-  const el = handle || sheet;
-  el.removeEventListener('touchstart', startHandler);
-  el.removeEventListener('touchmove', moveHandler);
-  el.removeEventListener('touchend', endHandler);
-  el.addEventListener('touchstart', startHandler, { passive: true });
-  el.addEventListener('touchmove', moveHandler, { passive: true });
-  el.addEventListener('touchend', endHandler, { passive: true });
+
+  el._swipe = { start: startHandler, move: moveHandler, end: endHandler };
+  el.addEventListener('touchstart', el._swipe.start, { passive: true });
+  el.addEventListener('touchmove',  el._swipe.move,  { passive: true });
+  el.addEventListener('touchend',   el._swipe.end,   { passive: true });
 }
 
 // ─── Степпер палочек ──────────────────────────────────────────────────────────

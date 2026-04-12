@@ -5444,7 +5444,7 @@
 
   var chopstickCount = null;
   function changeChopsticks(delta) {
-    if (chopstickCount === null) chopstickCount = delta > 0 ? 1 : 0;
+    if (chopstickCount === null) { if (delta > 0) chopstickCount = 0; else return; }
     else chopstickCount = Math.max(0, chopstickCount + delta);
     var el = document.getElementById('chopstickVal');
     if (!el) return;
@@ -7466,12 +7466,12 @@
         '</div>';
 
       chopCard.querySelector('.chop-minus').addEventListener('click', function() {
-        if (chopQty === null) chopQty = 0;
-        else chopQty = Math.max(0, chopQty - 1);
+        if (chopQty === null) return;
+        chopQty = Math.max(0, chopQty - 1);
         coChopsticks = chopQty; buildChopCard();
       });
       chopCard.querySelector('.chop-plus').addEventListener('click', function() {
-        if (chopQty === null) chopQty = 1;
+        if (chopQty === null) chopQty = 0;
         else chopQty++;
         coChopsticks = chopQty; buildChopCard();
       });

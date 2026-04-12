@@ -4593,7 +4593,7 @@
               <div id="coStreetSugg" class="street-suggestions" style="display:none"></div>
             </div>
             <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
-              <input type="text" id="coHouse" class="form-input" placeholder="Дом">
+              <input type="text" id="coHouse" class="form-input" placeholder="Дом" oninput="coGeoDetect()">
               <button class="btn btn-ghost" onclick="openMapPicker()" style="white-space:nowrap;font-size:0.8rem">🗺 На карте</button>
             </div>
           </div>
@@ -7464,11 +7464,14 @@
     var delivEl = document.getElementById('coSumDelivery');
     var noteEl  = document.getElementById('coDeliveryNote');
     if (delivEl) {
-      if (savedAddress) {
+      if (coDeliveryType === 'self') {
+        delivEl.textContent = 'Бесплатно';
+        if (noteEl) noteEl.style.display = 'none';
+      } else if (savedAddress && savedAddress.zone) {
         delivEl.textContent = delivCost === 0 ? 'Бесплатно' : fmt(delivCost);
         if (noteEl) noteEl.style.display = 'none';
       } else {
-        delivEl.textContent = 'Уточним';
+        delivEl.textContent = 'Укажите адрес';
         if (noteEl) noteEl.style.display = '';
       }
     }
@@ -7770,6 +7773,46 @@
   }
 
   var coStreetTimer = null;
+  var coGeoTimer = null;
+
+  // Определить зону по координатам и обновить стоимость доставки
+  function coDetectZoneByCoords(lat, lng, streetLabel) {
+    var zoneDesc = _getDeliveryZone(lat, lng);
+    if (zoneDesc) {
+      savedAddress = {
+        text: streetLabel,
+        street: document.getElementById('coStreet').value.trim() || streetLabel,
+        house: document.getElementById('coHouse').value.trim(),
+        zone: zoneDesc,
+        lat: lat, lng: lng
+      };
+      localStorage.setItem('swl_address', JSON.stringify(savedAddress));
+      coUpdateSummary();
+    } else {
+      // Адрес не в зоне доставки — обнулить и показать «Уточним»
+      if (savedAddress && savedAddress.lat === lat) { savedAddress = null; localStorage.removeItem('swl_address'); }
+      coUpdateSummary();
+    }
+  }
+
+  // Геокодинг полного адреса и определение зоны
+  function coGeoDetect() {
+    var street = document.getElementById('coStreet').value.trim();
+    var house  = document.getElementById('coHouse').value.trim();
+    if (!street) return;
+    var query = 'Курган ' + street + (house ? ' ' + house : '');
+    clearTimeout(coGeoTimer);
+    coGeoTimer = setTimeout(function() {
+      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ru&q=' + encodeURIComponent(query))
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (!data.length) return;
+        var lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+        coDetectZoneByCoords(lat, lng, street + (house ? ', ' + house : ''));
+      }).catch(function(){});
+    }, 600);
+  }
+
   function coStreetSuggest(val) {
     clearTimeout(coStreetTimer);
     var sugg = document.getElementById('coStreetSugg');
@@ -7782,9 +7825,15 @@
         if (!data.length) { sugg.style.display = 'none'; return; }
         data.forEach(function(item) {
           var street = item.display_name.split(',')[0].trim();
+          var lat = parseFloat(item.lat), lng = parseFloat(item.lon);
           var d = document.createElement('div');
           d.className = 'suggestion-item'; d.textContent = street;
-          d.onclick = function() { document.getElementById('coStreet').value = street; sugg.style.display = 'none'; };
+          d.onclick = function() {
+            document.getElementById('coStreet').value = street;
+            sugg.style.display = 'none';
+            // Сразу определяем зону по координатам выбранной улицы
+            coDetectZoneByCoords(lat, lng, street);
+          };
           sugg.appendChild(d);
         });
         sugg.style.display = 'block';

@@ -4,7 +4,7 @@
 
 define('BOT_TOKEN',  '8687681331:AAEVMn_44tRlyBFRuD-X0fTOtkZHnAzO5YQ');
 define('BOT_NAME',   'sushi45_bot');
-define('SITE_URL',   'https://xn--e1afmkfd5bxa3b.xn--p1ai'); // сушислюбовью.рф
+define('SITE_URL',   'https://xn--90acqmqobo9b7bse.xn--p1ai'); // сушислюбовью.рф
 
 define('DB_HOST', 'localhost');
 define('DB_USER', 'angelros_swl');

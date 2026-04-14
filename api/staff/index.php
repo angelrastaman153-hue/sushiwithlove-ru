@@ -262,17 +262,49 @@ if (isset($_GET['action'])) {
         $data = json_decode(file_get_contents('php://input'), true);
         $tid  = intval($data['id']);
         if ($tid === $sid) { json_out(array('ok'=>false,'error'=>'Нельзя отключить себя')); }
-        // admin не может трогать owner-аккаунты
+        // admin не может трогать owner/admin-аккаунты
         if ($srole === 'admin') {
             $target = $pdo->query('SELECT role FROM staff WHERE id='.$tid)->fetch();
-            if ($target && in_array($target['role'], array('owner','admin'))) {
-                json_out(array('ok'=>false,'error'=>'Недостаточно прав'));
+            if ($target) {
+                $troles = array_map('trim', explode(',', $target['role']));
+                if (array_intersect($troles, array('owner','admin'))) {
+                    json_out(array('ok'=>false,'error'=>'Недостаточно прав'));
+                }
             }
         }
         $cur = $pdo->query('SELECT active FROM staff WHERE id='.$tid)->fetch();
         $new = $cur['active'] ? 0 : 1;
         $pdo->prepare('UPDATE staff SET active=? WHERE id=?')->execute(array($new, $tid));
         json_out(array('ok'=>true,'active'=>$new));
+    }
+
+    // --- Редактировать сотрудника (имя + роли) ---
+    if ($action === 'staff_edit' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data     = json_decode(file_get_contents('php://input'), true);
+        $tid      = intval($data['id']);
+        $name     = trim(isset($data['name']) ? $data['name'] : '');
+        $roles_in = isset($data['roles']) ? $data['roles'] : array();
+        if (!$tid)  { json_out(array('ok'=>false,'error'=>'Не указан сотрудник')); }
+        if (!$name) { json_out(array('ok'=>false,'error'=>'Введите имя')); }
+        if (empty($roles_in)) { json_out(array('ok'=>false,'error'=>'Выберите хотя бы одну роль')); }
+        // Нельзя редактировать себя (роли), нельзя admin трогать owner/admin
+        if ($srole === 'admin') {
+            $target = $pdo->query('SELECT role FROM staff WHERE id='.$tid)->fetch();
+            if ($target) {
+                $troles = array_map('trim', explode(',', $target['role']));
+                if (array_intersect($troles, array('owner','admin'))) {
+                    json_out(array('ok'=>false,'error'=>'Недостаточно прав'));
+                }
+            }
+        }
+        $allowed = ($srole === 'owner') ? array('admin','operator','courier') : array('operator','courier');
+        // owner не может снять с себя owner через этот экшен
+        if ($tid === $sid) { $allowed[] = 'owner'; }
+        $clean = array();
+        foreach ($roles_in as $r) { if (in_array($r, $allowed)) $clean[] = $r; }
+        if (empty($clean)) { json_out(array('ok'=>false,'error'=>'Нет допустимых ролей')); }
+        $pdo->prepare('UPDATE staff SET name=?, role=? WHERE id=?')->execute(array($name, implode(',', $clean), $tid));
+        json_out(array('ok'=>true));
     }
 
     // --- Лог действий (только owner) ---
@@ -524,6 +556,34 @@ if (isset($_GET['action'])) {
   </div>
 </div>
 
+<!-- Модал: редактировать сотрудника -->
+<div class="modal-bg" id="editStaffModal">
+  <div class="modal">
+    <h3>Редактировать сотрудника</h3>
+    <input type="hidden" id="editStaffId">
+    <label>Имя</label>
+    <input type="text" id="editName" style="width:100%">
+    <label style="margin-top:12px">Роли</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+      <?php if ($srole === 'owner'): ?>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.88rem;color:#ccc;cursor:pointer">
+        <input type="checkbox" class="edit-role-chk" value="admin"> Администратор
+      </label>
+      <?php endif; ?>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.88rem;color:#ccc;cursor:pointer">
+        <input type="checkbox" class="edit-role-chk" value="operator"> Оператор
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.88rem;color:#ccc;cursor:pointer">
+        <input type="checkbox" class="edit-role-chk" value="courier"> Курьер
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeEditModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <!-- Модал: смена пароля -->
 <div class="modal-bg" id="passModal">
   <div class="modal">
@@ -683,17 +743,20 @@ function loadStaff() {
         role = role.trim();
         return '<span class="badge badge-'+role+'" style="margin-right:3px">'+(rLabels[role]||role)+'</span>';
       }).join('');
-      var activeBtn = s.active
+      var toggleBtn = s.active
         ? '<button class="btn btn-sm btn-danger" onclick="toggleStaff('+s.id+')">Откл.</button>'
-        : '<button class="btn btn-sm btn-ghost" onclick="toggleStaff('+s.id+')">Вкл.</button>';
+        : '<button class="btn btn-sm" style="background:#1a3a1a;color:#44cc88;border:1px solid #2a5a2a" onclick="toggleStaff('+s.id+')">Вкл.</button>';
+      // Передаём роли как data-атрибут через JSON
+      var rolesJson = JSON.stringify(staffRoles).replace(/'/g, '&#39;');
       html += '<tr style="'+(s.active?'':'opacity:.5')+'">'
         + '<td><b>'+esc(s.name)+'</b></td>'
         + '<td style="color:#888">'+esc(s.login)+'</td>'
         + '<td>'+badgesHtml+'</td>'
         + '<td>'+(s.active?'<span style="color:#44cc88">Активен</span>':'<span style="color:#666">Откл.</span>')+'</td>'
         + '<td style="display:flex;gap:6px;flex-wrap:wrap">'
+        +   '<button class="btn btn-sm btn-primary" onclick="openEditModal('+s.id+',\''+esc(s.name)+'\','+JSON.stringify(staffRoles)+')">Изменить</button>'
         +   '<button class="btn btn-sm btn-ghost" onclick="openPassModal('+s.id+')">Пароль</button>'
-        +   activeBtn
+        +   toggleBtn
         + '</td>'
         + '</tr>';
     });
@@ -720,6 +783,31 @@ function addStaff() {
     } else showAlert(r.error||'Ошибка', true);
   });
 }
+function openEditModal(id, name, roles) {
+  document.getElementById('editStaffId').value = id;
+  document.getElementById('editName').value = name;
+  document.querySelectorAll('.edit-role-chk').forEach(function(c) {
+    c.checked = roles.indexOf(c.value) !== -1;
+  });
+  document.getElementById('editStaffModal').classList.add('open');
+}
+function closeEditModal() { document.getElementById('editStaffModal').classList.remove('open'); }
+function saveEdit() {
+  var id    = parseInt(document.getElementById('editStaffId').value);
+  var name  = document.getElementById('editName').value.trim();
+  var roles = [];
+  document.querySelectorAll('.edit-role-chk:checked').forEach(function(c){ roles.push(c.value); });
+  if (!name)          { showAlert('Введите имя', true); return; }
+  if (!roles.length)  { showAlert('Выберите хотя бы одну роль', true); return; }
+  fetch('?action=staff_edit', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({id:id, name:name, roles:roles})
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (r.ok) { showAlert('Сохранено', false); closeEditModal(); loadStaff(); }
+    else showAlert(r.error||'Ошибка', true);
+  });
+}
+
 function openPassModal(id) {
   document.getElementById('passStaffId').value = id;
   document.getElementById('newPassChange').value = '';

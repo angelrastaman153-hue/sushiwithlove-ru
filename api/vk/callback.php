@@ -32,10 +32,17 @@ if ($data['type'] === 'message_new') {
     if ($from_id && $from_id < 0) { echo 'ok'; exit; }
 
     if ($text && $peer_id) {
-        $query = preg_replace('/[^a-zA-Z0-9\x{0410}-\x{044F}\x{0451}\x{0401}\-]/u', '', $text);
-        $reply = ttk_lookup($query);
-        if ($reply) {
-            vk_send_to($peer_id, $reply['text'], isset($reply['photo']) ? $reply['photo'] : null);
+        $query = preg_replace('/[^a-zA-Z0-9\x{0410}-\x{044F}\x{0451}\x{0401}\-\s]/u', '', trim($text));
+        $query = trim($query);
+        if ($query) {
+            $result = ttk_lookup($query);
+            if ($result === null) {
+                vk_send_to($peer_id, '❌ «' . $query . '» — не найдено. Попробуй точный артикул (например: 005) или другое слово.');
+            } elseif ($result['type'] === 'single') {
+                vk_send_to($peer_id, $result['text'], $result['photo']);
+            } elseif ($result['type'] === 'multiple') {
+                vk_send_to($peer_id, $result['text'], null);
+            }
         }
     }
 }
@@ -75,7 +82,6 @@ function ttk_lookup($query) {
 
     if (!$csv) return null;
 
-    // fgetcsv корректно обрабатывает многострочные ячейки в кавычках
     $tmp = tempnam(sys_get_temp_dir(), 'csv');
     file_put_contents($tmp, $csv);
     $rows = array();
@@ -88,6 +94,8 @@ function ttk_lookup($query) {
     if (empty($rows)) return null;
 
     $query_lower = mb_strtolower(trim($query), 'UTF-8');
+    $exact = null;   // точное совпадение по коду или названию
+    $matches = array(); // все частичные совпадения
 
     foreach ($rows as $i => $row) {
         if ($i === 0) continue;
@@ -100,26 +108,64 @@ function ttk_lookup($query) {
         $recipe = trim(isset($row[4]) ? $row[4] : '');
         $active = trim(isset($row[5]) ? $row[5] : '');
 
-        if (mb_strtolower($code, 'UTF-8') === $query_lower ||
-            mb_strtolower($name, 'UTF-8') === $query_lower ||
-            (mb_strlen($query, 'UTF-8') >= 3 && mb_stripos($name, $query, 0, 'UTF-8') !== false)) {
+        $code_lower = mb_strtolower($code, 'UTF-8');
+        $name_lower = mb_strtolower($name, 'UTF-8');
+        $is_archived = ($active && mb_strtolower($active, 'UTF-8') === 'архив');
 
-            if ($active && mb_strtolower($active, 'UTF-8') === 'архив') {
-                return array('text' => '📦 ' . $name . ' [' . $code . '] — в АРХИВЕ', 'photo' => null);
+        $is_exact   = ($code_lower === $query_lower || $name_lower === $query_lower);
+        $is_partial = (mb_strlen($query, 'UTF-8') >= 3 && mb_stripos($name, $query, 0, 'UTF-8') !== false);
+
+        if ($is_exact || $is_partial) {
+            $item = array(
+                'code' => $code, 'name' => $name, 'photo' => $photo,
+                'weight' => $weight, 'recipe' => $recipe, 'archived' => $is_archived
+            );
+            if ($is_exact) {
+                $exact = $item;
+                break; // точное совпадение — дальше не ищем
+            } else {
+                $matches[] = $item;
             }
-
-            $text = '📋 ' . $name . ' [' . $code . ']';
-            if ($weight) $text .= "\n⚖️ Вес: " . $weight . ' г';
-            if ($recipe) $text .= "\n\n🍽 Состав и приготовление:\n" . $recipe;
-
-            $photo_url = null;
-            if ($photo && strpos($photo, 'http') === 0) {
-                $photo_url = gdrive_to_direct($photo);
-            }
-            return array('text' => $text, 'photo' => $photo_url);
         }
     }
+
+    // Точное совпадение — вернуть одну карточку
+    if ($exact) {
+        return ttk_make_card($exact);
+    }
+
+    // Одно частичное — тоже карточку
+    if (count($matches) === 1) {
+        return ttk_make_card($matches[0]);
+    }
+
+    // Несколько совпадений — список
+    if (count($matches) > 1) {
+        $text = '🔍 По запросу «' . $query . '» нашлось ' . count($matches) . ' позиции:' . "\n";
+        foreach ($matches as $m) {
+            $arch = $m['archived'] ? ' [архив]' : '';
+            $text .= "\n• " . $m['name'] . ' — ' . $m['code'] . $arch;
+        }
+        $text .= "\n\nНапиши точный артикул (например: " . $matches[0]['code'] . "), чтобы получить карточку.";
+        return array('type' => 'multiple', 'text' => $text, 'photo' => null);
+    }
+
     return null;
+}
+
+function ttk_make_card($item) {
+    if ($item['archived']) {
+        return array('type' => 'single', 'text' => '📦 ' . $item['name'] . ' [' . $item['code'] . '] — в АРХИВЕ', 'photo' => null);
+    }
+    $text = '📋 ' . $item['name'] . ' [' . $item['code'] . ']';
+    if ($item['weight']) $text .= "\n⚖️ Вес: " . $item['weight'] . ' г';
+    if ($item['recipe']) $text .= "\n\n🍽 Состав и приготовление:\n" . $item['recipe'];
+
+    $photo_url = null;
+    if ($item['photo'] && strpos($item['photo'], 'http') === 0) {
+        $photo_url = gdrive_to_direct($item['photo']);
+    }
+    return array('type' => 'single', 'text' => $text, 'photo' => $photo_url);
 }
 
 function vk_send_to($peer_id, $text, $photo_url = null) {

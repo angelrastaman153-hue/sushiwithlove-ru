@@ -111,6 +111,35 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true,'stats'=>$stats));
     }
 
+    if ($action === 'users_list') {
+        $stmt = db()->query('SELECT id,name,phone,tg_id,points,created_at FROM users ORDER BY created_at DESC LIMIT 200');
+        json_out(array('ok'=>true,'users'=>$stmt->fetchAll()));
+    }
+
+    if ($action === 'orders_list') {
+        $pdo = db();
+        $where = array('1=1');
+        $params = array();
+        if (!empty($_GET['status'])) { $where[] = 'o.status=?'; $params[] = $_GET['status']; }
+        if (!empty($_GET['from']))   { $where[] = 'DATE(o.created_at)>=?'; $params[] = $_GET['from']; }
+        if (!empty($_GET['to']))     { $where[] = 'DATE(o.created_at)<=?'; $params[] = $_GET['to']; }
+        $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
+        $sql = 'SELECT o.*, u.name as user_name FROM orders o LEFT JOIN users u ON u.id=o.user_id WHERE '.implode(' AND ',$where).' ORDER BY o.created_at DESC LIMIT '.$limit;
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        json_out(array('ok'=>true,'orders'=>$stmt->fetchAll()));
+    }
+
+    if ($action === 'points_log') {
+        $stmt = db()->query('SELECT pl.*, u.name as user_name FROM points_log pl LEFT JOIN users u ON u.id=pl.user_id ORDER BY pl.created_at DESC LIMIT 200');
+        json_out(array('ok'=>true,'log'=>$stmt->fetchAll()));
+    }
+
+    if ($action === 'loyalty_config_get') {
+        $stmt = db()->query('SELECT key_name, value, comment FROM loyalty_config ORDER BY key_name');
+        json_out(array('ok'=>true,'config'=>$stmt->fetchAll()));
+    }
+
     exit;
 }
 ?>
@@ -491,53 +520,10 @@ function saveLoyalty() {
 
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// Дополнительные action-запросы
-var _origFetch = window.fetch;
-// Перехватываем action=users_list, orders_list, points_log, loyalty_config_get
-(function(){
-  // Эти данные отдаёт PHP ниже через отдельные action
-})();
 
 // Загрузка при старте
 showTab('dashboard');
 </script>
 
-<?php
-// Дополнительные GET-запросы данных
-if (isset($_GET['action'])) {
-    $pdo = db();
-    $action = $_GET['action'];
-
-    if ($action === 'users_list') {
-        $stmt = $pdo->query('SELECT id,name,phone,tg_id,points,created_at FROM users ORDER BY created_at DESC LIMIT 200');
-        json_out(array('ok'=>true,'users'=>$stmt->fetchAll()));
-    }
-
-    if ($action === 'orders_list') {
-        $where = array('1=1');
-        $params = array();
-        if (!empty($_GET['status'])) { $where[] = 'o.status=?'; $params[] = $_GET['status']; }
-        if (!empty($_GET['from']))   { $where[] = 'DATE(o.created_at)>=?'; $params[] = $_GET['from']; }
-        if (!empty($_GET['to']))     { $where[] = 'DATE(o.created_at)<=?'; $params[] = $_GET['to']; }
-        $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
-        $sql = 'SELECT o.*, u.name as user_name FROM orders o LEFT JOIN users u ON u.id=o.user_id WHERE '.implode(' AND ',$where).' ORDER BY o.created_at DESC LIMIT '.$limit;
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        json_out(array('ok'=>true,'orders'=>$stmt->fetchAll()));
-    }
-
-    if ($action === 'points_log') {
-        $stmt = $pdo->query('SELECT pl.*, u.name as user_name FROM points_log pl LEFT JOIN users u ON u.id=pl.user_id ORDER BY pl.created_at DESC LIMIT 200');
-        json_out(array('ok'=>true,'log'=>$stmt->fetchAll()));
-    }
-
-    if ($action === 'loyalty_config_get') {
-        $stmt = $pdo->query('SELECT key_name, value, comment FROM loyalty_config ORDER BY key_name');
-        json_out(array('ok'=>true,'config'=>$stmt->fetchAll()));
-    }
-
-    exit;
-}
-?>
 </body>
 </html>

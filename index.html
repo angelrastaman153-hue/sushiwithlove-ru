@@ -8155,7 +8155,21 @@
           promo_code:    coActivePromo || null,
           promo_discount:coPromoDiscount || 0,
           points_spent:  0,
-          total_paid:    Math.max(0, sub - (coPromoDiscount||0)) + swlDeliveryCost
+          total_paid:    Math.max(0, sub - (coPromoDiscount||0)) + swlDeliveryCost,
+          // Данные для ВК-уведомления
+          name:          name,
+          phone:         phone,
+          delivery_type: coDeliveryType,
+          street:        coDeliveryType === 'delivery' ? (document.getElementById('coStreet')||{}).value||'' : '',
+          home:          coDeliveryType === 'delivery' ? (document.getElementById('coHouse')||{}).value||'' : '',
+          entrance:      coDeliveryType === 'delivery' ? (document.getElementById('coEntrance')||{}).value||'' : '',
+          floor:         coDeliveryType === 'delivery' ? (document.getElementById('coFloor')||{}).value||'' : '',
+          flat:          coDeliveryType === 'delivery' ? (document.getElementById('coFlat')||{}).value||'' : '',
+          comment:       mainComment || '',
+          pay:           String(coPaymentMethod),
+          cash_from:     cashFrom || '',
+          order_total:   total,
+          items:         cart.map(function(i){ return {id:i.id, name:i.name, qty:i.qty, price:i.price, isGift:!!i.isGift}; })
         };
         var swlHeaders = {'Content-Type': 'application/json'};
         if (token) swlHeaders['X-Token'] = token;

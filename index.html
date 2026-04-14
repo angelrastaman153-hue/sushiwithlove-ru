@@ -4795,6 +4795,9 @@
         <!-- БЛОК 8: Время -->
         <div class="co-block">
           <div class="co-block-title">Время получения</div>
+          <div id="coClosedBanner" style="display:none;background:rgba(255,100,50,0.1);border:1px solid rgba(255,100,50,0.3);border-radius:12px;padding:12px 16px;font-size:0.9rem;color:#ff6a3d;margin-bottom:12px">
+            🕙 Сейчас не работаем (режим 10:00–22:00). Оформите предзаказ — выберите удобное время ниже.
+          </div>
           <div class="co-time-options">
             <button class="co-time-btn active" id="coTimeSoon" onclick="coSetTimeMode('soon')">⚡ Как можно скорее</button>
             <button class="co-time-btn" id="coTimeScheduled" onclick="coSetTimeMode('scheduled')">📅 На дату и время</button>
@@ -8113,6 +8116,18 @@
     if (phone.length < 11) { coShowErr('Введите корректный номер телефона');          document.getElementById('coPhone').focus(); return; }
     if (!consent)          { coShowErr('Необходимо согласие на обработку данных');                                                return; }
     if (!cart.length)      { coShowErr('Корзина пуста');                                                                         return; }
+    if (coIsClosed() && coTimeMode !== 'scheduled') {
+      coShowErr('Сейчас мы не работаем — укажите время получения предзаказа');
+      var soonBtn = document.getElementById('coTimeSoon');
+      if (soonBtn) soonBtn.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    if (coIsClosed() && coTimeMode === 'scheduled' && !coSelectedSlot) {
+      coShowErr('Выберите время получения предзаказа');
+      var slotsEl = document.getElementById('coTimeSlots');
+      if (slotsEl) slotsEl.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
     // Сохраняем имя и телефон для следующего раза
     localStorage.setItem('swl_saved_name',  name);
     localStorage.setItem('swl_saved_phone', document.getElementById('coPhone').value.trim());
@@ -8159,63 +8174,92 @@
     var mBtn = document.getElementById('coMobileBarBtn');
     btn.disabled = true; btn.textContent = 'Отправляем...';
     if (mBtn) { mBtn.disabled = true; mBtn.textContent = 'Отправляем...'; }
-    fetch('order.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-    .then(function(r){ return r.json(); })
-    .then(function(res) {
-      if (res.ok) {
-        // Сохраняем заказ в нашу БД (тихо, в фоне)
-        var token = lkGetToken();
-        var swlDeliveryCost = (coDeliveryType === 'delivery' && typeof coGetDeliveryCostFromZone === 'function')
-            ? coGetDeliveryCostFromZone() : 0;
-        var swlPayload = {
-          fp_order_id:   res.order_id || null,
-          items_total:   sub,
-          delivery_cost: swlDeliveryCost,
-          promo_code:    coActivePromo || null,
-          promo_discount:coPromoDiscount || 0,
-          points_spent:  0,
-          total_paid:    Math.max(0, sub - (coPromoDiscount||0)) + swlDeliveryCost,
-          // Данные для ВК-уведомления
-          name:          name,
-          phone:         phone,
-          delivery_type: coDeliveryType,
-          street:        coDeliveryType === 'delivery' ? (document.getElementById('coStreet')||{}).value||'' : '',
-          home:          coDeliveryType === 'delivery' ? (document.getElementById('coHouse')||{}).value||'' : '',
-          entrance:      coDeliveryType === 'delivery' ? (document.getElementById('coEntrance')||{}).value||'' : '',
-          floor:         coDeliveryType === 'delivery' ? (document.getElementById('coFloor')||{}).value||'' : '',
-          flat:          coDeliveryType === 'delivery' ? (document.getElementById('coFlat')||{}).value||'' : '',
-          comment:       mainComment || '',
-          pay:           String(coPaymentMethod),
-          cash_from:     cashFrom || '',
-          order_total:   total,
-          items:         cart.map(function(i){ return {id:i.id, name:i.name, qty:i.qty, price:i.price, isGift:!!i.isGift}; })
-        };
-        var swlHeaders = {'Content-Type': 'application/json'};
-        if (token) swlHeaders['X-Token'] = token;
-        fetch('/api/orders/save.php', {method:'POST', headers: swlHeaders, body: JSON.stringify(swlPayload)}).catch(function(){});
+    // ШАГ 1: Сохраняем заказ в нашу БД сразу (fp_order_id = null, статус pending)
+    var token = lkGetToken();
+    var swlDeliveryCost = (coDeliveryType === 'delivery' && typeof coGetDeliveryCostFromZone === 'function')
+        ? coGetDeliveryCostFromZone() : 0;
+    var swlPayload = {
+      fp_order_id:   null,
+      items_total:   sub,
+      delivery_cost: swlDeliveryCost,
+      promo_code:    coActivePromo || null,
+      promo_discount:coPromoDiscount || 0,
+      points_spent:  0,
+      total_paid:    Math.max(0, sub - (coPromoDiscount||0)) + swlDeliveryCost,
+      name:          name,
+      phone:         phone,
+      delivery_type: coDeliveryType,
+      street:        coDeliveryType === 'delivery' ? (document.getElementById('coStreet')||{}).value||'' : '',
+      home:          coDeliveryType === 'delivery' ? (document.getElementById('coHouse')||{}).value||'' : '',
+      entrance:      coDeliveryType === 'delivery' ? (document.getElementById('coEntrance')||{}).value||'' : '',
+      floor:         coDeliveryType === 'delivery' ? (document.getElementById('coFloor')||{}).value||'' : '',
+      flat:          coDeliveryType === 'delivery' ? (document.getElementById('coFlat')||{}).value||'' : '',
+      comment:       mainComment || '',
+      pay:           String(coPaymentMethod),
+      cash_from:     cashFrom || '',
+      order_total:   total,
+      preorder_date: preDate || '',
+      preorder_time: preTime || '',
+      items:         cart.map(function(i){ return {id:i.id, name:i.name, qty:i.qty, price:i.price, isGift:!!i.isGift}; })
+    };
+    var swlHeaders = {'Content-Type': 'application/json'};
+    if (token) swlHeaders['X-Token'] = token;
 
-        document.getElementById('coLayout').style.display = 'none';
-        document.getElementById('coSuccessScreen').style.display = 'block';
-        document.getElementById('coOrderNum').textContent = res.order_id ? '№ ' + res.order_id : '';
-        // Заполняем список заказа
-        var itemsEl = document.getElementById('coSuccessItems');
-        var totalEl = document.getElementById('coSuccessTotal');
-        if (itemsEl) {
-          itemsEl.innerHTML = '';
-          var orderTotal = 0;
-          cart.forEach(function(i) {
-            orderTotal += i.price * i.qty;
-            var row = document.createElement('div');
-            row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:0.9rem';
-            row.innerHTML = '<span style="color:var(--text-1)">' + (i.emoji || '🍱') + ' ' + i.name + (i.qty > 1 ? ' × ' + i.qty : '') + '</span>'
-              + '<span style="font-weight:600;white-space:nowrap;color:' + (i.isGift ? '#4ade80' : 'var(--accent)') + '">' + (i.isGift ? 'Подарок' : fmt(i.price * i.qty)) + '</span>';
-            itemsEl.appendChild(row);
-          });
-          if (totalEl) totalEl.innerHTML = '<span>Итого</span><span style="color:var(--accent)">' + fmt(orderTotal) + '</span>';
+    fetch('/api/orders/save.php', {method:'POST', headers: swlHeaders, body: JSON.stringify(swlPayload)})
+    .then(function(r){ return r.json(); })
+    .then(function(saveRes) {
+      var ourOrderId = (saveRes && saveRes.order_id) ? saveRes.order_id : null;
+      // ШАГ 2: Отправляем в FrontPad (необязательно — если упадёт, заказ уже сохранён)
+      fetch('order.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        // Если FrontPad принял заказ — привязываем fp_order_id к нашему заказу
+        if (res.ok && res.order_id && ourOrderId) {
+          fetch('/api/orders/link_fp.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({order_id: ourOrderId, fp_order_id: res.order_id})
+          }).catch(function(){});
         }
-        var h = new Date().getHours();
-        var msgEl = document.getElementById('coSuccessMsg');
-        if (msgEl) {
+        coShowOrderSuccess(res.ok ? (res.order_id || null) : null);
+      })
+      .catch(function() {
+        // FrontPad недоступен — заказ уже сохранён в нашей БД, показываем успех
+        coShowOrderSuccess(null);
+      });
+    })
+    .catch(function() {
+      // Наша БД недоступна — критическая ошибка
+      coShowErr('Ошибка. Позвоните нам: 8-922-578-2070');
+      btn.disabled = false; btn.textContent = 'Оформить заказ →';
+      if (mBtn) { mBtn.disabled = false; mBtn.textContent = 'Оформить заказ →'; }
+    });
+
+    function coShowOrderSuccess(fpOrderId) {
+      document.getElementById('coLayout').style.display = 'none';
+      document.getElementById('coSuccessScreen').style.display = 'block';
+      document.getElementById('coOrderNum').textContent = fpOrderId ? '№ ' + fpOrderId : '';
+      var itemsEl = document.getElementById('coSuccessItems');
+      var totalEl = document.getElementById('coSuccessTotal');
+      if (itemsEl) {
+        itemsEl.innerHTML = '';
+        var orderTotal = 0;
+        cart.forEach(function(i) {
+          orderTotal += i.price * i.qty;
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:0.9rem';
+          row.innerHTML = '<span style="color:var(--text-1)">' + (i.emoji || '🍱') + ' ' + i.name + (i.qty > 1 ? ' × ' + i.qty : '') + '</span>'
+            + '<span style="font-weight:600;white-space:nowrap;color:' + (i.isGift ? '#4ade80' : 'var(--accent)') + '">' + (i.isGift ? 'Подарок' : fmt(i.price * i.qty)) + '</span>';
+          itemsEl.appendChild(row);
+        });
+        if (totalEl) totalEl.innerHTML = '<span>Итого</span><span style="color:var(--accent)">' + fmt(orderTotal) + '</span>';
+      }
+      var msgEl = document.getElementById('coSuccessMsg');
+      if (msgEl) {
+        if (preTime) {
+          msgEl.textContent = 'Заказ принят! Мы перезвоним для подтверждения предзаказа.';
+        } else {
+          var h = new Date().getHours();
           if (h >= 10 && h < 22) {
             msgEl.textContent = 'Оператор свяжется с вами в течение 5 минут';
           } else if (h < 10) {
@@ -8224,17 +8268,8 @@
             msgEl.textContent = 'Мы получили ваш заказ. Оператор перезвонит завтра в 10:00.';
           }
         }
-      } else {
-        coShowErr('Ошибка. Позвоните нам: 8-922-578-2070');
-        btn.disabled = false; btn.textContent = 'Оформить заказ →';
-        if (mBtn) { mBtn.disabled = false; mBtn.textContent = 'Оформить заказ →'; }
       }
-    })
-    .catch(function() {
-      coShowErr('Нет связи. Позвоните нам: 8-922-578-2070');
-      btn.disabled = false; btn.textContent = 'Оформить заказ →';
-      if (mBtn) { mBtn.disabled = false; mBtn.textContent = 'Оформить заказ →'; }
-    });
+    }
   }
 
   // ============================================================
@@ -8749,6 +8784,29 @@
     if (dd && wrap && !wrap.contains(e.target)) dd.classList.remove('open');
   });
 
+  function coIsClosed() {
+    var h = (new Date().getUTCHours() + 5) % 24; // UTC+5 Курган
+    return h < 10 || h >= 22;
+  }
+
+  function coApplyClosedMode() {
+    if (!coIsClosed()) return;
+    var banner = document.getElementById('coClosedBanner');
+    if (banner) banner.style.display = '';
+    var soonBtn = document.getElementById('coTimeSoon');
+    if (soonBtn) { soonBtn.disabled = true; soonBtn.style.opacity = '0.4'; soonBtn.style.cursor = 'not-allowed'; }
+    coSetTimeMode('scheduled');
+    // Определяем дату: если после 22:00 — завтра, если до 10:00 — сегодня
+    var localNow = new Date(Date.now() + 5 * 3600 * 1000); // UTC+5
+    var h = localNow.getUTCHours();
+    if (h >= 22) localNow = new Date(localNow.getTime() + 86400 * 1000);
+    var yyyy = localNow.getUTCFullYear();
+    var mm   = String(localNow.getUTCMonth() + 1).padStart(2, '0');
+    var dd   = String(localNow.getUTCDate()).padStart(2, '0');
+    var dateInp = document.getElementById('coDate');
+    if (dateInp) { dateInp.value = yyyy + '-' + mm + '-' + dd; coGenerateTimeSlots(); }
+  }
+
   // Pre-fill checkout from LK или localStorage
   var _origOpenCheckoutPage = openCheckoutPage;
   openCheckoutPage = function() {
@@ -8764,6 +8822,8 @@
     // Если поля всё ещё пустые — берём из localStorage
     if (nameInp  && !nameInp.value)  nameInp.value  = localStorage.getItem('swl_saved_name')  || '';
     if (phoneInp && !phoneInp.value) phoneInp.value = localStorage.getItem('swl_saved_phone') || '';
+    // Закрытые часы — включаем режим предзаказа
+    coApplyClosedMode();
   };
 
   // Init

@@ -1,7 +1,7 @@
 <?php
 // POST /api/orders/save.php
-// Вызывается из JS после успешной отправки заказа в FrontPad
-// Сохраняет заказ в нашу БД и начисляет баллы после доставки
+// Вызывается из JS СРАЗУ при оформлении заказа (fp_order_id = null → статус pending)
+// После успешной отправки в FrontPad — link_fp.php привязывает fp_order_id и меняет статус на new
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vk_notify.php';
@@ -45,14 +45,15 @@ if ($user_id && $points_spent > 0) {
         ->execute(array($user_id, -$points_spent, 'spend'));
 }
 
-// Сохраняем заказ
+// Сохраняем заказ: pending если нет fp_order_id (FrontPad ещё не ответил), new если уже есть
+$status = $fp_order_id ? 'new' : 'pending';
 $pdo->prepare('
     INSERT INTO orders
       (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
        points_spent, total_paid, status, created_at)
-    VALUES (?,?,?,?,?,?,?,?,"new",NOW())
+    VALUES (?,?,?,?,?,?,?,?,?,NOW())
 ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
-                  $promo_code, $promo_discount, $points_spent, $total_paid));
+                  $promo_code, $promo_discount, $points_spent, $total_paid, $status));
 
 $order_id = $pdo->lastInsertId();
 

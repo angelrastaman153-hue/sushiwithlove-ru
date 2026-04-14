@@ -450,7 +450,7 @@ function loadOrders() {
     var html = '';
     r.orders.forEach(function(o){
       html += '<tr>'
-        +'<td>#'+o.id+(o.fp_order_id?'<br><small style="color:#555">FP:'+o.fp_order_id+'</small>':'')+'</td>'
+        +'<td>#'+o.id+(o.fp_order_id?'<br><small style="color:#555">FP:'+o.fp_order_id+'</small>':'<br><small style="color:#f97316">⚠️ Нет в FP</small>')+'</td>'
         +'<td>'+fmtDate(o.created_at)+'</td>'
         +'<td>'+(o.user_name||'—')+'</td>'
         +'<td>'+fmt(o.total_paid)+'</td>'

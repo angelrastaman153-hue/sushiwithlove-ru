@@ -11,20 +11,29 @@ if (isset($_GET['logout'])) { session_destroy(); header('Location: ?'); exit; }
 // Вход
 $login_error = '';
 $chosen_role = '';
+$role_labels_auth = array('owner'=>'Управляющий','admin'=>'Администратор','operator'=>'Оператор','courier'=>'Курьер');
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['swl_login'])) {
-    $login = trim(isset($_POST['swl_login']) ? $_POST['swl_login'] : '');
-    $pass  = isset($_POST['swl_pass']) ? $_POST['swl_pass'] : '';
-    $chosen_role = isset($_POST['swl_role']) ? $_POST['swl_role'] : '';
-    $stmt  = db()->prepare('SELECT * FROM staff WHERE login=? AND active=1 LIMIT 1');
+    $login       = trim(isset($_POST['swl_login']) ? $_POST['swl_login'] : '');
+    $pass        = isset($_POST['swl_pass'])  ? $_POST['swl_pass']  : '';
+    $chosen_role = isset($_POST['swl_role'])  ? $_POST['swl_role']  : '';
+    $stmt = db()->prepare('SELECT * FROM staff WHERE login=? AND active=1 LIMIT 1');
     $stmt->execute(array($login));
     $staff = $stmt->fetch();
     if ($staff && password_verify($pass, $staff['password'])) {
-        $_SESSION['staff_id']   = $staff['id'];
-        $_SESSION['staff_role'] = $staff['role'];
-        $_SESSION['staff_name'] = $staff['name'];
-        header('Location: ?'); exit;
+        // Проверяем есть ли у сотрудника выбранная роль
+        $staff_roles = array_map('trim', explode(',', $staff['role']));
+        if ($chosen_role && !in_array($chosen_role, $staff_roles)) {
+            $rname = isset($role_labels_auth[$chosen_role]) ? $role_labels_auth[$chosen_role] : $chosen_role;
+            $login_error = 'У вас нет доступа как «' . $rname . '»';
+        } else {
+            $_SESSION['staff_id']   = $staff['id'];
+            $_SESSION['staff_role'] = $chosen_role ? $chosen_role : $staff_roles[0];
+            $_SESSION['staff_name'] = $staff['name'];
+            header('Location: ?'); exit;
+        }
+    } else {
+        $login_error = 'Неверный логин или пароль';
     }
-    $login_error = 'Неверный логин или пароль';
 }
 
 // Проверка сессии
@@ -216,15 +225,21 @@ if (isset($_GET['action'])) {
         $data  = json_decode(file_get_contents('php://input'), true);
         $name  = trim(isset($data['name'])  ? $data['name']  : '');
         $login = trim(isset($data['login']) ? $data['login'] : '');
-        $pass  = isset($data['pass'])  ? $data['pass']  : '';
-        $role  = isset($data['role'])  ? $data['role']  : 'operator';
+        $pass  = isset($data['pass'])   ? $data['pass']   : '';
+        $roles_in = isset($data['roles']) ? $data['roles'] : array();
         if (!$name || !$login || !$pass) { json_out(array('ok'=>false,'error'=>'Заполните все поля')); }
-        // admin может создавать только operator/courier, не owner/admin
-        $roles = ($srole === 'owner') ? array('admin','operator','courier') : array('operator','courier');
-        if (!in_array($role, $roles)) { json_out(array('ok'=>false,'error'=>'Недостаточно прав для этой роли')); }
+        if (empty($roles_in))            { json_out(array('ok'=>false,'error'=>'Выберите хотя бы одну роль')); }
+        // Допустимые роли: admin может назначать только operator/courier
+        $allowed = ($srole === 'owner') ? array('admin','operator','courier') : array('operator','courier');
+        $clean_roles = array();
+        foreach ($roles_in as $r) {
+            if (in_array($r, $allowed)) $clean_roles[] = $r;
+        }
+        if (empty($clean_roles)) { json_out(array('ok'=>false,'error'=>'Недостаточно прав для выбранных ролей')); }
+        $role_val = implode(',', $clean_roles);
         $hash = password_hash($pass, PASSWORD_DEFAULT);
         try {
-            $pdo->prepare('INSERT INTO staff (name, login, password, role) VALUES (?,?,?,?)')->execute(array($name, $login, $hash, $role));
+            $pdo->prepare('INSERT INTO staff (name, login, password, role) VALUES (?,?,?,?)')->execute(array($name, $login, $hash, $role_val));
             json_out(array('ok'=>true,'id'=>$pdo->lastInsertId()));
         } catch (PDOException $e) {
             json_out(array('ok'=>false,'error'=>'Логин уже занят'));
@@ -489,13 +504,19 @@ if (isset($_GET['action'])) {
     <label>Пароль</label>
     <input type="password" id="newPass" placeholder="Минимум 4 символа">
     <label>Роль</label>
-    <select id="newRole">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px">
       <?php if ($srole === 'owner'): ?>
-      <option value="admin">Администратор</option>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.88rem;color:#ccc;cursor:pointer">
+        <input type="checkbox" class="role-chk" value="admin"> Администратор
+      </label>
       <?php endif; ?>
-      <option value="operator">Оператор</option>
-      <option value="courier">Курьер</option>
-    </select>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.88rem;color:#ccc;cursor:pointer">
+        <input type="checkbox" class="role-chk" value="operator" checked> Оператор
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;margin:0;font-size:0.88rem;color:#ccc;cursor:pointer">
+        <input type="checkbox" class="role-chk" value="courier"> Курьер
+      </label>
+    </div>
     <div class="modal-btns">
       <button class="btn btn-ghost" onclick="closeAddStaff()">Отмена</button>
       <button class="btn btn-primary" onclick="addStaff()">Добавить</button>
@@ -654,16 +675,21 @@ function changeStatus(oid, status) {
 function loadStaff() {
   fetch('?action=staff_list').then(function(r){ return r.json(); }).then(function(r) {
     if (!r.ok) return;
-    var rLabels = {owner:'Управляющий', operator:'Оператор', courier:'Курьер'};
+    var rLabels = {owner:'Управляющий', admin:'Администратор', operator:'Оператор', courier:'Курьер'};
     var html = '';
     r.staff.forEach(function(s) {
+      var staffRoles = s.role ? s.role.split(',') : [];
+      var badgesHtml = staffRoles.map(function(role) {
+        role = role.trim();
+        return '<span class="badge badge-'+role+'" style="margin-right:3px">'+(rLabels[role]||role)+'</span>';
+      }).join('');
       var activeBtn = s.active
         ? '<button class="btn btn-sm btn-danger" onclick="toggleStaff('+s.id+')">Откл.</button>'
         : '<button class="btn btn-sm btn-ghost" onclick="toggleStaff('+s.id+')">Вкл.</button>';
       html += '<tr style="'+(s.active?'':'opacity:.5')+'">'
         + '<td><b>'+esc(s.name)+'</b></td>'
         + '<td style="color:#888">'+esc(s.login)+'</td>'
-        + '<td><span class="badge badge-'+s.role+'">'+(rLabels[s.role]||s.role)+'</span></td>'
+        + '<td>'+badgesHtml+'</td>'
         + '<td>'+(s.active?'<span style="color:#44cc88">Активен</span>':'<span style="color:#666">Откл.</span>')+'</td>'
         + '<td style="display:flex;gap:6px;flex-wrap:wrap">'
         +   '<button class="btn btn-sm btn-ghost" onclick="openPassModal('+s.id+')">Пароль</button>'
@@ -677,16 +703,21 @@ function loadStaff() {
 function openAddStaff() { document.getElementById('addStaffModal').classList.add('open'); }
 function closeAddStaff(){ document.getElementById('addStaffModal').classList.remove('open'); }
 function addStaff() {
+  var roles = [];
+  document.querySelectorAll('.role-chk:checked').forEach(function(c){ roles.push(c.value); });
   var payload = {
     name:  document.getElementById('newName').value.trim(),
     login: document.getElementById('newLogin').value.trim(),
     pass:  document.getElementById('newPass').value,
-    role:  document.getElementById('newRole').value
+    roles: roles
   };
   fetch('?action=staff_add', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){ return r.json(); }).then(function(r) {
-    if (r.ok) { showAlert('Сотрудник добавлен', false); closeAddStaff(); loadStaff(); }
-    else showAlert(r.error||'Ошибка', true);
+    if (r.ok) { showAlert('Сотрудник добавлен', false); closeAddStaff(); loadStaff();
+      // Сбросить форму
+      document.getElementById('newName').value=''; document.getElementById('newLogin').value=''; document.getElementById('newPass').value='';
+      document.querySelectorAll('.role-chk').forEach(function(c){ c.checked = c.value==='operator'; });
+    } else showAlert(r.error||'Ошибка', true);
   });
 }
 function openPassModal(id) {

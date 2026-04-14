@@ -12,3 +12,10 @@ define('DB_PASS', 'ArastamaN45');
 define('DB_NAME', 'angelros_swl');
 
 define('SESSION_DAYS', 30); // срок жизни сессии
+
+// VK — кухонный экран
+define('VK_TOKEN',    'vk1.a.WDNS1oSr7tPId3ZWhRbjLCe-AbRhMojK0IXg1RKXvW8C1ANWkTVyRk4r85nRz0IzgdfffHpYbv2zaCEb5AKT1TjQRNpw85zF2GUiJIfWoKdIWJFrB0fGeoCviFJI8RzqkYSgShCNM0QBYeIzIxKWoZJQvmi0lvtvhDUr8HJiERXw_XA-PhrdhLaT1mpdT9IJuZNXf-NDIg5mQtdeOZ60kQ');
+define('VK_GROUP_ID', '237666301');
+// peer_id получателей уведомлений (через запятую если несколько)
+// Личный диалог: ID пользователя, Беседа: 2000000000 + номер беседы
+define('VK_PEER_IDS', '3150260'); // Михаил Богачёв (администратор)

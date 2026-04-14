@@ -4,6 +4,7 @@
 // Сохраняет заказ в нашу БД и начисляет баллы после доставки
 
 require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../vk_notify.php';
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -60,5 +61,9 @@ if ($user_id) {
     $pdo->prepare('UPDATE users SET last_order_at = NOW() WHERE id = ?')
         ->execute(array($user_id));
 }
+
+// Уведомление в ВК
+$vk_msg = vk_format_order($order_id, $data);
+vk_send($vk_msg);
 
 json_out(array('ok' => true, 'order_id' => $order_id));

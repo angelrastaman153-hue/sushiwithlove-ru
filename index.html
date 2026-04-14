@@ -8113,6 +8113,9 @@
     if (phone.length < 11) { coShowErr('Введите корректный номер телефона');          document.getElementById('coPhone').focus(); return; }
     if (!consent)          { coShowErr('Необходимо согласие на обработку данных');                                                return; }
     if (!cart.length)      { coShowErr('Корзина пуста');                                                                         return; }
+    // Сохраняем имя и телефон для следующего раза
+    localStorage.setItem('swl_saved_name',  name);
+    localStorage.setItem('swl_saved_phone', document.getElementById('coPhone').value.trim());
     var street = '', home = '', entrance = '', floor = '', flat = '';
     if (coDeliveryType === 'delivery') {
       street   = document.getElementById('coStreet').value.trim();
@@ -8746,17 +8749,21 @@
     if (dd && wrap && !wrap.contains(e.target)) dd.classList.remove('open');
   });
 
-  // Pre-fill checkout from LK
+  // Pre-fill checkout from LK или localStorage
   var _origOpenCheckoutPage = openCheckoutPage;
   openCheckoutPage = function() {
     _origOpenCheckoutPage();
+    var nameInp  = document.getElementById('coName');
+    var phoneInp = document.getElementById('coPhone');
+    // Сначала пробуем из LK (авторизованный пользователь)
     var user = lkGet();
     if (user) {
-      var nameInp  = document.getElementById('coName');
-      var phoneInp = document.getElementById('coPhone');
       if (nameInp  && !nameInp.value)  nameInp.value  = user.name || '';
       if (phoneInp && !phoneInp.value) phoneInp.value = lkFmt(user.phone);
     }
+    // Если поля всё ещё пустые — берём из localStorage
+    if (nameInp  && !nameInp.value)  nameInp.value  = localStorage.getItem('swl_saved_name')  || '';
+    if (phoneInp && !phoneInp.value) phoneInp.value = localStorage.getItem('swl_saved_phone') || '';
   };
 
   // Init

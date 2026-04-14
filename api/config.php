@@ -25,4 +25,4 @@ define('VK_TOKEN',    'vk1.a.KAQexgBeEkvKhUwRWmHj8ZSFtXHjeg99gPwpYTjaKS21sJTEZIQ
 define('VK_GROUP_ID', '237666301');
 // peer_id получателей уведомлений (через запятую если несколько)
 // Личный диалог: ID пользователя, Беседа: 2000000000 + номер беседы
-define('VK_PEER_IDS', '3150260'); // Михаил Богачёв (администратор)
+define('VK_PEER_IDS', '3150260,290986594'); // Михаил Богачёв, Милана Романова

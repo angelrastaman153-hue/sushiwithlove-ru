@@ -3314,6 +3314,7 @@
             <div class="lk-dd-phone" id="lkDdPhone"></div>
           </div>
           <div class="lk-dd-item">🎁 Мои баллы: <b id="lkDdBonuses" style="color:var(--accent);margin-left:4px">0</b></div>
+          <div class="lk-dd-item" onclick="lkOpenOrders()">📦 Мои заказы</div>
           <div class="lk-dd-item danger" onclick="lkLogout()">🚪 Выйти</div>
         </div>
       </div>
@@ -4624,6 +4625,21 @@
       </label>
       <div id="lkError" style="display:none;color:#e05a5a;font-size:0.85rem"></div>
       <button id="lkSubmitBtn" class="btn btn-primary" style="width:100%;justify-content:center" onclick="lkSubmit()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ЛИЧНЫЙ КАБИНЕТ — ИСТОРИЯ ЗАКАЗОВ
+============================================================ -->
+<div class="modal-overlay" id="lkOrdersOverlay" onclick="if(event.target===this)lkCloseOrders()" style="display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div class="modal" style="max-width:520px;width:100%;padding:28px 24px 24px;margin:auto">
+    <div class="modal-header" style="margin-bottom:20px">
+      <div class="modal-header-title">📦 Мои заказы</div>
+      <button class="modal-close" onclick="lkCloseOrders()">✕</button>
+    </div>
+    <div id="lkOrdersList" style="display:flex;flex-direction:column;gap:12px">
+      <div style="color:var(--text-2);text-align:center;padding:20px">Загрузка...</div>
     </div>
   </div>
 </div>
@@ -8623,6 +8639,85 @@
     document.getElementById('lkDropdown').classList.remove('open');
     lkUpdateHeader();
     showToast('👤 Выход', 'Вы вышли из личного кабинета', 'added');
+  }
+
+  // === История заказов ===
+  var LK_STATUS_LABELS = {
+    'new': '🕐 Новый', 'cooking': '👨‍🍳 Готовится',
+    'delivering': '🚗 В пути', 'done': '✅ Выполнен', 'cancelled': '❌ Отменён'
+  };
+  var LK_STATUS_COLORS = {
+    'new': '#6ab0ff', 'cooking': '#ffaa44',
+    'delivering': '#44cc88', 'done': '#66bb66', 'cancelled': '#cc6666'
+  };
+
+  function lkOpenOrders() {
+    document.getElementById('lkDropdown').classList.remove('open');
+    var ov = document.getElementById('lkOrdersOverlay');
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lkLoadOrders();
+  }
+
+  function lkCloseOrders() {
+    document.getElementById('lkOrdersOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function lkLoadOrders() {
+    var token = lkGetToken();
+    if (!token) {
+      document.getElementById('lkOrdersList').innerHTML = '<div style="color:var(--text-2);text-align:center;padding:20px">Войдите через Telegram чтобы видеть историю заказов</div>';
+      return;
+    }
+    fetch('/api/me.php', { headers: {'X-Token': token} })
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        if (!res.ok) { document.getElementById('lkOrdersList').innerHTML = '<div style="color:#e05a5a;text-align:center;padding:20px">Ошибка загрузки</div>'; return; }
+        // Обновляем баллы заодно
+        var auth = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
+        if (auth.user) { auth.user.points = res.user.points; localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); lkUpdateHeader(); }
+        lkRenderOrders(res.orders, res.user);
+      })
+      .catch(function(){ document.getElementById('lkOrdersList').innerHTML = '<div style="color:#e05a5a;text-align:center;padding:20px">Нет связи с сервером</div>'; });
+  }
+
+  function lkRenderOrders(orders, user) {
+    var el = document.getElementById('lkOrdersList');
+    if (!orders || !orders.length) {
+      el.innerHTML = '<div style="color:var(--text-2);text-align:center;padding:30px;line-height:1.6">У вас пока нет заказов.<br>Самое время это исправить 🍱</div>';
+      return;
+    }
+    // Итоговая карточка профиля
+    var html = '<div style="background:rgba(232,168,71,0.08);border:1px solid rgba(232,168,71,0.2);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      + '<div><div style="font-weight:600">' + (user.name||'') + '</div>'
+      + (user.phone ? '<div style="font-size:0.8rem;color:var(--text-2);margin-top:2px">' + lkFmt(user.phone) + '</div>' : '')
+      + '</div>'
+      + '<div style="text-align:right"><div style="font-size:1.3rem;font-weight:700;color:var(--accent)">' + (user.points||0) + '</div><div style="font-size:0.75rem;color:var(--text-2)">баллов</div></div>'
+      + '</div>';
+
+    orders.forEach(function(o) {
+      var status = o.status || 'new';
+      var color  = LK_STATUS_COLORS[status] || '#aaa';
+      var label  = LK_STATUS_LABELS[status]  || status;
+      var date   = o.created_at ? o.created_at.slice(0,10).split('-').reverse().join('.') : '';
+      html += '<div style="background:var(--surface-2,#1a1a1a);border:1px solid var(--border);border-radius:12px;padding:14px 16px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        + '<div style="font-size:0.85rem;color:var(--text-2)">' + date + (o.fp_order_id ? ' · №' + o.fp_order_id : '') + '</div>'
+        + '<div style="font-size:0.8rem;font-weight:600;color:' + color + '">' + label + '</div>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<div style="font-size:0.85rem;color:var(--text-2)">'
+        + (o.delivery_cost > 0 ? 'Товары ' + o.items_total + ' ₽ + доставка ' + o.delivery_cost + ' ₽' : 'Товары ' + o.items_total + ' ₽')
+        + (o.promo_code ? ' · промокод ' + o.promo_code : '')
+        + '</div>'
+        + '<div style="font-weight:700;color:var(--accent)">' + o.total_paid + ' ₽</div>'
+        + '</div>'
+        + (o.points_earned > 0 ? '<div style="font-size:0.78rem;color:#66bb66;margin-top:6px">+' + o.points_earned + ' баллов начислено</div>' : '')
+        + (o.points_spent  > 0 ? '<div style="font-size:0.78rem;color:#e05a5a;margin-top:6px">−' + o.points_spent  + ' баллов списано</div>'  : '')
+        + '</div>';
+    });
+    el.innerHTML = html;
   }
 
   function lkInitMask() {

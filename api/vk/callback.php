@@ -1,53 +1,51 @@
 <?php
-// VK Callback API — обработчик событий группы ССЛ-КУХНЯ
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../vk_notify.php';
+// VK Callback API — без внешних зависимостей на старте
+define('_VK_CONFIRMATION', '813d4204');
+define('_VK_GROUP_ID',     237666301);
+define('_VK_SECRET',       '');
+define('_GS_SHEET_ID',     '10vZ9_4tPf23o3E3ETdIqHxQmgDc4_hm0Jtrpu4i_PnA');
+define('_VK_TOKEN',        'vk1.a.WDNS1oSr7tPId3ZWhRbjLCe-AbRhMojK0IXg1RKXvW8C1ANWkTVyRk4r85nRz0IzgdfffHpYbv2zaCEb5AKT1TjQRNpw85zF2GUiJIfWoKdIWJFrB0fGeoCviFJI8RzqkYSgShCNM0QBYeIzIxKWoZJQvmi0lvtvhDUr8HJiERXw_XA-PhrdhLaT1mpdT9IJuZNXf-NDIg5mQtdeOZ60kQ');
 
 $body = file_get_contents('php://input');
 $data = json_decode($body, true);
 
 if (!$data) { echo 'ok'; exit; }
 
-// Проверка секретного ключа (только если задан)
-if (VK_SECRET !== '' && isset($data['secret']) && $data['secret'] !== VK_SECRET) { echo 'ok'; exit; }
-if (VK_SECRET !== '' && !isset($data['secret'])) { echo 'ok'; exit; }
-
 // Подтверждение адреса сервера
-if ($data['type'] === 'confirmation' && $data['group_id'] == VK_GROUP_ID) {
-    echo VK_CONFIRMATION; exit;
+if ($data['type'] === 'confirmation' && $data['group_id'] == _VK_GROUP_ID) {
+    echo _VK_CONFIRMATION;
+    exit;
+}
+
+// Проверка секретного ключа (только если задан)
+if (_VK_SECRET !== '' && (!isset($data['secret']) || $data['secret'] !== _VK_SECRET)) {
+    echo 'ok'; exit;
 }
 
 // Новое сообщение
 if ($data['type'] === 'message_new') {
-    $msg = $data['object']['message'] ?? $data['object'] ?? array();
-    $peer_id = $msg['peer_id'] ?? null;
-    $text    = trim($msg['text'] ?? '');
-    $from_id = $msg['from_id'] ?? null;
+    $msg     = isset($data['object']['message']) ? $data['object']['message'] : (isset($data['object']) ? $data['object'] : array());
+    $peer_id = isset($msg['peer_id']) ? $msg['peer_id'] : null;
+    $text    = isset($msg['text'])    ? trim($msg['text']) : '';
+    $from_id = isset($msg['from_id']) ? $msg['from_id'] : null;
 
-    // Игнорируем сообщения от самого бота
     if ($from_id && $from_id < 0) { echo 'ok'; exit; }
 
     if ($text && $peer_id) {
-        // Убираем лишнее, ищем артикул
-        $query = preg_replace('/[^a-zA-Z0-9а-яА-Я\-]/u', '', $text);
-
+        $query = preg_replace('/[^a-zA-Z0-9\x{0410}-\x{044F}\x{0451}\x{0401}\-]/u', '', $text);
         $reply = ttk_lookup($query);
         if ($reply) {
-            vk_send_to($peer_id, $reply['text'], $reply['photo'] ?? null);
+            vk_send_to($peer_id, $reply['text'], isset($reply['photo']) ? $reply['photo'] : null);
         }
-        // Если не нашли — молчим (не засоряем чат)
     }
 }
 
 echo 'ok';
 
-// ============================================================
-// Поиск ТТК в Google Sheets
-// ============================================================
 function ttk_lookup($query) {
     if (!$query) return null;
 
-    $url = 'https://docs.google.com/spreadsheets/d/' . GS_SHEET_ID . '/export?format=csv';
+    $url = 'https://docs.google.com/spreadsheets/d/' . _GS_SHEET_ID . '/export?format=csv';
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -63,20 +61,19 @@ function ttk_lookup($query) {
     $query_lower = mb_strtolower(trim($query), 'UTF-8');
 
     foreach ($rows as $i => $row) {
-        if ($i === 0) continue; // пропускаем заголовок
+        if ($i === 0) continue;
         if (count($row) < 2) continue;
 
-        $code  = trim($row[0] ?? '');
-        $name  = trim($row[1] ?? '');
-        $photo = trim($row[2] ?? '');
-        $weight= trim($row[3] ?? '');
-        $recipe= trim($row[4] ?? '');
-        $active= trim($row[5] ?? '');
+        $code   = trim(isset($row[0]) ? $row[0] : '');
+        $name   = trim(isset($row[1]) ? $row[1] : '');
+        $photo  = trim(isset($row[2]) ? $row[2] : '');
+        $weight = trim(isset($row[3]) ? $row[3] : '');
+        $recipe = trim(isset($row[4]) ? $row[4] : '');
+        $active = trim(isset($row[5]) ? $row[5] : '');
 
-        // Поиск по коду или названию
         if (mb_strtolower($code, 'UTF-8') === $query_lower ||
             mb_strtolower($name, 'UTF-8') === $query_lower ||
-            (strlen($query) >= 3 && mb_stripos($name, $query, 0, 'UTF-8') !== false)) {
+            (mb_strlen($query, 'UTF-8') >= 3 && mb_stripos($name, $query, 0, 'UTF-8') !== false)) {
 
             if ($active && mb_strtolower($active, 'UTF-8') === 'архив') {
                 return array('text' => '📦 ' . $name . ' [' . $code . '] — в АРХИВЕ', 'photo' => null);
@@ -92,11 +89,8 @@ function ttk_lookup($query) {
     return null;
 }
 
-// Отправка сообщения с фото (если есть)
 function vk_send_to($peer_id, $text, $photo_url = null) {
     $attachment = '';
-
-    // Если есть фото — загружаем в ВК
     if ($photo_url) {
         $attachment = vk_upload_photo($peer_id, $photo_url);
     }
@@ -105,7 +99,7 @@ function vk_send_to($peer_id, $text, $photo_url = null) {
         'peer_id'      => $peer_id,
         'message'      => $text,
         'random_id'    => mt_rand(1, 9999999),
-        'access_token' => VK_TOKEN,
+        'access_token' => _VK_TOKEN,
         'v'            => '5.131'
     );
     if ($attachment) $params['attachment'] = $attachment;
@@ -118,17 +112,14 @@ function vk_send_to($peer_id, $text, $photo_url = null) {
     curl_close($ch);
 }
 
-// Загрузка фото из Google Drive в ВК
 function vk_upload_photo($peer_id, $photo_url) {
-    // 1. Получаем upload server
     $res = json_decode(file_get_contents(
         'https://api.vk.com/method/photos.getMessagesUploadServer?peer_id=' . $peer_id
-        . '&access_token=' . VK_TOKEN . '&v=5.131'
+        . '&access_token=' . _VK_TOKEN . '&v=5.131'
     ), true);
     if (empty($res['response']['upload_url'])) return '';
     $upload_url = $res['response']['upload_url'];
 
-    // 2. Скачиваем фото
     $ch = curl_init($photo_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -138,7 +129,6 @@ function vk_upload_photo($peer_id, $photo_url) {
     curl_close($ch);
     if (!$img_data) return '';
 
-    // 3. Загружаем во ВК через tmpfile
     $ext = (strpos($ct, 'png') !== false) ? 'png' : 'jpg';
     $tmp = tempnam(sys_get_temp_dir(), 'vkp') . '.' . $ext;
     file_put_contents($tmp, $img_data);
@@ -154,13 +144,12 @@ function vk_upload_photo($peer_id, $photo_url) {
 
     if (empty($upload['photo'])) return '';
 
-    // 4. Сохраняем фото
     $save = json_decode(file_get_contents(
         'https://api.vk.com/method/photos.saveMessagesPhoto'
         . '?server=' . $upload['server']
         . '&photo=' . urlencode($upload['photo'])
         . '&hash=' . $upload['hash']
-        . '&access_token=' . VK_TOKEN . '&v=5.131'
+        . '&access_token=' . _VK_TOKEN . '&v=5.131'
     ), true);
 
     if (!empty($save['response'][0])) {

@@ -8141,6 +8141,23 @@
     .then(function(r){ return r.json(); })
     .then(function(res) {
       if (res.ok) {
+        // Сохраняем заказ в нашу БД (тихо, в фоне)
+        var token = lkGetToken();
+        var swlDeliveryCost = (coDeliveryType === 'delivery' && typeof coGetDeliveryCostFromZone === 'function')
+            ? coGetDeliveryCostFromZone() : 0;
+        var swlPayload = {
+          fp_order_id:   res.order_id || null,
+          items_total:   sub,
+          delivery_cost: swlDeliveryCost,
+          promo_code:    coActivePromo || null,
+          promo_discount:coPromoDiscount || 0,
+          points_spent:  0,
+          total_paid:    Math.max(0, sub - (coPromoDiscount||0)) + swlDeliveryCost
+        };
+        var swlHeaders = {'Content-Type': 'application/json'};
+        if (token) swlHeaders['X-Token'] = token;
+        fetch('/api/orders/save.php', {method:'POST', headers: swlHeaders, body: JSON.stringify(swlPayload)}).catch(function(){});
+
         document.getElementById('coLayout').style.display = 'none';
         document.getElementById('coSuccessScreen').style.display = 'block';
         document.getElementById('coOrderNum').textContent = res.order_id ? '№ ' + res.order_id : '';

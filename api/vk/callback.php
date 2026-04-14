@@ -128,23 +128,38 @@ function vk_send_to($peer_id, $text, $photo_url = null) {
     curl_close($ch);
 }
 
+function vk_curl($url) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    return $res;
+}
+
 function vk_upload_photo($peer_id, $photo_url) {
-    $res = json_decode(file_get_contents(
+    // 1. Получаем upload server
+    $res = json_decode(vk_curl(
         'https://api.vk.com/method/photos.getMessagesUploadServer?peer_id=' . $peer_id
         . '&access_token=' . _VK_TOKEN . '&v=5.131'
     ), true);
     if (empty($res['response']['upload_url'])) return '';
     $upload_url = $res['response']['upload_url'];
 
+    // 2. Скачиваем фото
     $ch = curl_init($photo_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $img_data = curl_exec($ch);
     $ct = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
     curl_close($ch);
-    if (!$img_data) return '';
+    if (!$img_data || strlen($img_data) < 100) return '';
 
+    // 3. Загружаем во ВК
     $ext = (strpos($ct, 'png') !== false) ? 'png' : 'jpg';
     $tmp = tempnam(sys_get_temp_dir(), 'vkp') . '.' . $ext;
     file_put_contents($tmp, $img_data);
@@ -153,14 +168,16 @@ function vk_upload_photo($peer_id, $photo_url) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, array('photo' => new CURLFile($tmp)));
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $upload = json_decode(curl_exec($ch), true);
     curl_close($ch);
     @unlink($tmp);
 
     if (empty($upload['photo'])) return '';
 
-    $save = json_decode(file_get_contents(
+    // 4. Сохраняем фото
+    $save = json_decode(vk_curl(
         'https://api.vk.com/method/photos.saveMessagesPhoto'
         . '?server=' . $upload['server']
         . '&photo=' . urlencode($upload['photo'])

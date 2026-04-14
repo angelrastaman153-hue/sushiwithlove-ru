@@ -9,9 +9,12 @@ session_start();
 if (isset($_GET['logout'])) { session_destroy(); header('Location: ?'); exit; }
 
 // Вход
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-    $login = trim(isset($_POST['login']) ? $_POST['login'] : '');
-    $pass  = isset($_POST['pass']) ? $_POST['pass'] : '';
+$login_error = '';
+$chosen_role = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['swl_login'])) {
+    $login = trim(isset($_POST['swl_login']) ? $_POST['swl_login'] : '');
+    $pass  = isset($_POST['swl_pass']) ? $_POST['swl_pass'] : '';
+    $chosen_role = isset($_POST['swl_role']) ? $_POST['swl_role'] : '';
     $stmt  = db()->prepare('SELECT * FROM staff WHERE login=? AND active=1 LIMIT 1');
     $stmt->execute(array($login));
     $staff = $stmt->fetch();
@@ -26,31 +29,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
 // Проверка сессии
 if (empty($_SESSION['staff_id'])) {
+    $roles = array(
+        'owner'    => array('icon' => '🍱', 'label' => 'Управляющий',  'hint' => 'Владелец бизнеса'),
+        'admin'    => array('icon' => '👔', 'label' => 'Администратор','hint' => 'Управление бизнесом'),
+        'operator' => array('icon' => '📦', 'label' => 'Оператор',     'hint' => 'Работа с заказами'),
+        'courier'  => array('icon' => '🛵', 'label' => 'Курьер',       'hint' => 'Доставка'),
+    );
     ?><!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><title>Вход — Суши с Любовью</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  body{font-family:system-ui,sans-serif;background:#111;color:#eee;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-  .box{background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:40px;max-width:360px;width:100%;margin:20px}
-  h2{margin:0 0 6px;font-size:1.3rem;color:#e8a847}
-  p{margin:0 0 24px;font-size:0.85rem;color:#555}
-  label{display:block;font-size:0.82rem;color:#888;margin-bottom:6px}
-  input{width:100%;box-sizing:border-box;background:#222;border:1px solid #444;color:#eee;border-radius:8px;padding:12px;font-size:1rem;margin-bottom:16px}
-  button{width:100%;background:#e8a847;border:none;color:#000;border-radius:8px;padding:12px;font-size:1rem;font-weight:700;cursor:pointer}
-  .err{color:#e05a5a;margin-bottom:12px;font-size:0.9rem;background:#2a1a1a;border:1px solid #4a2a2a;padding:10px;border-radius:8px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;background:#111;color:#eee;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .logo{font-size:1.1rem;font-weight:700;color:#e8a847;margin-bottom:32px;text-align:center}
+  .logo span{display:block;font-size:0.82rem;color:#555;font-weight:400;margin-top:4px}
+  /* Экран выбора роли */
+  .roles{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px;width:100%}
+  .role-card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:22px 16px;text-align:center;cursor:pointer;transition:all 0.15s;user-select:none}
+  .role-card:hover{border-color:#e8a847;background:#1f1e1a}
+  .role-card:active{transform:scale(.97)}
+  .role-icon{font-size:2rem;margin-bottom:10px}
+  .role-label{font-size:0.95rem;font-weight:700;color:#eee}
+  .role-hint{font-size:0.75rem;color:#555;margin-top:4px}
+  /* Экран логина */
+  .login-box{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:28px;max-width:360px;width:100%;display:none}
+  .login-header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .login-icon{font-size:1.8rem}
+  .login-title{font-size:1.05rem;font-weight:700;color:#eee}
+  .login-sub{font-size:0.8rem;color:#555;margin-top:2px}
+  .back-btn{background:none;border:none;color:#555;cursor:pointer;font-size:0.82rem;margin-bottom:18px;padding:0;display:flex;align-items:center;gap:5px}
+  .back-btn:hover{color:#e8a847}
+  label{display:block;font-size:0.78rem;color:#888;margin-bottom:5px}
+  .inp{width:100%;background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:12px;font-size:0.95rem;margin-bottom:14px;outline:none}
+  .inp:focus{border-color:#e8a847}
+  .submit-btn{width:100%;background:#e8a847;border:none;color:#000;border-radius:8px;padding:12px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:4px}
+  .submit-btn:hover{background:#d4913a}
+  .err{color:#e05a5a;font-size:0.85rem;background:#2a1a1a;border:1px solid #4a2a2a;padding:10px 14px;border-radius:8px;margin-bottom:14px}
 </style></head><body>
-<div class="box">
-  <h2>🍱 Суши с Любовью</h2>
-  <p>Панель сотрудника</p>
-  <?php if (!empty($login_error)) echo '<div class="err">'.$login_error.'</div>'; ?>
-  <form method="post">
+<div class="logo">🍱 Суши с Любовью<span>Панель сотрудника</span></div>
+
+<!-- Экран 1: выбор роли -->
+<div class="roles" id="screenRoles">
+  <?php foreach ($roles as $key => $r): ?>
+  <div class="role-card" onclick="selectRole('<?php echo $key; ?>')">
+    <div class="role-icon"><?php echo $r['icon']; ?></div>
+    <div class="role-label"><?php echo $r['label']; ?></div>
+    <div class="role-hint"><?php echo $r['hint']; ?></div>
+  </div>
+  <?php endforeach; ?>
+</div>
+
+<!-- Экран 2: логин/пароль -->
+<div class="login-box" id="screenLogin">
+  <button class="back-btn" onclick="goBack()">← Назад</button>
+  <div class="login-header">
+    <div class="login-icon" id="loginIcon"></div>
+    <div>
+      <div class="login-title" id="loginTitle"></div>
+      <div class="login-sub" id="loginSub"></div>
+    </div>
+  </div>
+  <?php if ($login_error): ?>
+  <div class="err"><?php echo $login_error; ?></div>
+  <?php endif; ?>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="swl_role" id="hiddenRole" value="<?php echo htmlspecialchars($chosen_role); ?>">
+    <!-- Обманываем автозаполнение браузера -->
+    <input type="text" style="display:none" aria-hidden="true">
+    <input type="password" style="display:none" aria-hidden="true">
     <label>Логин</label>
-    <input type="text" name="login" autocomplete="username" autofocus>
+    <input class="inp" type="text" name="swl_login" id="loginInp" autocomplete="off" value="">
     <label>Пароль</label>
-    <input type="password" name="pass" autocomplete="current-password">
-    <button type="submit">Войти</button>
+    <input class="inp" type="password" name="swl_pass" autocomplete="new-password" value="">
+    <button class="submit-btn" type="submit">Войти</button>
   </form>
 </div>
+
+<script>
+var ROLES = {
+  owner:    {icon:'🍱', label:'Управляющий',  hint:'Владелец бизнеса'},
+  admin:    {icon:'👔', label:'Администратор', hint:'Управление бизнесом'},
+  operator: {icon:'📦', label:'Оператор',      hint:'Работа с заказами'},
+  courier:  {icon:'🛵', label:'Курьер',        hint:'Доставка'}
+};
+
+function selectRole(role) {
+  var r = ROLES[role];
+  document.getElementById('loginIcon').textContent  = r.icon;
+  document.getElementById('loginTitle').textContent = r.label;
+  document.getElementById('loginSub').textContent   = r.hint;
+  document.getElementById('hiddenRole').value       = role;
+  document.getElementById('screenRoles').style.display = 'none';
+  document.getElementById('screenLogin').style.display = 'block';
+  setTimeout(function(){ document.getElementById('loginInp').focus(); }, 50);
+}
+function goBack() {
+  document.getElementById('screenRoles').style.display = '';
+  document.getElementById('screenLogin').style.display = 'none';
+  document.getElementById('loginInp').value = '';
+}
+<?php if ($login_error && $chosen_role): ?>
+// Показываем экран логина с ошибкой (после неудачной попытки)
+selectRole('<?php echo htmlspecialchars($chosen_role); ?>');
+<?php endif; ?>
+</script>
 </body></html><?php
     exit;
 }
@@ -124,21 +206,22 @@ if (isset($_GET['action'])) {
     }
 
     // --- Список сотрудников (только owner) ---
-    if ($action === 'staff_list' && $srole === 'owner') {
+    if ($action === 'staff_list' && ($srole === 'owner' || $srole === 'admin')) {
         $stmt = $pdo->query('SELECT id,name,login,role,active,created_at FROM staff ORDER BY id');
         json_out(array('ok'=>true,'staff'=>$stmt->fetchAll()));
     }
 
     // --- Добавить сотрудника (только owner) ---
-    if ($action === 'staff_add' && $srole === 'owner' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($action === 'staff_add' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data  = json_decode(file_get_contents('php://input'), true);
         $name  = trim(isset($data['name'])  ? $data['name']  : '');
         $login = trim(isset($data['login']) ? $data['login'] : '');
         $pass  = isset($data['pass'])  ? $data['pass']  : '';
         $role  = isset($data['role'])  ? $data['role']  : 'operator';
         if (!$name || !$login || !$pass) { json_out(array('ok'=>false,'error'=>'Заполните все поля')); }
-        $roles = array('operator','courier');
-        if (!in_array($role, $roles)) { json_out(array('ok'=>false,'error'=>'Неверная роль')); }
+        // admin может создавать только operator/courier, не owner/admin
+        $roles = ($srole === 'owner') ? array('admin','operator','courier') : array('operator','courier');
+        if (!in_array($role, $roles)) { json_out(array('ok'=>false,'error'=>'Недостаточно прав для этой роли')); }
         $hash = password_hash($pass, PASSWORD_DEFAULT);
         try {
             $pdo->prepare('INSERT INTO staff (name, login, password, role) VALUES (?,?,?,?)')->execute(array($name, $login, $hash, $role));
@@ -149,7 +232,7 @@ if (isset($_GET['action'])) {
     }
 
     // --- Смена пароля сотрудника (только owner) ---
-    if ($action === 'staff_pass' && $srole === 'owner' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($action === 'staff_pass' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
         $tid  = intval($data['id']);
         $pass = isset($data['pass']) ? $data['pass'] : '';
@@ -160,10 +243,17 @@ if (isset($_GET['action'])) {
     }
 
     // --- Деактивация/активация (только owner, нельзя себя) ---
-    if ($action === 'staff_toggle' && $srole === 'owner' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($action === 'staff_toggle' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
         $tid  = intval($data['id']);
         if ($tid === $sid) { json_out(array('ok'=>false,'error'=>'Нельзя отключить себя')); }
+        // admin не может трогать owner-аккаунты
+        if ($srole === 'admin') {
+            $target = $pdo->query('SELECT role FROM staff WHERE id='.$tid)->fetch();
+            if ($target && in_array($target['role'], array('owner','admin'))) {
+                json_out(array('ok'=>false,'error'=>'Недостаточно прав'));
+            }
+        }
         $cur = $pdo->query('SELECT active FROM staff WHERE id='.$tid)->fetch();
         $new = $cur['active'] ? 0 : 1;
         $pdo->prepare('UPDATE staff SET active=? WHERE id=?')->execute(array($new, $tid));
@@ -171,14 +261,14 @@ if (isset($_GET['action'])) {
     }
 
     // --- Лог действий (только owner) ---
-    if ($action === 'order_log' && $srole === 'owner') {
+    if ($action === 'order_log' && ($srole === 'owner' || $srole === 'admin')) {
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 200;
         $stmt = $pdo->query('SELECT * FROM order_log ORDER BY created_at DESC LIMIT '.$limit);
         json_out(array('ok'=>true,'log'=>$stmt->fetchAll()));
     }
 
     // --- Статистика (только owner) ---
-    if ($action === 'stats' && $srole === 'owner') {
+    if ($action === 'stats' && ($srole === 'owner' || $srole === 'admin')) {
         $today = date('Y-m-d');
         $stats = array(
             'orders_today'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE DATE(created_at)='$today'")->fetchColumn(),
@@ -307,7 +397,8 @@ if (isset($_GET['action'])) {
   <div class="header-left">
     <div class="header-title">🍱 Суши с Любовью</div>
     <div class="header-user"><?php echo htmlspecialchars($sname); ?> · <?php
-      echo $srole === 'owner' ? 'Управляющий' : ($srole === 'operator' ? 'Оператор' : 'Курьер');
+      $roleLabels = array('owner'=>'Управляющий','admin'=>'Администратор','operator'=>'Оператор','courier'=>'Курьер');
+      echo isset($roleLabels[$srole]) ? $roleLabels[$srole] : $srole;
     ?></div>
   </div>
   <div class="header-right">
@@ -323,7 +414,7 @@ if (isset($_GET['action'])) {
   <div class="tab-btn active" onclick="showPage('orders')" id="ptab-orders">
     📦 Заказы <span class="cnt" id="cnt-active" style="display:none"></span>
   </div>
-  <?php if ($srole === 'owner'): ?>
+  <?php if (($srole === 'owner' || $srole === 'admin')): ?>
   <div class="tab-btn" onclick="showPage('staff')" id="ptab-staff">👥 Сотрудники</div>
   <div class="tab-btn" onclick="showPage('log')" id="ptab-log">📋 Активность</div>
   <?php endif; ?>
@@ -361,7 +452,7 @@ if (isset($_GET['action'])) {
   </div>
 </div>
 
-<?php if ($srole === 'owner'): ?>
+<?php if (($srole === 'owner' || $srole === 'admin')): ?>
 <!-- === СТРАНИЦА: СОТРУДНИКИ === -->
 <div class="page" id="page-staff">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-top:4px">
@@ -399,6 +490,9 @@ if (isset($_GET['action'])) {
     <input type="password" id="newPass" placeholder="Минимум 4 символа">
     <label>Роль</label>
     <select id="newRole">
+      <?php if ($srole === 'owner'): ?>
+      <option value="admin">Администратор</option>
+      <?php endif; ?>
       <option value="operator">Оператор</option>
       <option value="courier">Курьер</option>
     </select>

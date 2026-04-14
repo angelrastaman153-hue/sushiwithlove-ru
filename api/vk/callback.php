@@ -4,7 +4,7 @@ define('_VK_CONFIRMATION', '813d4204');
 define('_VK_GROUP_ID',     237666301);
 define('_VK_SECRET',       '');
 define('_GS_SHEET_ID',     '10vZ9_4tPf23o3E3ETdIqHxQmgDc4_hm0Jtrpu4i_PnA');
-define('_VK_TOKEN',        'vk1.a.WDNS1oSr7tPId3ZWhRbjLCe-AbRhMojK0IXg1RKXvW8C1ANWkTVyRk4r85nRz0IzgdfffHpYbv2zaCEb5AKT1TjQRNpw85zF2GUiJIfWoKdIWJFrB0fGeoCviFJI8RzqkYSgShCNM0QBYeIzIxKWoZJQvmi0lvtvhDUr8HJiERXw_XA-PhrdhLaT1mpdT9IJuZNXf-NDIg5mQtdeOZ60kQ');
+define('_VK_TOKEN',        'vk1.a.KAQexgBeEkvKhUwRWmHj8ZSFtXHjeg99gPwpYTjaKS21sJTEZIQozbv4J5OMy1XsQ7T7m8qFjVLQ7EuyEZnpBBw_7adEOYpTcBGZKIOgXGIYyptk2ixJwico1MP3v-WzVLR3-o9dLPfhwmrb_-eNMilpRfi_mR46RS_-IatWRx_EVjzEvTW2ifWcx8lmALrp1n2xVGZC0WrdlyAILq8xbA');
 
 $body = file_get_contents('php://input');
 $data = json_decode($body, true);

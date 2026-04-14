@@ -4733,6 +4733,7 @@
               <div style="font-size:0.8rem;color:var(--text-2);margin-top:2px">Ежедневно 10:00–22:00</div>
             </div>
           </div>
+          <textarea id="coCommentSelf" class="form-input" rows="2" placeholder="Комментарий к заказу (необязательно)" style="resize:none;width:100%;box-sizing:border-box;margin-top:12px"></textarea>
         </div>
 
         <!-- БЛОК 3: Промокод -->
@@ -8113,8 +8114,10 @@
     // Пожелание по времени
     var timeComment = (document.getElementById('coTimeComment') || {}).value;
     if (timeComment && timeComment.trim()) commentParts.push('Время: ' + timeComment.trim());
-    // Основной комментарий курьеру
-    var mainComment = document.getElementById('coComment').value.trim();
+    // Основной комментарий (для доставки — coComment, для самовывоза — coCommentSelf)
+    var mainComment = coDeliveryType === 'self'
+      ? (document.getElementById('coCommentSelf') ? document.getElementById('coCommentSelf').value.trim() : '')
+      : document.getElementById('coComment').value.trim();
     if (mainComment) commentParts.push(mainComment);
     var comment = commentParts.join('\n');
     var cashFrom = (coPaymentMethod === 2 && !coNoCash) ? document.getElementById('coCashFrom').value.trim() : (coNoCash ? 'Без сдачи' : '');

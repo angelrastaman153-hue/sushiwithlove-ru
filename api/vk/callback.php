@@ -75,7 +75,16 @@ function ttk_lookup($query) {
 
     if (!$csv) return null;
 
-    $rows = array_map('str_getcsv', explode("\n", $csv));
+    // fgetcsv корректно обрабатывает многострочные ячейки в кавычках
+    $tmp = tempnam(sys_get_temp_dir(), 'csv');
+    file_put_contents($tmp, $csv);
+    $rows = array();
+    $fh = fopen($tmp, 'r');
+    while (($row = fgetcsv($fh)) !== false) {
+        $rows[] = $row;
+    }
+    fclose($fh);
+    @unlink($tmp);
     if (empty($rows)) return null;
 
     $query_lower = mb_strtolower(trim($query), 'UTF-8');

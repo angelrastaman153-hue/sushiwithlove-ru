@@ -43,14 +43,22 @@ if ($data['type'] === 'message_new') {
 echo 'ok';
 
 function gdrive_to_direct($url) {
+    $file_id = null;
+
     // https://drive.google.com/file/d/FILE_ID/view...
     if (preg_match('/drive\.google\.com\/file\/d\/([a-zA-Z0-9_\-]+)/', $url, $m)) {
-        return 'https://drive.google.com/uc?export=download&id=' . $m[1];
+        $file_id = $m[1];
     }
     // https://drive.google.com/open?id=FILE_ID
-    if (preg_match('/drive\.google\.com\/open\?id=([a-zA-Z0-9_\-]+)/', $url, $m)) {
-        return 'https://drive.google.com/uc?export=download&id=' . $m[1];
+    elseif (preg_match('/[?&]id=([a-zA-Z0-9_\-]+)/', $url, $m)) {
+        $file_id = $m[1];
     }
+
+    if ($file_id) {
+        // Прямой CDN-URL Google (работает без редиректов и авторизации)
+        return 'https://lh3.googleusercontent.com/d/' . $file_id;
+    }
+
     return $url;
 }
 

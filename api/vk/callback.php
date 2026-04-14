@@ -42,6 +42,18 @@ if ($data['type'] === 'message_new') {
 
 echo 'ok';
 
+function gdrive_to_direct($url) {
+    // https://drive.google.com/file/d/FILE_ID/view...
+    if (preg_match('/drive\.google\.com\/file\/d\/([a-zA-Z0-9_\-]+)/', $url, $m)) {
+        return 'https://drive.google.com/uc?export=download&id=' . $m[1];
+    }
+    // https://drive.google.com/open?id=FILE_ID
+    if (preg_match('/drive\.google\.com\/open\?id=([a-zA-Z0-9_\-]+)/', $url, $m)) {
+        return 'https://drive.google.com/uc?export=download&id=' . $m[1];
+    }
+    return $url;
+}
+
 function ttk_lookup($query) {
     if (!$query) return null;
 
@@ -83,7 +95,11 @@ function ttk_lookup($query) {
             if ($weight) $text .= "\n⚖️ Вес: " . $weight . ' г';
             if ($recipe) $text .= "\n\n🍽 Состав и приготовление:\n" . $recipe;
 
-            return array('text' => $text, 'photo' => ($photo && strpos($photo, 'http') === 0) ? $photo : null);
+            $photo_url = null;
+            if ($photo && strpos($photo, 'http') === 0) {
+                $photo_url = gdrive_to_direct($photo);
+            }
+            return array('text' => $text, 'photo' => $photo_url);
         }
     }
     return null;

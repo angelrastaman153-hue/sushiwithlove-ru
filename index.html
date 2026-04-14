@@ -8415,8 +8415,49 @@
         ? 'Добро пожаловать! Вам начислено ' + pts + ' баллов за регистрацию'
         : 'С возвращением, ' + (res.user.name || '') + '! Ваши баллы: ' + pts;
       showToast('👤 Вход выполнен', msg, 'added');
+      // Новым пользователям предлагаем добавить телефон и дату рождения
+      if (res.is_new) {
+        setTimeout(function(){ lkOpenCompleteProfile(res.user.name || ''); }, 800);
+      }
     })
     .catch(function(){ showToast('Ошибка', 'Нет связи с сервером', 'error'); });
+  }
+
+  // Обновить баллы с сервера в фоне
+  function lkRefreshPoints() {
+    var token = lkGetToken();
+    if (!token) return;
+    fetch('/api/me.php', { headers: {'X-Token': token} })
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        if (!res.ok) return;
+        var auth = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
+        auth.user = res.user;
+        localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+        lkUpdateHeader();
+      })
+      .catch(function(){});
+  }
+
+  // Открыть форму дополнения профиля (телефон + дата рождения)
+  function lkOpenCompleteProfile(name) {
+    var ov = document.getElementById('lkOverlay');
+    ov.style.display = 'flex';
+    ov.style.opacity = '1';
+    ov.style.pointerEvents = 'all';
+    document.body.style.overflow = 'hidden';
+    // Меняем заголовок и текст
+    document.querySelector('#lkOverlay .modal-header-title').textContent = '📝 Дополните профиль';
+    document.getElementById('lkError').style.display = 'none';
+    document.getElementById('lkName').value  = name;
+    document.getElementById('lkPhone').value = '';
+    document.getElementById('lkConsent').checked = false;
+    var bdayInput = document.getElementById('lkBday');
+    bdayInput.value = ''; bdayInput.disabled = false;
+    lkInitMask();
+    // Помечаем что это режим дополнения профиля
+    ov.dataset.mode = 'complete';
+    setTimeout(function(){ document.getElementById('lkPhone').focus(); }, 60);
   }
 
   function lkFmt(phone) {
@@ -8448,6 +8489,7 @@
     var user = lkGet();
     if (user) {
       document.getElementById('lkDropdown').classList.toggle('open');
+      lkRefreshPoints(); // обновляем баллы с сервера в фоне
     } else {
       openLk();
     }
@@ -8503,12 +8545,42 @@
     var age = now.getFullYear() - bdayDate.getFullYear() - (now < new Date(now.getFullYear(), bdayDate.getMonth(), bdayDate.getDate()) ? 1 : 0);
     if (age < 14 || age > 90) { err.textContent = 'Укажите корректную дату рождения'; err.style.display = 'block'; document.getElementById('lkBday').focus(); return; }
     if (!consent)          { err.textContent = 'Подтвердите, что это ваш номер телефона';  err.style.display = 'block'; return; }
-    // Дату рождения сохраняем отдельно и больше не даём менять
-    var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');
-    var savedBday = existing.bday || bday; // если уже была сохранена — берём старую
-    localStorage.setItem(LK_KEY, JSON.stringify({ name: name, phone: phone, bday: savedBday }));
-    lkUpdateHeader();
-    closeLk();
+
+    var token = lkGetToken();
+    if (token) {
+      // Авторизован через Telegram — сохраняем профиль на сервер
+      var btn = document.getElementById('lkSubmitBtn');
+      btn.disabled = true; btn.textContent = 'Сохраняем...';
+      fetch('/api/profile.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Token': token},
+        body: JSON.stringify({name: name, phone: phone, birth_date: bday})
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        btn.disabled = false; btn.textContent = 'Сохранить';
+        if (!res.ok) { err.textContent = res.error || 'Ошибка'; err.style.display = 'block'; return; }
+        var auth = JSON.parse(localStorage.getItem(AUTH_KEY) || '{}');
+        auth.user = res.user;
+        localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+        // Восстанавливаем заголовок модала
+        document.querySelector('#lkOverlay .modal-header-title').textContent = '👤 Личный кабинет';
+        lkUpdateHeader();
+        closeLk();
+        showToast('✅ Профиль сохранён', 'Телефон и дата рождения добавлены', 'added');
+      })
+      .catch(function(){
+        btn.disabled = false; btn.textContent = 'Сохранить';
+        err.textContent = 'Нет связи с сервером'; err.style.display = 'block';
+      });
+    } else {
+      // Локальная авторизация (без Telegram)
+      var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');
+      var savedBday = existing.bday || bday;
+      localStorage.setItem(LK_KEY, JSON.stringify({ name: name, phone: phone, bday: savedBday }));
+      lkUpdateHeader();
+      closeLk();
+    }
   }
 
   function lkLogout() {

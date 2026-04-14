@@ -743,18 +743,19 @@ function loadStaff() {
         role = role.trim();
         return '<span class="badge badge-'+role+'" style="margin-right:3px">'+(rLabels[role]||role)+'</span>';
       }).join('');
-      var toggleBtn = s.active
+      var isActive  = parseInt(s.active) === 1;
+      var toggleBtn = isActive
         ? '<button class="btn btn-sm btn-danger" onclick="toggleStaff('+s.id+')">Откл.</button>'
         : '<button class="btn btn-sm" style="background:#1a3a1a;color:#44cc88;border:1px solid #2a5a2a" onclick="toggleStaff('+s.id+')">Вкл.</button>';
-      // Передаём роли как data-атрибут через JSON
-      var rolesJson = JSON.stringify(staffRoles).replace(/'/g, '&#39;');
-      html += '<tr style="'+(s.active?'':'opacity:.5')+'">'
+      // Роли передаём как строку через запятую — без JSON, без конфликта кавычек
+      var rolesStr = staffRoles.join(',');
+      html += '<tr style="'+(isActive?'':'opacity:.5')+'">'
         + '<td><b>'+esc(s.name)+'</b></td>'
         + '<td style="color:#888">'+esc(s.login)+'</td>'
         + '<td>'+badgesHtml+'</td>'
-        + '<td>'+(s.active?'<span style="color:#44cc88">Активен</span>':'<span style="color:#666">Откл.</span>')+'</td>'
+        + '<td>'+(isActive?'<span style="color:#44cc88">Активен</span>':'<span style="color:#666">Откл.</span>')+'</td>'
         + '<td style="display:flex;gap:6px;flex-wrap:wrap">'
-        +   '<button class="btn btn-sm btn-primary" onclick="openEditModal('+s.id+',\''+esc(s.name)+'\','+JSON.stringify(staffRoles)+')">Изменить</button>'
+        +   '<button class="btn btn-sm btn-primary" onclick="openEditModal('+s.id+',\''+esc(s.name)+'\',\''+rolesStr+'\')">Изменить</button>'
         +   '<button class="btn btn-sm btn-ghost" onclick="openPassModal('+s.id+')">Пароль</button>'
         +   toggleBtn
         + '</td>'
@@ -783,7 +784,8 @@ function addStaff() {
     } else showAlert(r.error||'Ошибка', true);
   });
 }
-function openEditModal(id, name, roles) {
+function openEditModal(id, name, rolesStr) {
+  var roles = rolesStr ? rolesStr.split(',') : [];
   document.getElementById('editStaffId').value = id;
   document.getElementById('editName').value = name;
   document.querySelectorAll('.edit-role-chk').forEach(function(c) {

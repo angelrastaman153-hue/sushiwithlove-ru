@@ -307,6 +307,19 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true));
     }
 
+    // --- Удаление тестового заказа (только owner) ---
+    if ($action === 'delete_test_order' && $_SERVER['REQUEST_METHOD'] === 'POST' && $srole === 'owner') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $oid  = intval(isset($data['order_id']) ? $data['order_id'] : 0);
+        if (!$oid) { json_out(array('ok'=>false,'error'=>'Нет order_id')); }
+        // Убеждаемся что это тестовый заказ
+        $row = $pdo->prepare('SELECT id FROM orders WHERE id=? AND is_test=1');
+        $row->execute(array($oid));
+        if (!$row->fetch()) { json_out(array('ok'=>false,'error'=>'Заказ не найден или не тестовый')); }
+        $pdo->prepare('DELETE FROM orders WHERE id=? AND is_test=1')->execute(array($oid));
+        json_out(array('ok'=>true));
+    }
+
     // --- Лог действий (только owner) ---
     if ($action === 'order_log' && ($srole === 'owner' || $srole === 'admin')) {
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 200;
@@ -318,10 +331,10 @@ if (isset($_GET['action'])) {
     if ($action === 'stats' && ($srole === 'owner' || $srole === 'admin')) {
         $today = date('Y-m-d');
         $stats = array(
-            'orders_today'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE DATE(created_at)='$today'")->fetchColumn(),
-            'revenue_today' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE DATE(created_at)='$today' AND status!='cancelled'")->fetchColumn(),
-            'orders_month'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01')")->fetchColumn(),
-            'revenue_month' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND status!='cancelled'")->fetchColumn(),
+            'orders_today'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE DATE(created_at)='$today' AND (is_test IS NULL OR is_test=0)")->fetchColumn(),
+            'revenue_today' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE DATE(created_at)='$today' AND status!='cancelled' AND (is_test IS NULL OR is_test=0)")->fetchColumn(),
+            'orders_month'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND (is_test IS NULL OR is_test=0)")->fetchColumn(),
+            'revenue_month' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND status!='cancelled' AND (is_test IS NULL OR is_test=0)")->fetchColumn(),
         );
         json_out(array('ok'=>true,'stats'=>$stats));
     }
@@ -372,6 +385,7 @@ if (isset($_GET['action'])) {
   .order-card.s-delivering{border-left:3px solid #44cc88}
   .order-card.s-done{border-left:3px solid #333;opacity:.65}
   .order-card.s-cancelled{border-left:3px solid #c66;opacity:.55}
+  .order-card.order-test{border-style:dashed;opacity:.8}
   .order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .order-id{font-weight:700;font-size:0.95rem}
   .order-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:0.85rem;margin-bottom:10px}
@@ -695,14 +709,18 @@ function renderOrders(orders) {
 
     var client = o.user_name ? esc(o.user_name) : '—';
     var phone  = o.user_phone ? fmt_phone(o.user_phone) : '';
+    var isTest = parseInt(o.is_test) === 1;
     var fpInfo = o.fp_order_id
       ? '<small style="color:#555;font-size:0.72rem">FP:'+o.fp_order_id+'</small>'
       : '<small style="color:#f97316;font-size:0.72rem">⚠️ Нет в FP</small>';
+    var testBadge = isTest ? ' <span style="background:rgba(232,168,71,0.15);color:#e8a847;border:1px solid rgba(232,168,71,0.3);border-radius:6px;font-size:0.7rem;padding:1px 7px;font-weight:700">🧪 ТЕСТ</span>' : '';
+    var deleteBtn = isTest ? '<button onclick="deleteTestOrder('+o.id+')" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid #e8a847;background:transparent;color:#e8a847;font-size:0.75rem;cursor:pointer">Удалить</button>' : '';
 
-    html += '<div class="order-card s-'+st+'">'
+    html += '<div class="order-card s-'+st+(isTest?' order-test':'')+'">'
       + '<div class="order-head">'
-      +   '<div><span class="order-id">#'+o.id+'</span> '+fpInfo+'</div>'
+      +   '<div><span class="order-id">'+(isTest?'#000':('#'+o.id))+'</span> '+testBadge+' '+fpInfo+'</div>'
       +   '<div style="display:flex;gap:8px;align-items:center">'
+      +     (isTest ? deleteBtn : '')
       +     '<span class="badge badge-'+st+'">'+(sLabels[st]||st)+'</span>'
       +     '<span style="font-size:0.78rem;color:#555">'+fmtDate(o.created_at)+'</span>'
       +   '</div>'
@@ -727,6 +745,17 @@ function changeStatus(oid, status) {
     body: JSON.stringify({order_id:oid, status:status})
   }).then(function(r){ return r.json(); }).then(function(r) {
     if (r.ok) { showAlert(status==='done'?'✅ Выполнен':('Статус: '+status), false); loadOrders(); }
+    else showAlert(r.error||'Ошибка', true);
+  });
+}
+
+function deleteTestOrder(oid) {
+  if (!confirm('Удалить тестовый заказ #' + oid + '?')) return;
+  fetch('?action=delete_test_order', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({order_id: oid})
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (r.ok) { showAlert('🗑️ Тестовый заказ удалён', false); loadOrders(); }
     else showAlert(r.error||'Ошибка', true);
   });
 }

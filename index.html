@@ -4886,7 +4886,7 @@
           <div id="coSubmitErr" style="display:none;color:#e05a5a;font-size:0.82rem;margin-bottom:10px;text-align:center"></div>
           <button class="btn btn-primary co-submit-btn" id="coSubmitBtn" onclick="coSubmitOrder()">Оформить заказ →</button>
           <div id="coSummaryTimeHint" style="margin-top:10px;font-size:0.75rem;color:var(--text-2);text-align:center">Оператор свяжется в течение 5 минут</div>
-          <button id="coTestBtn" onclick="coTestOrder()" style="display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:2px dashed #e8a847;background:rgba(232,168,71,0.08);color:#e8a847;font-size:0.82rem;font-weight:700;cursor:pointer;letter-spacing:.05em">🧪 ТЕСТ — заказ не сохраняется</button>
+          <button id="coTestBtn" onclick="coTestOrder()" style="display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:2px dashed #e8a847;background:rgba(232,168,71,0.08);color:#e8a847;font-size:0.82rem;font-weight:700;cursor:pointer;letter-spacing:.05em">🧪 ТЕСТ — полный заказ, в статистику не войдёт</button>
           <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px;font-size:0.85rem" onclick="coGoBackToMenu()">← Вернуться в меню</button>
         </div>
       </div><!-- /right -->
@@ -8826,27 +8826,112 @@
 
   function coTestOrder() {
     if (!cart.length) { coShowErr('Корзина пуста'); return; }
-    // Показываем экран успеха с номером 000 — ничего не отправляем
-    document.getElementById('coLayout').style.display = 'none';
-    document.getElementById('coSuccessScreen').style.display = 'block';
-    document.getElementById('coOrderNum').textContent = '№ 000 (тест)';
-    var itemsEl = document.getElementById('coSuccessItems');
-    var totalEl = document.getElementById('coSuccessTotal');
-    if (itemsEl) {
-      itemsEl.innerHTML = '';
-      var sum = 0;
-      cart.forEach(function(i) {
-        sum += i.price * i.qty;
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;font-size:0.9rem';
-        row.innerHTML = '<span>' + (i.emoji||'🍱') + ' ' + i.name + (i.qty>1?' × '+i.qty:'') + '</span>'
-          + '<span style="color:var(--accent);font-weight:600">' + fmt(i.price*i.qty) + '</span>';
-        itemsEl.appendChild(row);
-      });
-      if (totalEl) totalEl.innerHTML = '<span>Итого</span><span style="color:var(--accent)">' + fmt(sum) + '</span>';
+    coShowErr('');
+    // Тестовый заказ — работает как настоящий, но is_test=1 и номер всегда 000
+    var name  = document.getElementById('coName').value.trim()  || 'Тест';
+    var phone = document.getElementById('coPhone').value.replace(/\D/g,'') || '89000000000';
+    var street = coDeliveryType === 'delivery' ? (document.getElementById('coStreet').value.trim() || 'Тест ул.') : 'Самовывоз';
+    var home   = coDeliveryType === 'delivery' ? (document.getElementById('coHouse').value.trim()  || '0') : '';
+    var entrance = coDeliveryType === 'delivery' ? (document.getElementById('coEntrance').value.trim() || '') : '';
+    var floor    = coDeliveryType === 'delivery' ? (document.getElementById('coFloor').value.trim()    || '') : '';
+    var flat     = coDeliveryType === 'delivery' ? (document.getElementById('coFlat').value.trim()     || '') : '';
+    var preDate = coTimeMode === 'scheduled' ? document.getElementById('coDate').value : '';
+    var preTime = coTimeMode === 'scheduled' ? (coSelectedSlot || '') : '';
+    var sub     = cart.reduce(function(s,i){ return s+i.price*i.qty; }, 0);
+    var total   = Math.max(0, sub - (coPromoDiscount||0));
+    var swlDeliveryCost = (coDeliveryType === 'delivery' && typeof coGetDeliveryCostFromZone === 'function')
+        ? coGetDeliveryCostFromZone() : 0;
+
+    // Payload для FrontPad (такой же как в coSubmitOrder)
+    var fpPayload = {
+      name: name, phone: phone,
+      delivery_type: coDeliveryType,
+      street: street, home: home, entrance: entrance, floor: floor, flat: flat,
+      comment: '[ТЕСТ] Тестовый заказ — не исполнять',
+      pay: String(coPaymentMethod), chopsticks: coChopsticks, cash_from: '',
+      preorder_date: preDate, preorder_time: preTime,
+      order_total: total, promo_code: coActivePromo || '',
+      items: cart.map(function(i){ return {id:i.id, qty:i.qty, price:i.price, name:i.name, isGift:!!i.isGift}; })
+    };
+
+    // Payload для нашей БД с is_test=1
+    var swlPayload = {
+      fp_order_id:   null,
+      is_test:       1,
+      items_total:   sub,
+      delivery_cost: swlDeliveryCost,
+      promo_code:    coActivePromo || null,
+      promo_discount:coPromoDiscount || 0,
+      points_spent:  0,
+      total_paid:    total + swlDeliveryCost,
+      name:          name,
+      phone:         phone,
+      delivery_type: coDeliveryType,
+      street:        coDeliveryType === 'delivery' ? street : '',
+      home:          home, entrance: entrance, floor: floor, flat: flat,
+      comment:       '[ТЕСТ] Тестовый заказ',
+      pay:           String(coPaymentMethod),
+      cash_from:     '',
+      order_total:   total,
+      preorder_date: preDate || '',
+      preorder_time: preTime || '',
+      items:         cart.map(function(i){ return {id:i.id, name:i.name, qty:i.qty, price:i.price, isGift:!!i.isGift}; })
+    };
+
+    var btn  = document.getElementById('coSubmitBtn');
+    var tBtn = document.getElementById('coTestBtn');
+    if (tBtn) { tBtn.disabled = true; tBtn.textContent = 'Отправляем тест...'; }
+
+    var token = lkGetToken();
+    var swlHeaders = {'Content-Type': 'application/json'};
+    if (token) swlHeaders['X-Token'] = token;
+
+    // ШАГ 1: Сохраняем тестовый заказ в БД (is_test=1)
+    fetch('/api/orders/save.php', {method:'POST', headers: swlHeaders, body: JSON.stringify(swlPayload)})
+    .then(function(r){ return r.json(); })
+    .then(function(saveRes) {
+      var ourOrderId = (saveRes && saveRes.order_id) ? saveRes.order_id : null;
+      // ШАГ 2: Отправляем в FrontPad
+      fetch('order.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(fpPayload)})
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        if (res.ok && res.order_id && ourOrderId) {
+          fetch('/api/orders/link_fp.php', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({order_id: ourOrderId, fp_order_id: res.order_id})
+          }).catch(function(){});
+        }
+        coShowTestSuccess();
+      })
+      .catch(function() { coShowTestSuccess(); });
+    })
+    .catch(function() {
+      if (tBtn) { tBtn.disabled = false; tBtn.textContent = '🧪 ТЕСТ'; }
+      coShowErr('Ошибка сохранения теста');
+    });
+
+    function coShowTestSuccess() {
+      document.getElementById('coLayout').style.display = 'none';
+      document.getElementById('coSuccessScreen').style.display = 'block';
+      document.getElementById('coOrderNum').textContent = '№ 000 (тест)';
+      var itemsEl = document.getElementById('coSuccessItems');
+      var totalEl = document.getElementById('coSuccessTotal');
+      if (itemsEl) {
+        itemsEl.innerHTML = '';
+        var sum = 0;
+        cart.forEach(function(i) {
+          sum += i.price * i.qty;
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;gap:10px;font-size:0.9rem';
+          row.innerHTML = '<span>' + (i.emoji||'🍱') + ' ' + i.name + (i.qty>1?' × '+i.qty:'') + '</span>'
+            + '<span style="color:var(--accent);font-weight:600">' + fmt(i.price*i.qty) + '</span>';
+          itemsEl.appendChild(row);
+        });
+        if (totalEl) totalEl.innerHTML = '<span>Итого</span><span style="color:var(--accent)">' + fmt(sum) + '</span>';
+      }
+      var msgEl = document.getElementById('coSuccessMsg');
+      if (msgEl) msgEl.textContent = '🧪 Тестовый заказ отправлен в FrontPad и ВК. В статистику не войдёт.';
     }
-    var msgEl = document.getElementById('coSuccessMsg');
-    if (msgEl) msgEl.textContent = '🧪 Тестовый заказ — в базу не записан, уведомлений нет.';
   }
 
   // Pre-fill checkout from LK или localStorage

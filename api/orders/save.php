@@ -34,6 +34,7 @@ $promo_code    = isset($data['promo_code'])    ? $data['promo_code']    : null;
 $promo_discount= isset($data['promo_discount'])? intval($data['promo_discount']): 0;
 $points_spent  = isset($data['points_spent'])  ? intval($data['points_spent'])  : 0;
 $total_paid    = isset($data['total_paid'])    ? intval($data['total_paid'])    : 0;
+$is_test       = isset($data['is_test'])       ? (int)$data['is_test']          : 0;
 
 $pdo = db();
 
@@ -50,10 +51,10 @@ $status = $fp_order_id ? 'new' : 'pending';
 $pdo->prepare('
     INSERT INTO orders
       (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
-       points_spent, total_paid, status, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,NOW())
+       points_spent, total_paid, status, is_test, created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,NOW())
 ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
-                  $promo_code, $promo_discount, $points_spent, $total_paid, $status));
+                  $promo_code, $promo_discount, $points_spent, $total_paid, $status, $is_test));
 
 $order_id = $pdo->lastInsertId();
 

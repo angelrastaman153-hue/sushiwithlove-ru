@@ -331,6 +331,21 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true));
     }
 
+    // --- Ручное создание ссылки отзыва (owner/admin) ---
+    if ($action === 'manual_review' && $_SERVER['REQUEST_METHOD'] === 'POST' && ($srole === 'owner' || $srole === 'admin')) {
+        $data  = json_decode(file_get_contents('php://input'), true);
+        $phone = isset($data['phone']) ? preg_replace('/\D/','',$data['phone']) : '';
+        $name  = isset($data['name'])  ? trim($data['name']) : '';
+        if (!$phone) { json_out(array('ok'=>false,'error'=>'Нет телефона')); }
+        $token = bin2hex(random_bytes(16));
+        $pdo->prepare('INSERT INTO reviews (order_id, token, phone, source) VALUES (?,?,?,?)')
+           ->execute(array(0, $token, $phone, 'manual'));
+        $link = 'https://xn--90acqmqobo9b7bse.xn--p1ai/review.php?t=' . $token;
+        require_once __DIR__ . '/../vk_notify.php';
+        vk_send("⭐ РУЧНОЙ ЗАПРОС ОТЗЫВА\nКлиент: " . ($name ?: $phone) . "\nСсылка:\n" . $link);
+        json_out(array('ok'=>true, 'token'=>$token, 'link'=>$link));
+    }
+
     // --- Удаление тестового заказа (только owner) ---
     if ($action === 'delete_test_order' && $_SERVER['REQUEST_METHOD'] === 'POST' && $srole === 'owner') {
         $data = json_decode(file_get_contents('php://input'), true);
@@ -574,6 +589,16 @@ if (isset($_GET['action'])) {
       <button class="btn btn-sm" id="revFilterAll" onclick="loadReviews(false)" style="border-color:#e8a847;color:#e8a847;background:rgba(232,168,71,0.12)">Все</button>
       <button class="btn btn-sm" id="revFilterNeg" onclick="loadReviews(true)" style="border-color:#333;color:#888;background:#1a1a1a">😕 Негативные</button>
     </div>
+  </div>
+  <!-- Ручная отправка -->
+  <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:16px;margin-bottom:16px">
+    <div style="font-size:0.82rem;color:#888;margin-bottom:10px">📨 Отправить запрос вручную (клиент не из сайта)</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="text" id="manualName" placeholder="Имя клиента" style="flex:1;min-width:120px;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#eee;font-size:0.9rem;outline:none">
+      <input type="text" id="manualPhone" placeholder="Телефон 89..." style="flex:1;min-width:140px;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#eee;font-size:0.9rem;outline:none">
+      <button onclick="sendManualReview()" class="btn btn-primary btn-sm" style="white-space:nowrap">Создать ссылку</button>
+    </div>
+    <div id="manualResult" style="display:none;margin-top:10px;padding:10px;background:#111;border-radius:8px;font-size:0.85rem;word-break:break-all;color:#e8a847"></div>
   </div>
   <!-- Сводка -->
   <div id="reviewsSummary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
@@ -895,6 +920,25 @@ function renderReviews(reviews) {
       + '</div>';
   });
   list.innerHTML = html;
+}
+
+function sendManualReview() {
+  var name  = document.getElementById('manualName').value.trim();
+  var phone = document.getElementById('manualPhone').value.replace(/\D/g,'');
+  if (!phone) { showAlert('Введите номер телефона', true); return; }
+  fetch('?action=manual_review', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name: name, phone: phone})
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (r.ok) {
+      var res = document.getElementById('manualResult');
+      res.style.display = '';
+      res.innerHTML = '📋 Ссылка создана:<br><b>' + r.link + '</b><br>'
+        + '<button onclick="copyLink(\'' + r.link + '\')" style="margin-top:8px;padding:4px 12px;border-radius:6px;border:1px solid #e8a847;background:transparent;color:#e8a847;cursor:pointer;font-size:0.8rem">Скопировать</button>';
+      document.getElementById('manualName').value = '';
+      document.getElementById('manualPhone').value = '';
+    } else { showAlert(r.error||'Ошибка', true); }
+  });
 }
 
 function str_repeat(s, n) { var r=''; for(var i=0;i<n;i++) r+=s; return r; }

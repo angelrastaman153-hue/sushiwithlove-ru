@@ -214,7 +214,6 @@ if (isset($_GET['action'])) {
             if (!$order['is_test']) {
                 $phone = $order['client_phone'];
                 $name  = $order['client_name'];
-                // Если телефон не в orders — берём из users
                 if (!$phone && $order['user_id']) {
                     $u = $pdo->prepare('SELECT phone, name FROM users WHERE id=?');
                     $u->execute(array($order['user_id']));
@@ -225,13 +224,27 @@ if (isset($_GET['action'])) {
                 $existing->execute(array($oid));
                 if (!$existing->fetch()) {
                     $token = bin2hex(random_bytes(16));
-                    $pdo->prepare('INSERT INTO reviews (order_id, token, phone, source) VALUES (?,?,?,?)')
-                       ->execute(array($oid, $token, $phone ?: null, 'site'));
+
+                    // Вычисляем время отправки: через 1 час, но не позже 22:00 Кургана (UTC+5)
+                    $send_utc = time() + 3600;
+                    $send_h   = intval(gmdate('H', $send_utc + 18000)); // час в Кургане
+                    if ($send_h < 10 || $send_h >= 22) {
+                        // Следующее утро 10:00 Кургана = 05:00 UTC
+                        $d = gmdate('Y-m-d', time() + 18000 + 86400);
+                        $send_utc = strtotime($d . ' 05:00:00');
+                    }
+                    $scheduled_for = gmdate('Y-m-d H:i:s', $send_utc);
+
+                    $pdo->prepare('INSERT INTO reviews (order_id, token, phone, source, scheduled_for) VALUES (?,?,?,?,?)')
+                       ->execute(array($oid, $token, $phone ?: null, 'site', $scheduled_for));
+
                     $link = 'https://xn--90acqmqobo9b7bse.xn--p1ai/review.php?t=' . $token;
-                    require_once __DIR__ . '/../vk_notify.php';
                     $client_info = ($name ?: ($phone ?: 'клиент'));
-                    vk_send("⭐ ОТЗЫВ — заказ #" . $oid . "\nКлиент: " . $client_info . "\nСсылка:\n" . $link);
-                    json_out(array('ok'=>true, 'review_link' => $link));
+                    $when = ($send_h >= 10 && $send_h < 22)
+                        ? 'через ~1 час'
+                        : ('завтра в 10:00 — ' . gmdate('d.m', $send_utc + 18000));
+                    json_out(array('ok'=>true, 'review_link' => $link,
+                        'review_scheduled' => $scheduled_for, 'review_when' => $when));
                 }
             }
         }
@@ -825,7 +838,7 @@ function changeStatus(oid, status) {
   }).then(function(r){ return r.json(); }).then(function(r) {
     if (r.ok) {
       if (status === 'done' && r.review_link) {
-        showReviewLinkAlert(r.review_link);
+        showReviewLinkAlert(r.review_link, r.review_when);
       } else {
         showAlert(status==='done'?'✅ Выполнен':('Статус: '+status), false);
       }
@@ -834,17 +847,9 @@ function changeStatus(oid, status) {
   });
 }
 
-function showReviewLinkAlert(link) {
-  var msg = '✅ Выполнен! Ссылка для отзыва скопирована в буфер.\nОтправьте клиенту в ВКонтакте или мессенджере.';
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(link).then(function() {
-      showAlert(msg, false);
-    }).catch(function() {
-      showAlert('✅ Выполнен! Ссылка отзыва: ' + link, false);
-    });
-  } else {
-    showAlert('✅ Выполнен! Ссылка отзыва:\n' + link, false);
-  }
+function showReviewLinkAlert(link, when) {
+  var whenText = when ? ' Запрос отзыва уйдёт ' + when + '.' : '';
+  showAlert('✅ Выполнен!' + whenText, false);
 }
 
 // === ОТЗЫВЫ ===

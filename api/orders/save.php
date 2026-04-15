@@ -27,6 +27,8 @@ if ($token) {
     if ($row) $user_id = $row['id'];
 }
 
+$client_phone  = isset($data['phone'])         ? preg_replace('/\D/', '', $data['phone']) : null;
+$client_name   = isset($data['name'])          ? trim($data['name'])           : null;
 $fp_order_id   = isset($data['fp_order_id'])   ? $data['fp_order_id']   : null;
 $items_total   = isset($data['items_total'])   ? intval($data['items_total'])   : 0;
 $delivery_cost = isset($data['delivery_cost']) ? intval($data['delivery_cost']) : 0;
@@ -51,10 +53,11 @@ $status = $fp_order_id ? 'new' : 'pending';
 $pdo->prepare('
     INSERT INTO orders
       (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
-       points_spent, total_paid, status, is_test, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,NOW())
+       points_spent, total_paid, status, is_test, client_phone, client_name, created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())
 ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
-                  $promo_code, $promo_discount, $points_spent, $total_paid, $status, $is_test));
+                  $promo_code, $promo_discount, $points_spent, $total_paid, $status,
+                  $is_test, $client_phone, $client_name));
 
 $order_id = $pdo->lastInsertId();
 

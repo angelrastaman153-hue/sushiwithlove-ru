@@ -198,7 +198,7 @@ if (isset($_GET['action'])) {
         $pdo->prepare('INSERT INTO order_log (order_id, staff_id, staff_name, from_status, to_status, created_at) VALUES (?,?,?,?,?,NOW())')
             ->execute(array($oid, $sid, $sname, $from_status, $status));
 
-        // При выполнении — начислить баллы
+        // При выполнении — начислить баллы + создать токен отзыва
         if ($status === 'done') {
             $order = $pdo->query('SELECT * FROM orders WHERE id='.$oid)->fetch();
             if ($order && !$order['points_earned'] && !$order['points_spent'] && $order['user_id']) {
@@ -208,6 +208,30 @@ if (isset($_GET['action'])) {
                     $pdo->prepare('UPDATE orders SET points_earned=? WHERE id=?')->execute(array($earned, $oid));
                     $pdo->prepare('UPDATE users SET points=points+?, last_order_at=NOW() WHERE id=?')->execute(array($earned, $order['user_id']));
                     $pdo->prepare('INSERT INTO points_log (user_id, order_id, delta, reason, created_at) VALUES (?,?,?,?,NOW())')->execute(array($order['user_id'], $oid, $earned, 'earn'));
+                }
+            }
+            // Создаём токен отзыва (только для не-тестовых заказов)
+            if (!$order['is_test']) {
+                $phone = $order['client_phone'];
+                $name  = $order['client_name'];
+                // Если телефон не в orders — берём из users
+                if (!$phone && $order['user_id']) {
+                    $u = $pdo->prepare('SELECT phone, name FROM users WHERE id=?');
+                    $u->execute(array($order['user_id']));
+                    $urow = $u->fetch();
+                    if ($urow) { $phone = $urow['phone']; $name = $urow['name']; }
+                }
+                $existing = $pdo->prepare('SELECT token FROM reviews WHERE order_id=?');
+                $existing->execute(array($oid));
+                if (!$existing->fetch()) {
+                    $token = bin2hex(random_bytes(16));
+                    $pdo->prepare('INSERT INTO reviews (order_id, token, phone, source) VALUES (?,?,?,?)')
+                       ->execute(array($oid, $token, $phone ?: null, 'site'));
+                    $link = 'https://xn--90acqmqobo9b7bse.xn--p1ai/review.php?t=' . $token;
+                    require_once __DIR__ . '/../vk_notify.php';
+                    $client_info = ($name ?: ($phone ?: 'клиент'));
+                    vk_send("⭐ ОТЗЫВ — заказ #" . $oid . "\nКлиент: " . $client_info . "\nСсылка:\n" . $link);
+                    json_out(array('ok'=>true, 'review_link' => $link));
                 }
             }
         }
@@ -318,6 +342,19 @@ if (isset($_GET['action'])) {
         if (!$row->fetch()) { json_out(array('ok'=>false,'error'=>'Заказ не найден или не тестовый')); }
         $pdo->prepare('DELETE FROM orders WHERE id=? AND is_test=1')->execute(array($oid));
         json_out(array('ok'=>true));
+    }
+
+    // --- Список отзывов (только owner/admin) ---
+    if ($action === 'reviews_list' && ($srole === 'owner' || $srole === 'admin')) {
+        $where = array('1=1');
+        $params = array();
+        if (!empty($_GET['only_negative'])) { $where[] = 'r.rating IS NOT NULL AND r.rating <= 4'; }
+        $stmt = $pdo->prepare(
+            'SELECT r.*, o.fp_order_id FROM reviews r LEFT JOIN orders o ON o.id=r.order_id
+             WHERE ' . implode(' AND ', $where) . ' ORDER BY r.created_at DESC LIMIT 200'
+        );
+        $stmt->execute($params);
+        json_out(array('ok'=>true,'reviews'=>$stmt->fetchAll()));
     }
 
     // --- Лог действий (только owner) ---
@@ -476,6 +513,7 @@ if (isset($_GET['action'])) {
     📦 Заказы <span class="cnt" id="cnt-active" style="display:none"></span>
   </div>
   <?php if (($srole === 'owner' || $srole === 'admin')): ?>
+  <div class="tab-btn" onclick="showPage('reviews')" id="ptab-reviews">⭐ Отзывы <span class="cnt" id="cnt-negative" style="display:none"></span></div>
   <div class="tab-btn" onclick="showPage('staff')" id="ptab-staff">👥 Сотрудники</div>
   <div class="tab-btn" onclick="showPage('log')" id="ptab-log">📋 Активность</div>
   <?php endif; ?>
@@ -526,6 +564,21 @@ if (isset($_GET['action'])) {
       <tbody id="staffTable"><tr><td colspan="5" style="color:#555">Загрузка…</td></tr></tbody>
     </table>
   </div>
+</div>
+
+<!-- === СТРАНИЦА: ОТЗЫВЫ === -->
+<div class="page" id="page-reviews">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:4px;flex-wrap:wrap;gap:10px">
+    <div style="font-size:1rem;font-weight:600;color:#ccc">Отзывы клиентов</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" id="revFilterAll" onclick="loadReviews(false)" style="border-color:#e8a847;color:#e8a847;background:rgba(232,168,71,0.12)">Все</button>
+      <button class="btn btn-sm" id="revFilterNeg" onclick="loadReviews(true)" style="border-color:#333;color:#888;background:#1a1a1a">😕 Негативные</button>
+    </div>
+  </div>
+  <!-- Сводка -->
+  <div id="reviewsSummary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
+  <!-- Список -->
+  <div id="reviewsList"><div class="empty">Загрузка…</div></div>
 </div>
 
 <!-- === СТРАНИЦА: АКТИВНОСТЬ === -->
@@ -632,9 +685,10 @@ function showPage(name) {
   var b = document.getElementById('ptab-' + name);
   if (b) b.classList.add('active');
   currentPage = name;
-  if (name === 'orders') loadOrders();
-  if (name === 'staff')  loadStaff();
-  if (name === 'log')    loadLog();
+  if (name === 'orders')  loadOrders();
+  if (name === 'staff')   loadStaff();
+  if (name === 'log')     loadLog();
+  if (name === 'reviews') loadReviews(false);
 }
 
 // --- Фильтр статуса ---
@@ -744,9 +798,109 @@ function changeStatus(oid, status) {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({order_id:oid, status:status})
   }).then(function(r){ return r.json(); }).then(function(r) {
-    if (r.ok) { showAlert(status==='done'?'✅ Выполнен':('Статус: '+status), false); loadOrders(); }
-    else showAlert(r.error||'Ошибка', true);
+    if (r.ok) {
+      if (status === 'done' && r.review_link) {
+        showReviewLinkAlert(r.review_link);
+      } else {
+        showAlert(status==='done'?'✅ Выполнен':('Статус: '+status), false);
+      }
+      loadOrders();
+    } else showAlert(r.error||'Ошибка', true);
   });
+}
+
+function showReviewLinkAlert(link) {
+  var msg = '✅ Выполнен! Ссылка для отзыва скопирована в буфер.\nОтправьте клиенту в ВКонтакте или мессенджере.';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function() {
+      showAlert(msg, false);
+    }).catch(function() {
+      showAlert('✅ Выполнен! Ссылка отзыва: ' + link, false);
+    });
+  } else {
+    showAlert('✅ Выполнен! Ссылка отзыва:\n' + link, false);
+  }
+}
+
+// === ОТЗЫВЫ ===
+function loadReviews(onlyNegative) {
+  var allBtn = document.getElementById('revFilterAll');
+  var negBtn = document.getElementById('revFilterNeg');
+  if (allBtn && negBtn) {
+    if (onlyNegative) {
+      allBtn.style.borderColor='#333'; allBtn.style.color='#888'; allBtn.style.background='#1a1a1a';
+      negBtn.style.borderColor='#e8a847'; negBtn.style.color='#e8a847'; negBtn.style.background='rgba(232,168,71,0.12)';
+    } else {
+      allBtn.style.borderColor='#e8a847'; allBtn.style.color='#e8a847'; allBtn.style.background='rgba(232,168,71,0.12)';
+      negBtn.style.borderColor='#333'; negBtn.style.color='#888'; negBtn.style.background='#1a1a1a';
+    }
+  }
+  var url = '?action=reviews_list' + (onlyNegative ? '&only_negative=1' : '');
+  fetch(url).then(function(r){ return r.json(); }).then(function(r) {
+    if (!r.ok) return;
+    renderReviews(r.reviews);
+  });
+}
+
+function renderReviews(reviews) {
+  var list = document.getElementById('reviewsList');
+  var summary = document.getElementById('reviewsSummary');
+
+  // Считаем сводку
+  var total = reviews.length;
+  var answered = reviews.filter(function(r){ return r.rating; }).length;
+  var negative = reviews.filter(function(r){ return r.rating && r.rating <= 4; }).length;
+  var positive = reviews.filter(function(r){ return r.rating && r.rating >= 5; }).length;
+  var avgRating = answered > 0
+    ? (reviews.filter(function(r){ return r.rating; }).reduce(function(s,r){ return s + parseInt(r.rating); }, 0) / answered).toFixed(1)
+    : '—';
+
+  // Бейдж на табе
+  var cntEl = document.getElementById('cnt-negative');
+  if (cntEl) { if (negative > 0) { cntEl.textContent = negative; cntEl.style.display = ''; } else { cntEl.style.display = 'none'; } }
+
+  if (summary) {
+    summary.innerHTML = [
+      ['📨 Отправлено', total],
+      ['⭐ Ответили', answered],
+      ['😊 Позитивных', positive],
+      ['😕 Перехвачено', negative],
+      ['📊 Средняя', avgRating]
+    ].map(function(s){
+      return '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:14px 12px;text-align:center">'
+        + '<div style="font-size:1.4rem;font-weight:700;color:#e8a847">' + s[1] + '</div>'
+        + '<div style="font-size:0.75rem;color:#555;margin-top:4px">' + s[0] + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  if (!reviews.length) { list.innerHTML = '<div class="empty">Отзывов пока нет</div>'; return; }
+
+  var html = '';
+  reviews.forEach(function(r) {
+    var stars = r.rating ? str_repeat('⭐', parseInt(r.rating)) + ' (' + r.rating + '/5)' : '—';
+    var isNeg = r.rating && parseInt(r.rating) <= 4;
+    var border = isNeg ? '#c66' : (r.rating ? '#44cc88' : '#2a2a2a');
+    var link = 'https://xn--90acqmqobo9b7bse.xn--p1ai/review.php?t=' + r.token;
+    html += '<div style="background:#1a1a1a;border:1px solid ' + border + ';border-radius:12px;padding:14px;margin-bottom:10px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'
+      +   '<div style="font-size:0.82rem;color:#555">' + fmtDate(r.created_at) + ' · Заказ #' + r.order_id + (r.phone ? ' · ' + r.phone : '') + '</div>'
+      +   '<div style="font-size:0.95rem">' + (r.rating ? stars : '<span style="color:#555">Не ответил</span>') + '</div>'
+      + '</div>'
+      + (r.comment ? '<div style="margin-top:10px;font-size:0.9rem;color:#ccc;background:#161616;border-radius:8px;padding:10px">' + esc(r.comment) + '</div>' : '')
+      + (!r.answered_at ? '<div style="margin-top:8px;display:flex;align-items:center;gap:10px">'
+          + '<span style="font-size:0.78rem;color:#555">Ссылка:</span>'
+          + '<button onclick="copyLink(\'' + link + '\')" style="padding:3px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#e8a847;font-size:0.78rem;cursor:pointer">📋 Копировать</button>'
+          + '</div>' : '')
+      + '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function str_repeat(s, n) { var r=''; for(var i=0;i<n;i++) r+=s; return r; }
+function copyLink(link) {
+  if (navigator.clipboard) { navigator.clipboard.writeText(link).then(function(){ showAlert('📋 Ссылка скопирована', false); }); }
+  else { showAlert('Ссылка: ' + link, false); }
 }
 
 function deleteTestOrder(oid) {

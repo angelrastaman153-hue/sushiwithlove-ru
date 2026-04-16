@@ -392,6 +392,70 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true));
     }
 
+    // === МЕНЮ ===
+
+    // --- Список позиций меню ---
+    if ($action === 'menu_list' && ($srole === 'owner' || $srole === 'admin')) {
+        $cats  = $pdo->query('SELECT * FROM menu_categories ORDER BY sort_order, name')->fetchAll();
+        $items = $pdo->query('SELECT * FROM menu_items ORDER BY sort_order, name')->fetchAll();
+        json_out(array('ok'=>true, 'categories'=>$cats, 'items'=>$items));
+    }
+
+    // --- Обновить позицию меню ---
+    if ($action === 'menu_update' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $d = json_decode(file_get_contents('php://input'), true);
+        $id = intval($d['id']);
+        if (!$id) json_out(array('ok'=>false,'error'=>'no id'));
+        $pdo->prepare('UPDATE menu_items SET fp_article_id=?, description=?, image_url=?, price=?, is_stop=?, updated_at=NOW() WHERE id=?')
+           ->execute(array(
+               isset($d['fp_article_id']) && $d['fp_article_id'] !== '' ? intval($d['fp_article_id']) : null,
+               isset($d['description'])   ? trim($d['description'])   : null,
+               isset($d['image_url'])     ? trim($d['image_url'])     : null,
+               isset($d['price'])         ? floatval($d['price'])     : 0,
+               isset($d['is_stop'])       ? intval($d['is_stop'])     : 0,
+               $id
+           ));
+        json_out(array('ok'=>true));
+    }
+
+    // --- Импорт/синхронизация из crm-love (только owner) ---
+    if ($action === 'menu_import' && $srole === 'owner' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $CRM_URL = 'https://test.xn--90acqmqobo9b7bse.xn--p1ai/api/v1/public/menu';
+        $CRM_IMG = 'https://test.xn--90acqmqobo9b7bse.xn--p1ai';
+        $ctx = stream_context_create(array('http'=>array('timeout'=>15,'ignore_errors'=>true),
+            'ssl'=>array('verify_peer'=>false,'verify_peer_name'=>false)));
+        $raw = @file_get_contents($CRM_URL, false, $ctx);
+        if (!$raw) json_out(array('ok'=>false,'error'=>'Нет ответа от crm-love'));
+        $menu = json_decode($raw, true);
+        if (empty($menu['categories'])) json_out(array('ok'=>false,'error'=>'Пустой ответ'));
+
+        $imported = 0; $updated = 0;
+        foreach ($menu['categories'] as $cat) {
+            $pdo->prepare('INSERT INTO menu_categories (crm_id,name,slug,sort_order,is_active) VALUES (?,?,?,?,1)
+                ON DUPLICATE KEY UPDATE name=VALUES(name), slug=VALUES(slug), sort_order=VALUES(sort_order)')
+               ->execute(array($cat['id'], $cat['name'], $cat['slug'], $cat['sort_order']));
+            $catRow = $pdo->prepare('SELECT id FROM menu_categories WHERE crm_id=?');
+            $catRow->execute(array($cat['id']));
+            $catId = $catRow->fetchColumn();
+            foreach ($cat['items'] as $i => $item) {
+                $imgUrl = $item['image_url'] ? $CRM_IMG . $item['image_url'] : null;
+                $exists = $pdo->prepare('SELECT id FROM menu_items WHERE crm_id=?');
+                $exists->execute(array($item['id']));
+                if ($exists->fetchColumn()) {
+                    // Обновляем только название, цену, вес, картинку — НЕ трогаем fp_article_id и description
+                    $pdo->prepare('UPDATE menu_items SET name=?, price=?, weight_grams=?, is_active=1, sort_order=? WHERE crm_id=?')
+                       ->execute(array($item['name'], $item['base_price'], $item['weight_grams'], $i, $item['id']));
+                    $updated++;
+                } else {
+                    $pdo->prepare('INSERT INTO menu_items (crm_id,category_id,name,price,weight_grams,image_url,is_stop,is_active,sort_order) VALUES (?,?,?,?,?,?,?,1,?)')
+                       ->execute(array($item['id'], $catId, $item['name'], $item['base_price'], $item['weight_grams'], $imgUrl, $item['is_stop']?1:0, $i));
+                    $imported++;
+                }
+            }
+        }
+        json_out(array('ok'=>true, 'imported'=>$imported, 'updated'=>$updated));
+    }
+
     // --- Список отзывов (только owner/admin) ---
     if ($action === 'reviews_list' && ($srole === 'owner' || $srole === 'admin')) {
         $where = array('1=1');
@@ -562,6 +626,7 @@ if (isset($_GET['action'])) {
   </div>
   <?php if (($srole === 'owner' || $srole === 'admin')): ?>
   <div class="tab-btn" onclick="showPage('reviews')" id="ptab-reviews">❤️ Отзывы с Любовью <span class="cnt" id="cnt-negative" style="display:none"></span></div>
+  <div class="tab-btn" onclick="showPage('menu')" id="ptab-menu">🍣 Меню</div>
   <div class="tab-btn" onclick="showPage('staff')" id="ptab-staff">👥 Сотрудники</div>
   <div class="tab-btn" onclick="showPage('log')" id="ptab-log">📋 Активность</div>
   <?php endif; ?>
@@ -647,6 +712,45 @@ if (isset($_GET['action'])) {
       <thead><tr><th>Время</th><th>Сотрудник</th><th>Заказ</th><th>Было</th><th>Стало</th></tr></thead>
       <tbody id="logTable"><tr><td colspan="5" style="color:#555">Загрузка…</td></tr></tbody>
     </table>
+  </div>
+</div>
+
+<!-- === СТРАНИЦА: МЕНЮ === -->
+<div class="page" id="page-menu">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;padding-top:4px">
+    <div style="font-size:1rem;font-weight:600;color:#ccc">🍣 Меню <span id="menuCount" style="color:#555;font-size:0.85rem"></span></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <input type="text" id="menuSearch" placeholder="Поиск…" oninput="menuFilter()" style="background:#1a1a1a;border:1px solid #333;color:#eee;border-radius:8px;padding:8px 12px;font-size:0.85rem;outline:none;width:200px">
+      <?php if ($srole === 'owner'): ?>
+      <button onclick="menuImport()" id="menuImportBtn" style="padding:8px 16px;border-radius:8px;border:1px solid #e8a847;background:rgba(232,168,71,0.1);color:#e8a847;font-size:0.85rem;cursor:pointer;font-weight:600">🔄 Синхронизировать из crm-love</button>
+      <?php endif; ?>
+    </div>
+  </div>
+  <div style="font-size:0.78rem;color:#555;margin-bottom:16px">Заполни артикул FrontPad — и позиция корректно уйдёт в заказ. Описание и фото видны только здесь (пока).</div>
+  <div id="menuContent"><div style="color:#555;padding:40px;text-align:center">Загрузка…</div></div>
+</div>
+
+<!-- Модал: редактировать позицию меню -->
+<div class="modal-bg" id="menuEditModal" onclick="if(event.target===this)closeMenuEdit()">
+  <div class="modal" style="max-width:500px">
+    <h3 id="menuEditTitle">Редактировать позицию</h3>
+    <input type="hidden" id="menuEditId">
+    <label>Артикул FrontPad</label>
+    <input type="number" id="menuEditFp" placeholder="Например: 101" class="inp">
+    <label>Цена (₽)</label>
+    <input type="number" id="menuEditPrice" class="inp">
+    <label>Фото URL</label>
+    <input type="text" id="menuEditImg" placeholder="https://..." class="inp">
+    <div id="menuEditImgPreview" style="margin:8px 0;min-height:80px"></div>
+    <label>Состав / описание</label>
+    <textarea id="menuEditDesc" rows="4" style="width:100%;background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:12px;font-size:0.9rem;font-family:inherit;resize:vertical;outline:none" placeholder="Лосось, сливочный сыр, нори…"></textarea>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
+      <input type="checkbox" id="menuEditStop"> Стоп-лист (временно недоступно)
+    </label>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button onclick="menuSave()" style="flex:1;background:#e8a847;border:none;color:#000;border-radius:8px;padding:12px;font-size:0.95rem;font-weight:700;cursor:pointer">Сохранить</button>
+      <button onclick="closeMenuEdit()" style="padding:12px 20px;border-radius:8px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer">Отмена</button>
+    </div>
   </div>
 </div>
 
@@ -747,6 +851,7 @@ function showPage(name) {
   if (name === 'staff')   loadStaff();
   if (name === 'log')     loadLog();
   if (name === 'reviews') loadReviews(false);
+  if (name === 'menu')    loadMenu();
 }
 
 // --- Фильтр статуса ---
@@ -998,6 +1103,137 @@ function deleteTestOrder(oid) {
   }).then(function(r){ return r.json(); }).then(function(r) {
     if (r.ok) { showAlert('🗑️ Тестовый заказ удалён', false); loadOrders(); }
     else showAlert(r.error||'Ошибка', true);
+  });
+}
+
+// === МЕНЮ ===
+var _menuData = null;
+
+function loadMenu() {
+  fetch('?action=menu_list').then(function(r){ return r.json(); }).then(function(r) {
+    if (!r.ok) { document.getElementById('menuContent').innerHTML = '<div style="color:#e05a5a">Ошибка: ' + (r.error||'') + '</div>'; return; }
+    _menuData = r;
+    renderMenu(r);
+  }).catch(function(){ document.getElementById('menuContent').innerHTML = '<div style="color:#e05a5a">Ошибка загрузки. Сначала запусти миграцию: <a href="../menu/migrate.php" target="_blank" style="color:#e8a847">api/menu/migrate.php</a></div>'; });
+}
+
+function renderMenu(r) {
+  var cats  = r.categories || [];
+  var items = r.items || [];
+  var q = (document.getElementById('menuSearch')||{value:''}).value.toLowerCase();
+
+  var catMap = {};
+  cats.forEach(function(c){ catMap[c.id] = c; });
+  var byCat = {};
+  cats.forEach(function(c){ byCat[c.id] = []; });
+  var total = 0;
+  items.forEach(function(item) {
+    if (q && item.name.toLowerCase().indexOf(q) === -1) return;
+    if (!byCat[item.category_id]) byCat[item.category_id] = [];
+    byCat[item.category_id].push(item);
+    total++;
+  });
+
+  document.getElementById('menuCount').textContent = '(' + total + ' позиций)';
+
+  var html = '';
+  cats.forEach(function(cat) {
+    var list = byCat[cat.id] || [];
+    if (!list.length) return;
+    html += '<div style="margin-bottom:24px">'
+      + '<div style="font-size:0.9rem;font-weight:700;color:#e8a847;margin-bottom:10px;padding:6px 0;border-bottom:1px solid #2a2a2a">'
+      + esc(cat.name) + ' <span style="color:#555;font-weight:400">(' + list.length + ')</span></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+    list.forEach(function(item) {
+      var img = item.image_url
+        ? '<img src="'+esc(item.image_url)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=\'none\'">'
+        : '<div style="width:56px;height:56px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🍱</div>';
+      var fpBadge = item.fp_article_id
+        ? '<span style="background:rgba(68,204,136,0.15);color:#44cc88;border-radius:5px;padding:1px 7px;font-size:0.72rem">FP:'+item.fp_article_id+'</span>'
+        : '<span style="background:rgba(249,115,22,0.15);color:#f97316;border-radius:5px;padding:1px 7px;font-size:0.72rem">без артикула</span>';
+      var stopBadge = parseInt(item.is_stop) ? '<span style="background:rgba(224,90,90,0.15);color:#e05a5a;border-radius:5px;padding:1px 7px;font-size:0.72rem;margin-left:4px">стоп</span>' : '';
+      html += '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start">'
+        + img
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="font-size:0.85rem;font-weight:600;color:#eee;margin-bottom:4px;line-height:1.3">'+esc(item.name)+'</div>'
+        +   '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">'+fpBadge+stopBadge+'</div>'
+        +   '<div style="font-size:0.8rem;color:#e8a847;margin-bottom:6px">'+item.price+' ₽'+(item.weight_grams?' · '+item.weight_grams+' г':'')+'</div>'
+        +   (item.description ? '<div style="font-size:0.75rem;color:#666;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(item.description)+'">'+esc(item.description)+'</div>' : '')
+        +   '<button onclick="openMenuEdit('+item.id+')" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer">✏️ Изменить</button>'
+        + '</div></div>';
+    });
+    html += '</div></div>';
+  });
+
+  document.getElementById('menuContent').innerHTML = html || '<div style="color:#555;padding:20px">Ничего не найдено</div>';
+}
+
+function menuFilter() {
+  if (_menuData) renderMenu(_menuData);
+}
+
+function openMenuEdit(id) {
+  if (!_menuData) return;
+  var item = null;
+  _menuData.items.forEach(function(i){ if (i.id === id) item = i; });
+  if (!item) return;
+  document.getElementById('menuEditId').value   = item.id;
+  document.getElementById('menuEditTitle').textContent = esc(item.name);
+  document.getElementById('menuEditFp').value   = item.fp_article_id || '';
+  document.getElementById('menuEditPrice').value = item.price || '';
+  document.getElementById('menuEditImg').value   = item.image_url || '';
+  document.getElementById('menuEditDesc').value  = item.description || '';
+  document.getElementById('menuEditStop').checked = parseInt(item.is_stop) === 1;
+  menuUpdateImgPreview(item.image_url);
+  document.getElementById('menuEditModal').style.display = 'flex';
+  document.getElementById('menuEditImg').oninput = function(){ menuUpdateImgPreview(this.value); };
+}
+
+function menuUpdateImgPreview(url) {
+  var el = document.getElementById('menuEditImgPreview');
+  if (url && url.trim()) {
+    el.innerHTML = '<img src="'+esc(url)+'" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:cover" onerror="this.parentNode.innerHTML=\'<span style=color:#e05a5a>Фото не загружается</span>\'">';
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function closeMenuEdit() {
+  document.getElementById('menuEditModal').style.display = 'none';
+}
+
+function menuSave() {
+  var id   = parseInt(document.getElementById('menuEditId').value);
+  var fpRaw = document.getElementById('menuEditFp').value.trim();
+  fetch('?action=menu_update', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      id:            id,
+      fp_article_id: fpRaw !== '' ? parseInt(fpRaw) : null,
+      price:         parseFloat(document.getElementById('menuEditPrice').value) || 0,
+      image_url:     document.getElementById('menuEditImg').value.trim() || null,
+      description:   document.getElementById('menuEditDesc').value.trim() || null,
+      is_stop:       document.getElementById('menuEditStop').checked ? 1 : 0
+    })
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (r.ok) { closeMenuEdit(); showAlert('✅ Сохранено', false); loadMenu(); }
+    else showAlert(r.error || 'Ошибка', true);
+  }).catch(function(){ showAlert('Ошибка сети', true); });
+}
+
+function menuImport() {
+  var btn = document.getElementById('menuImportBtn');
+  if (!btn) return;
+  btn.disabled = true; btn.textContent = '⏳ Синхронизирую…';
+  fetch('?action=menu_import', {method:'POST'})
+  .then(function(r){ return r.json(); })
+  .then(function(r) {
+    btn.disabled = false; btn.textContent = '🔄 Синхронизировать из crm-love';
+    if (r.ok) { showAlert('✅ Импорт: добавлено ' + r.imported + ', обновлено ' + r.updated, false); loadMenu(); }
+    else showAlert('Ошибка: ' + (r.error||''), true);
+  }).catch(function(){
+    btn.disabled = false; btn.textContent = '🔄 Синхронизировать из crm-love';
+    showAlert('Ошибка сети', true);
   });
 }
 

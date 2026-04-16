@@ -346,17 +346,26 @@ if (isset($_GET['action'])) {
 
     // --- Ручное создание ссылки отзыва (owner/admin) ---
     if ($action === 'manual_review' && $_SERVER['REQUEST_METHOD'] === 'POST' && ($srole === 'owner' || $srole === 'admin')) {
-        $data  = json_decode(file_get_contents('php://input'), true);
-        $phone = isset($data['phone']) ? preg_replace('/\D/','',$data['phone']) : '';
-        $name  = isset($data['name'])  ? trim($data['name']) : '';
-        if (!$phone) { json_out(array('ok'=>false,'error'=>'Нет телефона')); }
-        $token = bin2hex(random_bytes(16));
-        $pdo->prepare('INSERT INTO reviews (order_id, token, phone, source) VALUES (?,?,?,?)')
-           ->execute(array(0, $token, $phone, 'manual'));
-        $link = 'https://xn--90acqmqobo9b7bse.xn--p1ai/review.php?t=' . $token;
-        require_once __DIR__ . '/../vk_notify.php';
-        vk_send("⭐ РУЧНОЙ ЗАПРОС ОТЗЫВА\nКлиент: " . ($name ?: $phone) . "\nСсылка:\n" . $link);
-        json_out(array('ok'=>true, 'token'=>$token, 'link'=>$link));
+        try {
+            $data  = json_decode(file_get_contents('php://input'), true);
+            $phone = isset($data['phone']) ? preg_replace('/\D/','',$data['phone']) : '';
+            $name  = isset($data['name'])  ? trim($data['name']) : '';
+            if (!$phone) { json_out(array('ok'=>false,'error'=>'Нет телефона')); }
+            // PHP 5.6 совместимость
+            if (function_exists('random_bytes')) {
+                $token = bin2hex(random_bytes(16));
+            } else {
+                $token = md5(uniqid(mt_rand(), true)) . md5(uniqid(mt_rand(), true));
+            }
+            $pdo->prepare('INSERT INTO reviews (order_id, token, phone, source) VALUES (?,?,?,?)')
+               ->execute(array(0, $token, $phone, 'manual'));
+            $link = 'https://xn--90acqmqobo9b7bse.xn--p1ai/review.php?t=' . $token;
+            require_once __DIR__ . '/../vk_notify.php';
+            vk_send("❤️ ОТЗЫВЫ С ЛЮБОВЬЮ — ручной запрос\nКлиент: " . ($name ?: $phone) . "\nСсылка:\n" . $link);
+            json_out(array('ok'=>true, 'token'=>$token, 'link'=>$link));
+        } catch (Exception $e) {
+            json_out(array('ok'=>false,'error'=>$e->getMessage()));
+        }
     }
 
     // --- Удаление тестового заказа (только owner) ---
@@ -934,7 +943,11 @@ function sendManualReview() {
   fetch('?action=manual_review', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({name: name, phone: phone})
-  }).then(function(r){ return r.json(); }).then(function(r) {
+  }).then(function(r){ return r.text(); }).then(function(text) {
+    var r;
+    try { r = JSON.parse(text); } catch(e) {
+      showAlert('Ошибка сервера: ' + text.substring(0, 120), true); return;
+    }
     if (r.ok) {
       var res = document.getElementById('manualResult');
       res.style.display = '';
@@ -943,7 +956,7 @@ function sendManualReview() {
       document.getElementById('manualName').value = '';
       document.getElementById('manualPhone').value = '';
     } else { showAlert(r.error||'Ошибка', true); }
-  });
+  }).catch(function(e){ showAlert('Сеть: ' + e.message, true); });
 }
 
 function str_repeat(s, n) { var r=''; for(var i=0;i<n;i++) r+=s; return r; }

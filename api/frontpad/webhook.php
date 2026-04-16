@@ -6,10 +6,26 @@
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../vk_notify.php';
 
+// Google Apps Script — старый вебхук, пересылаем чтобы ничего не сломать
+define('GOOGLE_HOOK', 'https://script.google.com/macros/s/AKfycbyb8ZXW-criQzTqBF5PMbYk7u_U8BjJwPkoI3Ye9jEyXzMXT4N7RCkYQoS5vX7E37SY/exec');
+
 // Лог для отладки
 $log_file = __DIR__ . '/webhook_log.txt';
 $raw = file_get_contents('php://input');
 file_put_contents($log_file, date('Y-m-d H:i:s') . ' ' . $raw . "\n", FILE_APPEND);
+
+// Пересылаем в Google Script (тихо, без ожидания ответа)
+if ($raw) {
+    $ch = curl_init(GOOGLE_HOOK);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $raw);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    @curl_exec($ch);
+    curl_close($ch);
+}
 
 if (!$raw) { echo 'ok'; exit; }
 

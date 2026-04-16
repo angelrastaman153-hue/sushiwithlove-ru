@@ -63,14 +63,6 @@ if (!$token) {
   textarea:focus{border-color:#e8a847}
   textarea::placeholder{color:#444}
 
-  /* Согласие */
-  .consent-block{background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:16px;text-align:left;margin-bottom:24px}
-  .consent-block p{font-size:0.82rem;color:#888;line-height:1.6}
-  .consent-block a{color:#e8a847;text-decoration:none}
-  .consent-check{display:flex;align-items:flex-start;gap:10px;margin-top:12px;cursor:pointer}
-  .consent-check input{width:18px;height:18px;flex-shrink:0;accent-color:#e8a847;cursor:pointer;margin-top:2px}
-  .consent-check span{font-size:0.85rem;color:#bbb;line-height:1.4}
-
   /* Итог */
   .done-icon{font-size:3.5rem;margin-bottom:12px}
   .done-title{font-size:1.3rem;font-weight:700;margin-bottom:8px}
@@ -99,22 +91,8 @@ if (!$token) {
 
 <?php else: ?>
 
-  <!-- ШАГ 1: Согласие -->
-  <div class="step active" id="step1">
-    <h2>Как вам наш заказ?</h2>
-    <p style="margin-top:6px;margin-bottom:24px">Хотим стать лучше — поделитесь впечатлением.</p>
-    <div class="consent-block">
-      <p>Оставляя отзыв, вы соглашаетесь с обработкой персональных данных согласно <a href="#" onclick="return false">Политике конфиденциальности</a>. Отзыв анонимен — имя и телефон не публикуются.</p>
-      <label class="consent-check">
-        <input type="checkbox" id="consentCheck">
-        <span>Я соглашаюсь на обработку данных и получение сообщений</span>
-      </label>
-    </div>
-    <button class="btn btn-primary" id="consentBtn" onclick="goStep2()" disabled>Оставить отзыв →</button>
-  </div>
-
-  <!-- ШАГ 2: Звёзды -->
-  <div class="step" id="step2">
+  <!-- ШАГ 1: Звёзды -->
+  <div class="step active" id="step2">
     <h2>Оцените заказ</h2>
     <p style="margin-top:6px">Нажмите на звезду</p>
     <div class="stars" id="starsBlock">
@@ -174,21 +152,7 @@ var TOKEN = <?php echo json_encode($review ? $review['token'] : ''); ?>;
 var selectedRating = 0;
 var ratingSubmitted = false;
 
-// Шаг 1: согласие
-var consentCheck = document.getElementById('consentCheck');
-var consentBtn   = document.getElementById('consentBtn');
-if (consentCheck) {
-  consentCheck.addEventListener('change', function() {
-    consentBtn.disabled = !consentCheck.checked;
-  });
-}
-
-function goStep2() {
-  if (!consentCheck.checked) return;
-  setStep('step2');
-}
-
-// Шаг 2: звёзды
+// Звёзды
 var hints = {5:'Отлично! 🎉', 4:'Хорошо 👍', 3:'Нормально 😐', 2:'Плохо 😕', 1:'Ужасно 😤'};
 var starInputs = document.querySelectorAll('.stars input');
 var starHint   = document.getElementById('starHint');

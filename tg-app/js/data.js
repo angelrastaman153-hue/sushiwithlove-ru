@@ -212,15 +212,6 @@ const MENU_ITEMS = [
     img: '../photos/rolls/roll-layt-filadelfiya.jpg',
     upsell: [101, 201, 301],
   },
-  {
-    id: 23, fpArticle: 306, category: 'rolls',
-    name: 'Чикен Каппа',
-    desc: 'Курица, огурец, сливочный сыр, соус терияки',
-    weight: '260 г · 8 шт', price: 350,
-    badge: null,
-    img: null,
-    upsell: [101, 201, 301],
-  },
 
   // ── Горячие ───────────────────────────────────────────────────────────────
   {

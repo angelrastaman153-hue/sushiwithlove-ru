@@ -303,25 +303,48 @@
 
 <!-- Вспомогательные функции (не вошедшие в app.js) -->
 <script>
-  /** Геолокация через браузер (запасной вариант если tg.requestLocation недоступен) */
+  /** Геолокация + reverse geocoding через Nominatim */
   function requestGeoLocation() {
+    const tryGeo = (lat, lon) => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ru`, {
+        headers: { 'Accept-Language': 'ru' }
+      })
+      .then(r => r.json())
+      .then(data => {
+        const addr = data.address || {};
+        // Улица: road или neighbourhood
+        const street = addr.road || addr.neighbourhood || addr.suburb || '';
+        // Дом
+        const house  = addr.house_number || '';
+        if (street) {
+          document.getElementById('addr-street').value = street;
+          if (house) document.getElementById('addr-house').value = house;
+          showToast('Адрес определён ✓');
+        } else {
+          showToast('Улица не найдена — введите вручную');
+        }
+      })
+      .catch(() => showToast('Не удалось определить адрес. Введите вручную.'));
+    };
+
     if (tg) {
       try {
         tg.requestLocation((ok, loc) => {
-          if (ok && loc) {
-            // Здесь можно вызвать reverse geocoding
-            showToast('Местоположение определено. Введите улицу и дом.');
-          }
+          if (ok && loc) { tryGeo(loc.latitude, loc.longitude); return; }
+          fallbackGeo();
         });
         return;
       } catch(e) {}
     }
-    // Fallback: browser geolocation
-    if (!navigator.geolocation) { showToast('Геолокация не поддерживается'); return; }
-    navigator.geolocation.getCurrentPosition(
-      pos => showToast('Местоположение определено. Введите улицу и дом.'),
-      () => showToast('Не удалось определить адрес. Введите вручную.')
-    );
+    fallbackGeo();
+
+    function fallbackGeo() {
+      if (!navigator.geolocation) { showToast('Геолокация не поддерживается'); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => tryGeo(pos.coords.latitude, pos.coords.longitude),
+        () => showToast('Не удалось определить адрес. Введите вручную.')
+      );
+    }
   }
 
   /** Выбор способа оплаты */

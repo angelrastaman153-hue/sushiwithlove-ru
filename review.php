@@ -20,7 +20,7 @@ if (!$token) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Оставьте отзыв — Суши с Любовью</title>
+<title>Отзывы с Любовью — Суши с Любовью</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,-apple-system,sans-serif;background:#111;color:#eee;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -82,9 +82,9 @@ if (!$token) {
 </head>
 <body>
 <div class="card">
-  <div class="logo">🍣</div>
-  <div class="brand">Суши с Любовью</div>
-  <div class="subtitle">г. Курган</div>
+  <div class="logo">🍣❤️</div>
+  <div class="brand">Отзывы с Любовью</div>
+  <div class="subtitle">Суши с Любовью · г. Курган</div>
 
 <?php if ($error): ?>
   <div class="error-page">

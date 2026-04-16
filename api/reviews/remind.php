@@ -41,10 +41,10 @@ foreach ($stmt->fetchAll() as $r) {
     $client = $r['phone'] ?: ('заказ #' . $r['order_id']);
     $prefix = $r['order_id'] ? ('заказ #' . $r['order_id']) : 'ручной запрос';
 
-    $msg = "⭐ ЗАПРОС ОТЗЫВА — " . $prefix . "\n"
+    $msg = "❤️ ОТЗЫВЫ С ЛЮБОВЬЮ — " . $prefix . "\n"
          . "Клиент: " . $client . "\n\n"
-         . "Отправьте клиенту это сообщение:\n"
-         . "«Спасибо за заказ! Если вам понравилось — оставьте, пожалуйста, отзыв: " . $link . "»";
+         . "Отправьте клиенту:\n"
+         . "«Спасибо за заказ! Если вам понравилось — оставьте, пожалуйста, отзыв (займёт 30 секунд): " . $link . "»";
     vk_send($msg);
 
     $pdo->prepare('UPDATE reviews SET notified_at=NOW() WHERE id=?')->execute(array($r['id']));
@@ -65,10 +65,10 @@ foreach ($stmt2->fetchAll() as $r) {
     $link   = $site . '/review.php?t=' . $r['token'];
     $client = $r['phone'] ?: ('заказ #' . $r['order_id']);
 
-    $msg = "🔔 НАПОМИНАНИЕ (5 дней) — заказ #" . $r['order_id'] . "\n"
-         . "Клиент: " . $client . " не оставил отзыв\n\n"
+    $msg = "🔔 ОТЗЫВЫ С ЛЮБОВЬЮ — напоминание (5 дней)\n"
+         . "Заказ #" . $r['order_id'] . " · Клиент: " . $client . "\n\n"
          . "Отправьте повторно:\n"
-         . "«Добрый день! Напомним про отзыв — он очень важен для нас: " . $link . "»";
+         . "«Добрый день! Ваш отзыв очень важен для нас — займёт 30 секунд: " . $link . "»";
     vk_send($msg);
 
     $pdo->prepare('UPDATE reviews SET reminded_at=NOW() WHERE id=?')->execute(array($r['id']));

@@ -541,7 +541,7 @@ if (isset($_GET['action'])) {
     📦 Заказы <span class="cnt" id="cnt-active" style="display:none"></span>
   </div>
   <?php if (($srole === 'owner' || $srole === 'admin')): ?>
-  <div class="tab-btn" onclick="showPage('reviews')" id="ptab-reviews">⭐ Отзывы <span class="cnt" id="cnt-negative" style="display:none"></span></div>
+  <div class="tab-btn" onclick="showPage('reviews')" id="ptab-reviews">❤️ Отзывы с Любовью <span class="cnt" id="cnt-negative" style="display:none"></span></div>
   <div class="tab-btn" onclick="showPage('staff')" id="ptab-staff">👥 Сотрудники</div>
   <div class="tab-btn" onclick="showPage('log')" id="ptab-log">📋 Активность</div>
   <?php endif; ?>
@@ -597,7 +597,7 @@ if (isset($_GET['action'])) {
 <!-- === СТРАНИЦА: ОТЗЫВЫ === -->
 <div class="page" id="page-reviews">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:4px;flex-wrap:wrap;gap:10px">
-    <div style="font-size:1rem;font-weight:600;color:#ccc">Отзывы клиентов</div>
+    <div style="font-size:1rem;font-weight:600;color:#e8a847">❤️ Отзывы с Любовью</div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-sm" id="revFilterAll" onclick="loadReviews(false)" style="border-color:#e8a847;color:#e8a847;background:rgba(232,168,71,0.12)">Все</button>
       <button class="btn btn-sm" id="revFilterNeg" onclick="loadReviews(true)" style="border-color:#333;color:#888;background:#1a1a1a">😕 Негативные</button>

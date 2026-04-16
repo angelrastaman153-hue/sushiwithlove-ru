@@ -1117,6 +1117,13 @@ function loadMenu() {
   }).catch(function(){ document.getElementById('menuContent').innerHTML = '<div style="color:#e05a5a">Ошибка загрузки. Сначала запусти миграцию: <a href="../menu/migrate.php" target="_blank" style="color:#e8a847">api/menu/migrate.php</a></div>'; });
 }
 
+var GROUP_NAMES = {
+  'spaysi':'Соус спайси','syrny':'Соус сырный','teriaki':'Соус терияки',
+  'unagi':'Соус унаги','firmen':'Соус фирменный (фри/наггетсы)',
+  'soeviy':'Соевый соус','soeviy_chef':'Соевый соус от шефа',
+  'imbir':'Имбирь маринованный','kokteil':'Молочный коктейль'
+};
+
 function renderMenu(r) {
   var cats  = r.categories || [];
   var items = r.items || [];
@@ -1124,13 +1131,20 @@ function renderMenu(r) {
 
   var catMap = {};
   cats.forEach(function(c){ catMap[c.id] = c; });
+  // Группируем по категории, затем по group_key
   var byCat = {};
-  cats.forEach(function(c){ byCat[c.id] = []; });
+  cats.forEach(function(c){ byCat[c.id] = {singles:[], groups:{}}; });
   var total = 0;
   items.forEach(function(item) {
-    if (q && item.name.toLowerCase().indexOf(q) === -1) return;
-    if (!byCat[item.category_id]) byCat[item.category_id] = [];
-    byCat[item.category_id].push(item);
+    if (q && item.name.toLowerCase().indexOf(q) === -1 &&
+        !(item.group_key && GROUP_NAMES[item.group_key] && GROUP_NAMES[item.group_key].toLowerCase().indexOf(q) !== -1)) return;
+    if (!byCat[item.category_id]) byCat[item.category_id] = {singles:[], groups:{}};
+    if (item.group_key) {
+      if (!byCat[item.category_id].groups[item.group_key]) byCat[item.category_id].groups[item.group_key] = [];
+      byCat[item.category_id].groups[item.group_key].push(item);
+    } else {
+      byCat[item.category_id].singles.push(item);
+    }
     total++;
   });
 
@@ -1138,13 +1152,47 @@ function renderMenu(r) {
 
   var html = '';
   cats.forEach(function(cat) {
-    var list = byCat[cat.id] || [];
-    if (!list.length) return;
+    var bucket = byCat[cat.id] || {singles:[], groups:{}};
+    var singles = bucket.singles;
+    var groups = bucket.groups;
+    var hasItems = singles.length || Object.keys(groups).length;
+    if (!hasItems) return;
+    var displayCount = singles.length + Object.keys(groups).length;
     html += '<div style="margin-bottom:24px">'
       + '<div style="font-size:0.9rem;font-weight:700;color:#e8a847;margin-bottom:10px;padding:6px 0;border-bottom:1px solid #2a2a2a">'
-      + esc(cat.name) + ' <span style="color:#555;font-weight:400">(' + list.length + ')</span></div>'
+      + esc(cat.name) + ' <span style="color:#555;font-weight:400">(' + displayCount + ')</span></div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
-    list.forEach(function(item) {
+
+    // Сгруппированные позиции (соусы с вариантами объёма)
+    Object.keys(groups).forEach(function(gk) {
+      var variants = groups[gk];
+      var gname = GROUP_NAMES[gk] || gk;
+      var allHaveFp = variants.every(function(v){ return v.fp_article_id; });
+      var firstImg = variants[0].image_url;
+      var img = firstImg
+        ? '<img src="'+esc(firstImg)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=\'none\'">'
+        : '<div style="width:56px;height:56px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🫙</div>';
+      var fpStatus = allHaveFp
+        ? '<span style="background:rgba(68,204,136,0.15);color:#44cc88;border-radius:5px;padding:1px 7px;font-size:0.72rem">все артикулы ✓</span>'
+        : '<span style="background:rgba(249,115,22,0.15);color:#f97316;border-radius:5px;padding:1px 7px;font-size:0.72rem">не все артикулы</span>';
+      var variantPills = variants.map(function(v) {
+        var label = v.variant_label || v.name;
+        var fp = v.fp_article_id ? ' FP:'+v.fp_article_id : ' ⚠️';
+        return '<span onclick="openMenuEdit('+v.id+')" title="Изменить: '+esc(v.name)+'" '
+          +'style="display:inline-flex;align-items:center;gap:4px;background:#222;border:1px solid #333;border-radius:6px;padding:3px 8px;font-size:0.75rem;cursor:pointer;color:#ccc">'
+          + esc(label) + '<span style="color:#888;font-size:0.7rem">'+fp+'</span></span>';
+      }).join('');
+      html += '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start">'
+        + img
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="font-size:0.85rem;font-weight:600;color:#eee;margin-bottom:4px">'+esc(gname)+'</div>'
+        +   '<div style="margin-bottom:6px">'+fpStatus+'</div>'
+        +   '<div style="display:flex;flex-wrap:wrap;gap:4px">'+variantPills+'</div>'
+        + '</div></div>';
+    });
+
+    // Одиночные позиции
+    singles.forEach(function(item) {
       var img = item.image_url
         ? '<img src="'+esc(item.image_url)+'" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=\'none\'">'
         : '<div style="width:56px;height:56px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🍱</div>';

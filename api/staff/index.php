@@ -608,7 +608,7 @@ if (isset($_GET['action'])) {
     <div style="font-size:0.82rem;color:#888;margin-bottom:10px">📨 Отправить запрос вручную (клиент не из сайта)</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <input type="text" id="manualName" placeholder="Имя клиента" style="flex:1;min-width:120px;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#eee;font-size:0.9rem;outline:none">
-      <input type="text" id="manualPhone" placeholder="Телефон 89..." style="flex:1;min-width:140px;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#eee;font-size:0.9rem;outline:none">
+      <input type="tel" id="manualPhone" placeholder="89001234567" maxlength="11" style="flex:1;min-width:140px;background:#111;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#eee;font-size:0.9rem;outline:none" oninput="this.value=this.value.replace(/\D/g,'').slice(0,11)">
       <button onclick="sendManualReview()" class="btn btn-primary btn-sm" style="white-space:nowrap">Создать ссылку</button>
     </div>
     <div id="manualResult" style="display:none;margin-top:10px;padding:10px;background:#111;border-radius:8px;font-size:0.85rem;word-break:break-all;color:#e8a847"></div>

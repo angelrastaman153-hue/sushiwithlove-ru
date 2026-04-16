@@ -8951,8 +8951,10 @@
     if (phoneInp && !phoneInp.value) phoneInp.value = localStorage.getItem('swl_saved_phone') || '';
     // Закрытые часы — включаем режим предзаказа
     coApplyClosedMode();
-    // Кнопка ТЕСТ — только для владельца
+    // Кнопка ТЕСТ — только для владельца (обновляется при вводе телефона)
     coShowTestBtn();
+    var _phoneEl = document.getElementById('coPhone');
+    if (_phoneEl) _phoneEl.addEventListener('input', coShowTestBtn);
   };
 
   // Init

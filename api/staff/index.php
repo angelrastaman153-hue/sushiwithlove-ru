@@ -401,6 +401,20 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true, 'categories'=>$cats, 'items'=>$items));
     }
 
+    // --- Переключить активность позиции ---
+    if ($action === 'menu_toggle_active' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $d  = json_decode(file_get_contents('php://input'), true);
+        $id = intval(isset($d['id']) ? $d['id'] : 0);
+        if (!$id) json_out(array('ok'=>false,'error'=>'no id'));
+        $cur = $pdo->prepare('SELECT is_active FROM menu_items WHERE id=?');
+        $cur->execute(array($id));
+        $row = $cur->fetch();
+        if (!$row) json_out(array('ok'=>false,'error'=>'not found'));
+        $new = $row['is_active'] ? 0 : 1;
+        $pdo->prepare('UPDATE menu_items SET is_active=? WHERE id=?')->execute(array($new, $id));
+        json_out(array('ok'=>true,'is_active'=>$new));
+    }
+
     // --- Обновить позицию меню ---
     if ($action === 'menu_update' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $d = json_decode(file_get_contents('php://input'), true);
@@ -1207,7 +1221,10 @@ function renderMenu(r) {
         +   '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">'+fpBadge+stopBadge+'</div>'
         +   '<div style="font-size:0.8rem;color:#e8a847;margin-bottom:6px">'+item.price+' ₽'+(item.weight_grams?' · '+item.weight_grams+' г':'')+'</div>'
         +   (item.description ? '<div style="font-size:0.75rem;color:#666;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(item.description)+'">'+esc(item.description)+'</div>' : '')
+        +   '<div style="display:flex;gap:6px;flex-wrap:wrap">'
         +   '<button onclick="openMenuEdit('+item.id+')" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer">✏️ Изменить</button>'
+        +   '<button onclick="toggleActive('+item.id+',this)" style="font-size:0.75rem;padding:4px 10px;border-radius:6px;border:1px solid '+(parseInt(item.is_active)?'rgba(68,204,136,0.3)':'rgba(249,115,22,0.3)')+';background:transparent;color:'+(parseInt(item.is_active)?'#44cc88':'#f97316')+';cursor:pointer">'+(parseInt(item.is_active)?'👁 Активен':'🚫 Скрыт')+'</button>'
+        +   '</div>'
         + '</div></div>';
     });
     html += '</div></div>';
@@ -1266,6 +1283,18 @@ function menuSave() {
   }).then(function(r){ return r.json(); }).then(function(r) {
     if (r.ok) { closeMenuEdit(); showAlert('✅ Сохранено', false); loadMenu(); }
     else showAlert(r.error || 'Ошибка', true);
+  }).catch(function(){ showAlert('Ошибка сети', true); });
+}
+
+function toggleActive(id, btn) {
+  fetch('?action=menu_toggle_active', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})})
+  .then(function(r){ return r.json(); }).then(function(r) {
+    if (!r.ok) { showAlert(r.error||'Ошибка', true); return; }
+    var active = r.is_active;
+    btn.textContent = active ? '👁 Активен' : '🚫 Скрыт';
+    btn.style.color  = active ? '#44cc88' : '#f97316';
+    btn.style.borderColor = active ? 'rgba(68,204,136,0.3)' : 'rgba(249,115,22,0.3)';
+    showAlert(active ? '✅ Позиция активна — видна на сайте' : '🚫 Позиция скрыта с сайта', !active);
   }).catch(function(){ showAlert('Ошибка сети', true); });
 }
 

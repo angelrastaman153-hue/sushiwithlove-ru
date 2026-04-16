@@ -124,6 +124,9 @@ if (!empty($giftNotes)) {
     $descr = implode(' | ', array_filter(array_merge(array($descr), $giftNotes)));
 }
 
+// Вебхук при смене статуса на «Выполнен» (код API = 10)
+$post['hook_status[0]'] = 10;
+
 $postStr = http_build_query($post);
 
 $ctx = stream_context_create(array(

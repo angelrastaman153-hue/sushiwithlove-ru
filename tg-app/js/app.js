@@ -680,11 +680,11 @@ async function handleSubmitOrder() {
   };
 
   try {
-    await submitOrder(orderData);
+    const result = await submitOrder(orderData);
     // Успех
     Cart.clear();
     if (tg) { tg.MainButton.hideProgress(); tg.MainButton.hide(); }
-    showSuccessScreen(orderData);
+    showSuccessScreen(orderData, result.order_id);
   } catch (err) {
     if (tg) { tg.MainButton.hideProgress(); tg.MainButton.enable(); }
     haptic('error');
@@ -693,11 +693,10 @@ async function handleSubmitOrder() {
 }
 
 /**
- * Отправка заказа через order.php (тот же PHP-прокси, что на основном сайте)
- * Secret key Frontpad хранится на сервере в order.php — в браузер не попадает.
- *
- * Формат payload совпадает с основным сайтом (index.html → submitOrder).
- * point: 746 — ID точки в Frontpad.
+ * Отправка заказа:
+ *  1. api/orders/save.php  — сохраняем в БД и шлём уведомление в ВК
+ *  2. order.php            — отправляем заказ в FrontPad (secret key на сервере)
+ *  3. api/orders/link_fp.php — привязываем fp_order_id к записи в БД
  */
 async function submitOrder(orderData) {
   // Определяем время суток для пометки предзаказа (UTC+5, Курган)
@@ -710,74 +709,121 @@ async function submitOrder(orderData) {
     const note = '⏰ ПРЕДЗАКАЗ (Mini App) — принято в нерабочее время, перезвонить после 10:00';
     comment = comment ? note + '. ' + comment : note;
   } else {
-    // Помечаем источник заказа
     const note = '📱 Заказ из Telegram Mini App';
     comment = comment ? note + '. ' + comment : note;
   }
 
-  // Маппинг способа оплаты: совпадает с основным сайтом
-  // 1 = онлайн картой, 2 = наличные, 3 = картой курьеру
+  // Маппинг способа оплаты: 1 = онлайн, 2 = наличные, 3 = картой курьеру
   const payMap = { online: '1', cash: '2', card: '3' };
+  const pay = payMap[orderData.payment] || '2';
+
+  // delivery_type: 'self' для самовывоза — именно так ожидают order.php и vk_format_order
+  const deliveryType = orderData.deliveryType === 'pickup' ? 'self' : 'delivery';
 
   // Разбиваем адрес на улицу и дом
-  let street = '', home = '';
-  if (orderData.deliveryType === 'delivery' && orderData.address) {
+  let street = '', home = '', flat = '';
+  if (orderData.deliveryType !== 'pickup' && orderData.address) {
     const parts = orderData.address.split(',');
     street = (parts[0] || '').trim();
     home   = (parts[1] || '').replace(/д\.?\s*/i, '').trim();
+    const flatMatch = orderData.address.match(/кв\.?\s*(\d+)/i);
+    flat = flatMatch ? flatMatch[1] : '';
   }
 
-  const payload = {
+  // ── Шаг 1: сохраняем в БД + уведомление в ВК ────────────────────────────────
+  const savePayload = {
     name:          orderData.name,
     phone:         orderData.phone,
-    delivery_type: orderData.deliveryType === 'pickup' ? 'pickup' : 'delivery',
+    delivery_type: deliveryType,
     street,
     home,
-    entrance: '',
-    floor:    '',
-    flat:     orderData.address?.match(/кв\.?\s*(\d+)/i)?.[1] || '',
+    entrance:      '',
+    floor:         '',
+    flat,
+    pay,
+    cash_from:     '',
     comment,
-    pay:      payMap[orderData.payment] || '2',
-    point:    CONFIG.frontpadPoint,
-    cash_from: '',
-    chopsticks: orderData.chopsticks || 0,
-    preorder_date: '',
+    promo_code:    orderData.promoCode || '',
     preorder_time: '',
-    order_total: orderData.total,
-    promo_code: orderData.promoCode || '',
-    // fpArticle — реальный артикул FrontPad из data.js (не внутренний id)
-    items: orderData.items.map(i => ({ id: i.fpArticle || i.id, qty: i.qty, price: i.price })),
+    order_total:   orderData.total,
+    items:         orderData.items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+    items_total:   orderData.subtotal,
+    delivery_cost: orderData.delivery,
+    promo_discount: orderData.discount,
+    total_paid:    orderData.total,
+    points_spent:  0,
   };
 
-  const res = await fetch('../order.php', {
+  const saveRes = await fetch('../api/orders/save.php', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(payload),
+    body:    JSON.stringify(savePayload),
+  });
+  const saveData = await saveRes.json();
+  if (!saveData.ok) throw new Error('Ошибка сохранения заказа');
+  const dbOrderId = saveData.order_id;
+
+  // ── Шаг 2: отправляем в FrontPad ─────────────────────────────────────────────
+  const fpPayload = {
+    name:          orderData.name,
+    phone:         orderData.phone,
+    delivery_type: deliveryType,
+    street,
+    home,
+    entrance:      '',
+    floor:         '',
+    flat,
+    comment,
+    pay,
+    point:         CONFIG.frontpadPoint,
+    cash_from:     '',
+    chopsticks:    orderData.chopsticks || 0,
+    preorder_date: '',
+    preorder_time: '',
+    order_total:   orderData.total,
+    promo_code:    orderData.promoCode || '',
+    items:         orderData.items.map(i => ({ id: i.fpArticle || i.id, qty: i.qty, price: i.price })),
+  };
+
+  const fpRes = await fetch('../order.php', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(fpPayload),
   });
 
-  const text = await res.text();
-  let result;
-  try { result = JSON.parse(text); } catch(e) {
-    console.error('order.php вернул не JSON:', text);
+  const fpText = await fpRes.text();
+  let fpResult;
+  try { fpResult = JSON.parse(fpText); } catch(e) {
+    console.error('order.php вернул не JSON:', fpText);
     throw new Error('Ошибка сервера');
   }
 
-  if (!result.ok) {
-    console.error('Ошибка Frontpad:', result);
-    throw new Error(result.error || 'Ошибка оформления заказа');
+  if (!fpResult.ok) {
+    console.error('Ошибка Frontpad:', fpResult);
+    throw new Error(fpResult.error || 'Ошибка оформления заказа');
   }
 
-  return result;
+  // ── Шаг 3: привязываем fp_order_id к записи в БД (fire & forget) ─────────────
+  const fpOrderId = fpResult.order_id;
+  if (fpOrderId) {
+    fetch('../api/orders/link_fp.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ order_id: dbOrderId, fp_order_id: fpOrderId }),
+    }).catch(() => {});
+  }
+
+  return { ok: true, order_id: dbOrderId };
 }
 
 // ─── Экран: успех ─────────────────────────────────────────────────────────────
-function showSuccessScreen(orderData) {
-  const num = Math.floor(Math.random() * 9000) + 1000;
+function showSuccessScreen(orderData, orderId) {
+  const num = orderId || (Math.floor(Math.random() * 9000) + 1000);
   const now = new Date();
   now.setMinutes(now.getMinutes() + CONFIG.defaultDeliveryTime);
   const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
 
-  document.getElementById('success-order-num').textContent = '#' + num;
+  document.getElementById('success-order-num').textContent = orderId ? '№' + num : '#' + num;
   document.getElementById('success-time').textContent = `Доставим к ~${timeStr}. Позвоним для подтверждения.`;
   document.getElementById('success-summary').innerHTML = `${orderData.items.length} поз. · ${formatPrice(orderData.total)}`;
 

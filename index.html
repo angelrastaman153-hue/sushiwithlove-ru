@@ -5333,10 +5333,11 @@
     // Переинициализация
     initCatNav();
     if (typeof assignCardTags === 'function') assignCardTags();
-    // reveal-анимации
-    document.querySelectorAll('.reveal:not(.revealed)').forEach(function(el) {
-      el.classList.add('revealed');
-    });
+    // Показываем карточки — без observer они скрыты (.stagger-grid > * { opacity:0 })
+    if (wrap) {
+      wrap.querySelectorAll('.stagger-grid').forEach(function(g){ g.classList.add('visible'); });
+      wrap.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
+    }
   }
 
   function loadMenuFromDB() {

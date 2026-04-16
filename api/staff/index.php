@@ -381,6 +381,17 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true));
     }
 
+    // --- Удаление любого заказа (только owner) ---
+    if ($action === 'delete_order' && $_SERVER['REQUEST_METHOD'] === 'POST' && $srole === 'owner') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $oid  = intval(isset($data['order_id']) ? $data['order_id'] : 0);
+        if (!$oid) { json_out(array('ok'=>false,'error'=>'Нет order_id')); }
+        $pdo->prepare('DELETE FROM reviews WHERE order_id=?')->execute(array($oid));
+        $pdo->prepare('DELETE FROM order_log WHERE order_id=?')->execute(array($oid));
+        $pdo->prepare('DELETE FROM orders WHERE id=?')->execute(array($oid));
+        json_out(array('ok'=>true));
+    }
+
     // --- Список отзывов (только owner/admin) ---
     if ($action === 'reviews_list' && ($srole === 'owner' || $srole === 'admin')) {
         $where = array('1=1');
@@ -798,7 +809,8 @@ function renderOrders(orders) {
     pending:   [{s:'cooking',    l:'👨‍🍳 Готовится'},{s:'cancelled',l:'❌ Отмена'}],
     cooking:   [{s:'delivering', l:'🛵 Доставляется'},{s:'done',l:'✅ Выполнен'},{s:'cancelled',l:'❌ Отмена'}],
     delivering:[{s:'done',       l:'✅ Выполнен'},{s:'cancelled',l:'❌ Отмена'}],
-    done:[], cancelled:[]
+    done:      [{s:'delivering',l:'↩️ Вернуть в работу'},{s:'cancelled',l:'❌ Отмена'}],
+    cancelled: [{s:'new',l:'↩️ Восстановить заказ'}]
   };
   var courierBtns = {delivering:[{s:'done',l:'✅ Выполнен'}]};
 
@@ -815,13 +827,15 @@ function renderOrders(orders) {
       ? '<small style="color:#555;font-size:0.72rem">FP:'+o.fp_order_id+'</small>'
       : '<small style="color:#f97316;font-size:0.72rem">⚠️ Нет в FP</small>';
     var testBadge = isTest ? ' <span style="background:rgba(232,168,71,0.15);color:#e8a847;border:1px solid rgba(232,168,71,0.3);border-radius:6px;font-size:0.7rem;padding:1px 7px;font-weight:700">🧪 ТЕСТ</span>' : '';
-    var deleteBtn = isTest ? '<button onclick="deleteTestOrder('+o.id+')" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid #e8a847;background:transparent;color:#e8a847;font-size:0.75rem;cursor:pointer">Удалить</button>' : '';
+    var deleteBtn = (ROLE === 'owner')
+      ? '<button onclick="deleteAnyOrder('+o.id+')" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid #555;background:transparent;color:#888;font-size:0.75rem;cursor:pointer">🗑</button>'
+      : (isTest ? '<button onclick="deleteTestOrder('+o.id+')" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid #e8a847;background:transparent;color:#e8a847;font-size:0.75rem;cursor:pointer">Удалить</button>' : '');
 
     html += '<div class="order-card s-'+st+(isTest?' order-test':'')+'">'
       + '<div class="order-head">'
       +   '<div><span class="order-id">'+(isTest?'#000':('#'+o.id))+'</span> '+testBadge+' '+fpInfo+'</div>'
       +   '<div style="display:flex;gap:8px;align-items:center">'
-      +     (isTest ? deleteBtn : '')
+      +     (deleteBtn)
       +     '<span class="badge badge-'+st+'">'+(sLabels[st]||st)+'</span>'
       +     '<span style="font-size:0.78rem;color:#555">'+fmtDate(o.created_at)+'</span>'
       +   '</div>'
@@ -963,6 +977,17 @@ function str_repeat(s, n) { var r=''; for(var i=0;i<n;i++) r+=s; return r; }
 function copyLink(link) {
   if (navigator.clipboard) { navigator.clipboard.writeText(link).then(function(){ showAlert('📋 Ссылка скопирована', false); }); }
   else { showAlert('Ссылка: ' + link, false); }
+}
+
+function deleteAnyOrder(oid) {
+  if (!confirm('Удалить заказ #' + oid + '?\n\nЭто действие нельзя отменить.')) return;
+  fetch('?action=delete_order', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({order_id: oid})
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (r.ok) { showAlert('🗑️ Заказ #' + oid + ' удалён', false); loadOrders(); }
+    else showAlert(r.error || 'Ошибка', true);
+  }).catch(function(){ showAlert('Ошибка сети', true); });
 }
 
 function deleteTestOrder(oid) {

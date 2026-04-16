@@ -8694,12 +8694,15 @@
     document.getElementById('lkDropdown').classList.remove('open');
     var ov = document.getElementById('lkOrdersOverlay');
     ov.style.display = 'flex';
+    setTimeout(function(){ ov.classList.add('open'); }, 10);
     document.body.style.overflow = 'hidden';
     lkLoadOrders();
   }
 
   function lkCloseOrders() {
-    document.getElementById('lkOrdersOverlay').style.display = 'none';
+    var ov = document.getElementById('lkOrdersOverlay');
+    ov.classList.remove('open');
+    setTimeout(function(){ ov.style.display = 'none'; }, 300);
     document.body.style.overflow = '';
   }
 

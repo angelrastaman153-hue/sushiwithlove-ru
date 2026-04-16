@@ -10,7 +10,7 @@ $user = auth_required();
 
 // Последние 10 заказов
 $stmt = db()->prepare('
-    SELECT id, fp_order_id, items_total, delivery_cost, promo_discount,
+    SELECT id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
            points_spent, points_earned, total_paid, status, created_at
     FROM orders
     WHERE user_id = ?

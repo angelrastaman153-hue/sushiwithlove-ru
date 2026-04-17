@@ -5545,6 +5545,7 @@
       });
     }
     assignCardTags();
+    window.assignCardTags = assignCardTags; // доступ из renderDbMenu
 
     var activeTag = '';
     var pills = document.querySelectorAll('.filter-pill');

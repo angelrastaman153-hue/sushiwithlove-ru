@@ -18,8 +18,8 @@
   <meta property="og:site_name"   content="Суши с Любовью">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     /* ============================================================
@@ -3471,7 +3471,7 @@
       <!-- Карточка 1: Первый заказ -->
       <div class="promo-card reveal" data-promo="1LOVE">
         <div class="promo-img">
-          <img src="photos/promo/promo-1love.png" alt="Промокод 1LOVE" onerror="this.style.display='none'">
+          <img src="photos/promo/promo-1love.png" alt="Промокод 1LOVE" loading="lazy" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p1">🎁</div>
         </div>
         <div class="promo-body">
@@ -3496,7 +3496,7 @@
       <!-- Карточка 2: Именинникам -->
       <div class="promo-card reveal reveal-delay-1" data-promo="BDAY1,BDAY2">
         <div class="promo-img">
-          <img src="photos/promo/promo-bday.png" alt="Промокод именинникам" onerror="this.style.display='none'">
+          <img src="photos/promo/promo-bday.png" alt="Промокод именинникам" loading="lazy" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p2">🎂</div>
         </div>
         <div class="promo-body">
@@ -3525,7 +3525,7 @@
       <!-- Карточка 3: Самовывоз -->
       <div class="promo-card reveal reveal-delay-2" data-promo="СВ10">
         <div class="promo-img">
-          <img src="photos/promo/promo-sv10.png" alt="Промокод СВ10 самовывоз" onerror="this.style.display='none'">
+          <img src="photos/promo/promo-sv10.png" alt="Промокод СВ10 самовывоз" loading="lazy" onerror="this.style.display='none'">
           <div class="promo-img-placeholder p3">🚶</div>
         </div>
         <div class="promo-body">
@@ -6573,6 +6573,9 @@
     if (!_mapPickerInited) {
       _mapPickerInited = true;
       if (typeof L !== 'undefined') { _initLeafletMap(); return; }
+      var lc = document.createElement('link');
+      lc.rel = 'stylesheet'; lc.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(lc);
       var s = document.createElement('script');
       s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
       s.onload = _initLeafletMap;

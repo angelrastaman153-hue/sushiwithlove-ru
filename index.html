@@ -5360,44 +5360,132 @@
     });
   }
 
+  var GROUP_NAMES_PUB = {
+    'vasabi':'Васаби','imbir':'Имбирь маринованный','kokteil':'Молочный коктейль',
+    'bablmilk':'БАБЛ МИЛК манго','spaysi':'Соус спайси','syrny':'Соус сырный',
+    'teriaki':'Соус терияки','unagi':'Соус унаги','firmen':'Соус фирменный',
+    'soeviy':'Соевый соус','soeviy_chef':'Соевый соус от шефа'
+  };
+
+  function _gvSel(btn) {
+    var card = btn.closest('.dish-card');
+    if (!card) return;
+    var price  = parseInt(btn.dataset.price) || 0;
+    var fpId   = btn.dataset.fpId || '0';
+    var name   = btn.dataset.name || '';
+    var stop   = btn.dataset.stop === '1';
+    var emoji  = card.dataset.emoji || '';
+    card.querySelectorAll('.flavor-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    var priceEl = card.querySelector('.dish-price');
+    if (priceEl) priceEl.textContent = price.toLocaleString('ru-RU') + ' ₽';
+    card.dataset.price = price;
+    var addBtn = card.querySelector('.add-btn');
+    if (!addBtn) return;
+    if (!stop && fpId && fpId !== '0') {
+      var co = {id:parseInt(fpId), name:name, price:price, emoji:emoji};
+      addBtn.disabled = false; addBtn.style.opacity = ''; addBtn.style.cursor = '';
+      addBtn.textContent = '+ В корзину';
+      addBtn.onclick = function(){ addToCart(co); };
+    } else {
+      addBtn.disabled = true; addBtn.style.opacity = '0.4'; addBtn.style.cursor = 'not-allowed';
+      addBtn.textContent = stop ? 'Стоп' : 'Скоро'; addBtn.onclick = null;
+    }
+  }
+
+  function buildGroupCard(gkey, variants, emoji, delay) {
+    variants.sort(function(a,b){ return (a.sort_order||0)-(b.sort_order||0)||(parseFloat(a.price||0)-parseFloat(b.price||0)); });
+    var first = variants[0];
+    var rev = 'reveal' + (delay ? ' reveal-delay-'+(delay%4) : '');
+    var gname = GROUP_NAMES_PUB[gkey] || first.name;
+    var src = first.image_url || '';
+    var imgH = src
+      ? '<img src="'+_escH(src)+'" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.parentNode.innerHTML=\'<span style=font-size:2rem>'+emoji+'</span>\'">'
+      : '<span style="font-size:2rem">'+emoji+'</span>';
+    var sizeBtns = variants.map(function(v,i){
+      var p = Math.round(parseFloat(v.price)||0);
+      var lbl = _escH(v.variant_label || v.name);
+      return '<button class="flavor-btn'+(i===0?' active':'')+'" onclick="_gvSel(this)" '
+        +'data-fp-id="'+(v.fp_article_id||0)+'" data-price="'+p+'" '
+        +'data-name="'+_escH(v.name)+'" data-stop="'+(parseInt(v.is_stop)||0)+'">'+lbl+'</button>';
+    }).join('');
+    var defV = variants[0];
+    var defP = Math.round(parseFloat(defV.price)||0);
+    var defStop = parseInt(defV.is_stop);
+    var defCan = !defStop && defV.fp_article_id;
+    var defCo = JSON.stringify({id:parseInt(defV.fp_article_id)||0, name:defV.name, price:parseFloat(defV.price)||0, emoji:emoji});
+    var addBtn = defCan
+      ? '<button class="add-btn" onclick=\'addToCart('+defCo+')\'>+ В корзину</button>'
+      : '<button class="add-btn" style="opacity:.4;cursor:not-allowed" disabled>'+(defStop?'Стоп':'Скоро')+'</button>';
+    return '<div class="dish-card '+rev+'" data-id="grp-'+_escH(gkey)+'" data-name="'+_escH(gname)+'" data-price="'+defP+'" data-emoji="'+emoji+'">'
+      +'<div class="dish-img"><div class="dish-img-ph" style="display:flex;align-items:center;justify-content:center;overflow:hidden">'+imgH+'</div></div>'
+      +'<div class="dish-body">'
+      +'<div class="dish-name">'+_escH(gname)+'</div>'
+      +'<div class="flavor-picker">'+sizeBtns+'</div>'
+      +'<div class="dish-footer"><div class="dish-price">'+defP.toLocaleString('ru-RU')+' ₽</div>'+addBtn+'</div>'
+      +'</div></div>';
+  }
+
   function renderDbMenu(data) {
     var cats  = (data.categories || []).slice().sort(function(a,b){ return (a.sort_order||0)-(b.sort_order||0); });
     var items = data.items || [];
+
+    // Разделяем на одиночные и группы по категории
     var byCat = {};
-    items.forEach(function(it){ if(!byCat[it.category_id]) byCat[it.category_id]=[]; byCat[it.category_id].push(it); });
+    items.forEach(function(it){
+      var cid = it.category_id;
+      if (!byCat[cid]) byCat[cid] = {singles:[], groups:{}, groupOrder:{}};
+      if (it.group_key) {
+        var gk = it.group_key;
+        if (!byCat[cid].groups[gk]) { byCat[cid].groups[gk] = []; byCat[cid].groupOrder[gk] = it.sort_order||999; }
+        byCat[cid].groups[gk].push(it);
+        if ((it.sort_order||999) < byCat[cid].groupOrder[gk]) byCat[cid].groupOrder[gk] = it.sort_order||999;
+      } else {
+        byCat[cid].singles.push(it);
+      }
+    });
+
+    // Строим render-список: одиночные + группы, отсортированные по sort_order
+    function buildRenderList(catData) {
+      var list = catData.singles.map(function(it){ return {type:'single', item:it, so:it.sort_order||999}; });
+      Object.keys(catData.groups).forEach(function(gk){
+        list.push({type:'group', gkey:gk, variants:catData.groups[gk], so:catData.groupOrder[gk]});
+      });
+      list.sort(function(a,b){ return a.so - b.so; });
+      return list;
+    }
 
     // Категории-кнопки
-    var navHtml = '';
-    var first = true;
+    var navHtml = ''; var firstCat = true;
     cats.forEach(function(cat) {
-      var list = byCat[cat.id];
-      if (!list || !list.length) return;
-      navHtml += '<button class="cat-btn'+(first?' active':'')+'" data-target="cat-'+_escH(cat.id)+'">'+_escH(cat.name)+'</button>';
-      first = false;
+      var cd = byCat[cat.id];
+      if (!cd || (!cd.singles.length && !Object.keys(cd.groups).length)) return;
+      navHtml += '<button class="cat-btn'+(firstCat?' active':'')+'" data-target="cat-'+_escH(cat.id)+'">'+_escH(cat.name)+'</button>';
+      firstCat = false;
     });
     var navCont = document.getElementById('catNavContainer');
     if (navCont) navCont.innerHTML = navHtml;
 
-    // Группы с карточками
+    // Карточки
     var menuHtml = '';
     cats.forEach(function(cat) {
-      var list = byCat[cat.id];
-      if (!list || !list.length) return;
+      var cd = byCat[cat.id];
+      if (!cd || (!cd.singles.length && !Object.keys(cd.groups).length)) return;
       var emoji = CAT_EMOJI[cat.name] || '🍱';
-      menuHtml += '<div class="menu-group" id="cat-'+cat.id+'">'
-        +'<h3 class="menu-group-title">'+_escH(cat.name)+'</h3>'
-        +'<div class="dishes-grid stagger-grid">';
-      list.forEach(function(item, idx){ menuHtml += buildDishCard(item, emoji, idx); });
+      var renderList = buildRenderList(cd);
+      menuHtml += '<div class="menu-group" id="cat-'+cat.id+'"><h3 class="menu-group-title">'+_escH(cat.name)+'</h3><div class="dishes-grid stagger-grid">';
+      renderList.forEach(function(entry, idx){
+        if (entry.type === 'group') menuHtml += buildGroupCard(entry.gkey, entry.variants, emoji, idx);
+        else                        menuHtml += buildDishCard(entry.item, emoji, idx);
+      });
       menuHtml += '</div></div>';
     });
 
     var wrap = document.getElementById('menuGroupsWrap');
     if (wrap) wrap.innerHTML = menuHtml || '<div style="padding:40px;color:#666;text-align:center">Меню пусто</div>';
 
-    // Переинициализация
     initCatNav();
     if (typeof assignCardTags === 'function') assignCardTags();
-    // Показываем карточки — без observer они скрыты (.stagger-grid > * { opacity:0 })
     if (wrap) {
       wrap.querySelectorAll('.stagger-grid').forEach(function(g){ g.classList.add('visible'); });
       wrap.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });

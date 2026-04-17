@@ -7876,11 +7876,11 @@
             body: JSON.stringify({order_id: ourOrderId, fp_order_id: res.order_id})
           }).catch(function(){});
         }
-        coShowOrderSuccess(res.ok ? (res.order_id || null) : null);
+        coShowOrderSuccess(res.ok ? (res.order_id || null) : null, ourOrderId);
       })
       .catch(function() {
         // FrontPad недоступен — заказ уже сохранён в нашей БД, показываем успех
-        coShowOrderSuccess(null);
+        coShowOrderSuccess(null, ourOrderId);
       });
     })
     .catch(function() {
@@ -7890,7 +7890,8 @@
       if (mBtn) { mBtn.disabled = false; mBtn.textContent = 'Оформить заказ →'; }
     });
 
-    function coShowOrderSuccess(fpOrderId) {
+    function coShowOrderSuccess(fpOrderId, ourOrderId) {
+      if (window._trackOrder) window._trackOrder(ourOrderId || null);
       document.getElementById('coLayout').style.display = 'none';
       document.getElementById('coSuccessScreen').style.display = 'block';
       document.getElementById('coOrderNum').textContent = fpOrderId ? '№ ' + fpOrderId : '';
@@ -8617,6 +8618,93 @@
   // Init
   lkUpdateHeader();
   loadMenuFromDB();
+
+  // ── АНАЛИТИКА ВОРОНКИ ──────────────────────────────────────────
+  (function() {
+    // Генерируем/читаем session_id (живёт 30 мин без активности)
+    var SID_KEY = 'swl_sid', SID_TS_KEY = 'swl_sid_ts';
+    var SID_TTL = 30 * 60 * 1000;
+    function getSid() {
+      var sid = localStorage.getItem(SID_KEY);
+      var ts  = parseInt(localStorage.getItem(SID_TS_KEY) || '0');
+      if (!sid || (Date.now() - ts) > SID_TTL) {
+        sid = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        localStorage.setItem(SID_KEY, sid);
+      }
+      localStorage.setItem(SID_TS_KEY, Date.now());
+      return sid;
+    }
+
+    // UTM из URL
+    function getUtm(key) {
+      return new URLSearchParams(window.location.search).get(key) || null;
+    }
+
+    // Источник: если нет UTM — смотрим referrer
+    function getSource() {
+      var src = getUtm('utm_source');
+      if (src) return src;
+      var ref = document.referrer;
+      if (!ref) return 'direct';
+      if (/vk\.com/i.test(ref))      return 'vk';
+      if (/instagram/i.test(ref))    return 'instagram';
+      if (/yandex/i.test(ref))       return 'yandex';
+      if (/google/i.test(ref))       return 'google';
+      if (/2gis/i.test(ref))         return '2gis';
+      if (/t\.me|telegram/i.test(ref)) return 'telegram';
+      return 'referral';
+    }
+
+    var _sid = getSid();
+    var _device = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop';
+    var _tracked = {};
+
+    function track(stage, extra) {
+      if (_tracked[stage] && !extra) return; // не дублируем один и тот же этап
+      _tracked[stage] = true;
+      var payload = { session_id: _sid, stage: stage, device: _device };
+      if (!_tracked._init) {
+        payload.utm_source   = getSource();
+        payload.utm_medium   = getUtm('utm_medium');
+        payload.utm_campaign = getUtm('utm_campaign');
+        payload.referrer     = document.referrer || null;
+        _tracked._init = true;
+      }
+      if (extra) Object.assign(payload, extra);
+      navigator.sendBeacon
+        ? navigator.sendBeacon('/api/analytics/session.php', JSON.stringify(payload))
+        : fetch('/api/analytics/session.php', {method:'POST', body:JSON.stringify(payload), keepalive:true}).catch(function(){});
+    }
+
+    // 1. Зашёл на сайт
+    track('landed');
+
+    // 2. Пролистал меню (первый скролл)
+    var _scrolled = false;
+    window.addEventListener('scroll', function() {
+      if (!_scrolled && window.scrollY > 200) { _scrolled = true; track('browsed'); }
+    }, {passive:true});
+
+    // 3. Добавил в корзину
+    var _origAdd = addToCart;
+    addToCart = function(item) {
+      _origAdd(item);
+      track('cart');
+    };
+
+    // 4. Открыл корзину/оформление
+    var _origOpen = openCheckoutPage;
+    openCheckoutPage = function() {
+      _origOpen();
+      track('checkout');
+    };
+
+    // 5. Оформил заказ — вызывается из coSubmitOrder после успеха
+    window._trackOrder = function(orderId) {
+      track('ordered', { order_id: orderId || null });
+    };
+  })();
+  // ── конец аналитики ─────────────────────────────────────────────
 </script>
 </body>
 </html>

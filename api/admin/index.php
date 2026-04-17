@@ -140,6 +140,46 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true,'config'=>$stmt->fetchAll()));
     }
 
+    if ($action === 'analytics') {
+        $pdo  = db();
+        $days = isset($_GET['days']) ? max(1, intval($_GET['days'])) : 7;
+        // Воронка за период
+        $funnel = $pdo->query("
+            SELECT funnel_stage, COUNT(*) as cnt
+            FROM analytics_sessions
+            WHERE created_at >= NOW() - INTERVAL {$days} DAY
+            GROUP BY funnel_stage
+        ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        // Источники трафика
+        $sources = $pdo->query("
+            SELECT COALESCE(utm_source,'direct') as src, COUNT(*) as cnt
+            FROM analytics_sessions
+            WHERE created_at >= NOW() - INTERVAL {$days} DAY
+            GROUP BY utm_source ORDER BY cnt DESC LIMIT 20
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Устройства
+        $devices = $pdo->query("
+            SELECT COALESCE(device,'unknown') as device, COUNT(*) as cnt
+            FROM analytics_sessions
+            WHERE created_at >= NOW() - INTERVAL {$days} DAY
+            GROUP BY device
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // По дням
+        $byDay = $pdo->query("
+            SELECT DATE(created_at) as day,
+                COUNT(*) as sessions,
+                SUM(funnel_stage='ordered') as orders
+            FROM analytics_sessions
+            WHERE created_at >= NOW() - INTERVAL {$days} DAY
+            GROUP BY DATE(created_at) ORDER BY day
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        json_out(array('ok'=>true,'funnel'=>$funnel,'sources'=>$sources,'devices'=>$devices,'byDay'=>$byDay));
+    }
+
     exit;
 }
 ?>
@@ -183,6 +223,14 @@ if (isset($_GET['action'])) {
   .badge-delivering{background:#1a3a2a;color:#44cc88}
   .badge-done{background:#1a2a1a;color:#66bb66}
   .badge-cancelled{background:#2a1a1a;color:#cc6666}
+  /* Analytics */
+  .funnel-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .funnel-bar-wrap{flex:1;background:#222;border-radius:6px;height:22px;overflow:hidden}
+  .funnel-bar{height:100%;background:#e8a847;border-radius:6px;transition:width 0.4s}
+  .funnel-label{width:110px;font-size:0.85rem;color:#aaa}
+  .funnel-val{width:50px;text-align:right;font-weight:700;color:#e8a847}
+  .funnel-pct{width:45px;text-align:right;font-size:0.8rem;color:#666}
+  .src-table td{padding:6px 12px;border-bottom:1px solid #1a1a1a;font-size:0.88rem}
   /* Form */
   .form-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
   input[type=text],input[type=number],select,textarea{background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:8px 12px;font-size:0.9rem}
@@ -226,6 +274,7 @@ if (isset($_GET['action'])) {
   <a class="nav-link" href="#" onclick="showTab('points')">🎁 Баллы</a>
   <div class="nav-section">Настройки</div>
   <a class="nav-link" href="#" onclick="showTab('loyalty')">⚙️ Лояльность</a>
+  <a class="nav-link" href="#" onclick="showTab('analytics')">📈 Аналитика</a>
   <a class="logout-link" href="?logout=1">🚪 Выйти</a>
 </aside>
 
@@ -319,6 +368,46 @@ if (isset($_GET['action'])) {
     </div>
   </div>
 
+  <!-- ANALYTICS -->
+  <div class="tab" id="tab-analytics">
+    <h1 style="font-size:1.4rem;margin-bottom:20px;color:#e8a847">📈 Аналитика</h1>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+      <span style="color:#aaa;font-size:0.9rem">Период:</span>
+      <select id="analyticsDays" onchange="loadAnalytics()" style="background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:6px 12px">
+        <option value="7">7 дней</option>
+        <option value="14">14 дней</option>
+        <option value="30" selected>30 дней</option>
+        <option value="90">90 дней</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <!-- Воронка -->
+      <div class="section">
+        <h2 style="margin-bottom:16px">🔽 Воронка</h2>
+        <div id="analyticsF"><div style="color:#555">Загрузка…</div></div>
+      </div>
+      <!-- Источники -->
+      <div class="section">
+        <h2 style="margin-bottom:16px">🌐 Откуда пришли</h2>
+        <div id="analyticsS"><div style="color:#555">Загрузка…</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- Устройства -->
+      <div class="section">
+        <h2 style="margin-bottom:16px">📱 Устройства</h2>
+        <div id="analyticsD"><div style="color:#555">Загрузка…</div></div>
+      </div>
+      <!-- По дням -->
+      <div class="section">
+        <h2 style="margin-bottom:16px">📅 По дням</h2>
+        <div id="analyticsDays2" style="font-size:0.85rem"><div style="color:#555">Загрузка…</div></div>
+      </div>
+    </div>
+  </div>
+
 </main>
 </div>
 
@@ -332,11 +421,12 @@ function showTab(name) {
   var el = document.getElementById('tab-' + name);
   if (el) el.classList.add('active');
   currentTab = name;
-  if (name === 'dashboard') { loadStats(); loadDashOrders(); }
-  if (name === 'users')     loadUsers();
-  if (name === 'orders')    loadOrders();
-  if (name === 'points')    loadPoints();
-  if (name === 'loyalty')   loadLoyalty();
+  if (name === 'dashboard')  { loadStats(); loadDashOrders(); }
+  if (name === 'users')      loadUsers();
+  if (name === 'orders')     loadOrders();
+  if (name === 'points')     loadPoints();
+  if (name === 'loyalty')    loadLoyalty();
+  if (name === 'analytics')  loadAnalytics();
 }
 
 function api(action, method, body, cb) {
@@ -520,6 +610,68 @@ function saveLoyalty() {
 
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+function loadAnalytics() {
+  var days = document.getElementById('analyticsDays').value || 30;
+  fetch('?action=analytics&days=' + days + '&token=' + encodeURIComponent(document.cookie.match(/admin_token=([^;]+)/)?.[1]||''))
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      if (!d.ok) return;
+
+      // --- Воронка ---
+      var stages = [
+        {key:'landed',   label:'Зашли на сайт'},
+        {key:'browsed',  label:'Листали меню'},
+        {key:'cart',     label:'Добавили в корзину'},
+        {key:'checkout', label:'Открыли оформление'},
+        {key:'ordered',  label:'Оформили заказ'},
+      ];
+      var top = d.funnel['landed'] || 1;
+      var fHtml = stages.map(function(s) {
+        var n   = d.funnel[s.key] || 0;
+        var pct = Math.round(n / top * 100);
+        return '<div class="funnel-row">'
+          + '<div class="funnel-label">'+s.label+'</div>'
+          + '<div class="funnel-bar-wrap"><div class="funnel-bar" style="width:'+pct+'%"></div></div>'
+          + '<div class="funnel-val">'+n+'</div>'
+          + '<div class="funnel-pct">'+pct+'%</div>'
+          + '</div>';
+      }).join('');
+      document.getElementById('analyticsF').innerHTML = fHtml;
+
+      // --- Источники ---
+      var sHtml = '<table class="src-table" style="width:100%"><tr><th style="text-align:left;color:#666;font-weight:400;padding:6px 12px">Источник</th><th style="text-align:right;color:#666;font-weight:400;padding:6px 12px">Визитов</th></tr>';
+      var srcIcons = {vk:'🔵',instagram:'📷',yandex:'🔴',google:'🟢',direct:'🔗',telegram:'✈️','2gis':'🗺️',referral:'🌐'};
+      d.sources.forEach(function(s) {
+        var icon = srcIcons[s.src] || '🌐';
+        sHtml += '<tr><td>'+icon+' '+escHtml(s.src)+'</td><td style="text-align:right;color:#e8a847;font-weight:700">'+s.cnt+'</td></tr>';
+      });
+      sHtml += '</table>';
+      document.getElementById('analyticsS').innerHTML = sHtml;
+
+      // --- Устройства ---
+      var dHtml = '<table class="src-table" style="width:100%">';
+      d.devices.forEach(function(dv) {
+        var icon = dv.device === 'mobile' ? '📱' : '🖥️';
+        dHtml += '<tr><td>'+icon+' '+escHtml(dv.device)+'</td><td style="text-align:right;color:#e8a847;font-weight:700">'+dv.cnt+'</td></tr>';
+      });
+      dHtml += '</table>';
+      document.getElementById('analyticsD').innerHTML = dHtml;
+
+      // --- По дням ---
+      var bHtml = '<table class="src-table" style="width:100%"><tr>'
+        + '<th style="text-align:left;color:#666;font-weight:400;padding:6px 12px">Дата</th>'
+        + '<th style="text-align:right;color:#666;font-weight:400;padding:6px 12px">Визиты</th>'
+        + '<th style="text-align:right;color:#666;font-weight:400;padding:6px 12px">Заказы</th>'
+        + '</tr>';
+      d.byDay.forEach(function(row) {
+        bHtml += '<tr><td>'+row.day+'</td>'
+          + '<td style="text-align:right">'+row.sessions+'</td>'
+          + '<td style="text-align:right;color:#e8a847;font-weight:700">'+row.orders+'</td></tr>';
+      });
+      bHtml += '</table>';
+      document.getElementById('analyticsDays2').innerHTML = bHtml;
+    });
+}
 
 // Загрузка при старте
 showTab('dashboard');

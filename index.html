@@ -3833,11 +3833,55 @@
       <button onclick="moveReviews(1)">→</button>
     </div>
 
+    <!-- Виджеты площадок -->
     <div class="reveal" style="margin-top:40px">
-      <div style="font-size:0.8rem;color:var(--text-2);margin-bottom:12px;text-align:center">Актуальные отзывы с Яндекс.Карт</div>
-      <iframe src="https://yandex.ru/maps-reviews-widget/5625179727?comments"
-        width="100%" height="400" frameborder="0" allowfullscreen loading="lazy"
-        style="border-radius:16px;display:block"></iframe>
+      <!-- Переключатель -->
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;flex-wrap:wrap">
+        <button onclick="switchReviewPlatform('yandex')" id="rpBtn-yandex"
+          style="padding:8px 20px;border-radius:20px;border:1px solid var(--accent);background:rgba(232,168,71,0.15);color:var(--accent);font-weight:600;cursor:pointer;font-size:0.85rem">
+          🗺️ Яндекс.Карты
+        </button>
+        <button onclick="switchReviewPlatform('2gis')" id="rpBtn-2gis"
+          style="padding:8px 20px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;font-size:0.85rem">
+          📍 2ГИС
+        </button>
+      </div>
+
+      <!-- Виджет Яндекс -->
+      <div id="rp-yandex">
+        <iframe src="https://yandex.ru/maps-reviews-widget/5625179727?comments"
+          width="100%" height="400" frameborder="0" allowfullscreen loading="lazy"
+          style="border-radius:16px;display:block"></iframe>
+      </div>
+
+      <!-- Виджет 2ГИС -->
+      <div id="rp-2gis" style="display:none">
+        <iframe src="https://widgets.2gis.com/widget?type=firmsonmap&options=%7B%22pos%22%3A%7B%22lat%22%3A55.434712%2C%22lon%22%3A65.329715%2C%22zoom%22%3A16%7D%2C%22opt%22%3A%7B%22city%22%3A%22kurgan%22%7D%2C%22org%22%3A%2270000001017896762%22%7D"
+          width="100%" height="400" frameborder="0" allowfullscreen loading="lazy"
+          style="border-radius:16px;display:block"></iframe>
+      </div>
+
+      <!-- Кнопки «Оставить отзыв» -->
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+        <a href="https://yandex.ru/maps/org/sushi_s_lyubovyu/5625179727/reviews/" target="_blank" rel="noopener"
+           style="padding:10px 20px;border-radius:12px;border:1px solid var(--border);color:var(--text-2);font-size:0.85rem;text-decoration:none;transition:border-color 0.2s"
+           onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+          ✍️ Отзыв на Яндекс
+        </a>
+        <a href="https://2gis.ru/kurgan/firm/70000001017896762/tab/reviews" target="_blank" rel="noopener"
+           style="padding:10px 20px;border-radius:12px;border:1px solid var(--border);color:var(--text-2);font-size:0.85rem;text-decoration:none;transition:border-color 0.2s"
+           onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+          ✍️ Отзыв на 2ГИС
+        </a>
+        <a href="https://vk.com/reviews-50839877" target="_blank" rel="noopener"
+           style="padding:10px 20px;border-radius:12px;border:1px solid var(--border);color:var(--text-2);font-size:0.85rem;text-decoration:none;transition:border-color 0.2s"
+           onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+          ✍️ Отзыв ВКонтакте
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -8634,6 +8678,19 @@
   // Init
   lkUpdateHeader();
   loadMenuFromDB();
+
+  function switchReviewPlatform(name) {
+    ['yandex','2gis'].forEach(function(p) {
+      var panel = document.getElementById('rp-'+p);
+      var btn   = document.getElementById('rpBtn-'+p);
+      if (!panel || !btn) return;
+      var active = p === name;
+      panel.style.display = active ? '' : 'none';
+      btn.style.background  = active ? 'rgba(232,168,71,0.15)' : 'transparent';
+      btn.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+      btn.style.color       = active ? 'var(--accent)' : 'var(--text-2)';
+    });
+  }
 
   // ── АНАЛИТИКА ВОРОНКИ ──────────────────────────────────────────
   (function() {

@@ -5286,7 +5286,8 @@
     var priceStr = price.toLocaleString('ru-RU')+' ₽';
     var wt   = item.weight_grams ? '<div class="dish-weight">'+item.weight_grams+' г</div>' : '';
     var desc = item.description  ? '<div class="dish-composition">'+_escH(item.description)+'</div>' : '';
-    return '<div class="dish-card '+rev+'" data-id="'+item.id+'" data-name="'+_escH(item.name)+'" data-price="'+price+'" data-emoji="'+emoji+'">'
+    var descAttr = item.description ? ' data-desc="'+_escH(item.description)+'"' : '';
+    return '<div class="dish-card '+rev+'" data-id="'+item.id+'" data-name="'+_escH(item.name)+'" data-price="'+price+'" data-emoji="'+emoji+'"'+descAttr+'>'
       +'<div class="dish-img"><div class="dish-img-ph" style="display:flex;align-items:center;justify-content:center;overflow:hidden">'+imgH+'</div>'
       +'<div class="dish-badges">'+stopBadge+'</div></div>'
       +'<div class="dish-body">'
@@ -5294,6 +5295,69 @@
       +desc+wt
       +'<div class="dish-footer"><div class="dish-price">'+priceStr+'</div>'+addBtn+'</div>'
       +'</div></div>';
+  }
+
+  function initDishOverlays(root) {
+    root = root || document;
+    root.querySelectorAll('.dish-card').forEach(function(card) {
+      if (card.querySelector('.dish-hover-overlay')) return; // уже инициализирована
+      var descArr = null;
+      if (card.dataset.desc) {
+        descArr = [card.dataset.desc, ''];
+      } else if (typeof DISH_DESCS !== 'undefined' && DISH_DESCS[card.dataset.name]) {
+        descArr = DISH_DESCS[card.dataset.name];
+      }
+      if (!descArr) return;
+
+      var overlay = document.createElement('div');
+      overlay.className = 'dish-hover-overlay';
+      if (descArr[0]) {
+        var ing = document.createElement('div');
+        ing.className = 'dho-ingredients';
+        ing.textContent = descArr[0];
+        overlay.appendChild(ing);
+      }
+      if (descArr[1]) {
+        var taste = document.createElement('div');
+        taste.className = 'dho-taste';
+        taste.textContent = descArr[1];
+        overlay.appendChild(taste);
+      }
+      card.appendChild(overlay);
+
+      requestAnimationFrame(function() {
+        var maxSize = 15, minSize = 8, cur = maxSize;
+        overlay.style.fontSize = cur + 'px';
+        while (overlay.scrollHeight > overlay.clientHeight + 2 && cur > minSize) {
+          cur -= 0.5;
+          overlay.style.fontSize = cur + 'px';
+        }
+      });
+
+      var infoBtn = document.createElement('button');
+      infoBtn.className = 'dish-info-btn';
+      infoBtn.setAttribute('aria-label', 'Состав блюда');
+      infoBtn.textContent = 'ℹ';
+      infoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isOpen = card.classList.contains('desc-open');
+        document.querySelectorAll('.dish-card.desc-open').forEach(function(c) { c.classList.remove('desc-open'); });
+        if (!isOpen) card.classList.add('desc-open');
+      });
+
+      var nameEl = card.querySelector('.dish-name');
+      if (nameEl && !nameEl.closest('.dish-name-row')) {
+        var nameRow = document.createElement('div');
+        nameRow.className = 'dish-name-row';
+        nameEl.parentNode.insertBefore(nameRow, nameEl);
+        nameRow.appendChild(nameEl);
+        nameRow.appendChild(infoBtn);
+      }
+
+      var meta = card.querySelector('.dish-meta');
+      var footer = card.querySelector('.dish-footer');
+      if (meta && footer) footer.appendChild(meta);
+    });
   }
 
   function renderDbMenu(data) {
@@ -5337,6 +5401,7 @@
     if (wrap) {
       wrap.querySelectorAll('.stagger-grid').forEach(function(g){ g.classList.add('visible'); });
       wrap.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
+      initDishOverlays(wrap);
     }
   }
 
@@ -5730,72 +5795,8 @@
       'Лимонад AquAlania 0.5': ['Слива, груша, смородина, барбарис — выберите вкус на карточке.', 'Лимонады AquAlania («АкваАлания») — премиальные сильногазированные безалкогольные напитки, производимые в Северной Осетии на основе чистой родниковой воды. Отличаются богатой палитрой вкусов, гармоничным балансом сладости и кислинки.']
     };
 
-    document.querySelectorAll('.dish-card[data-name]').forEach(function(card) {
-      var name = card.dataset.name;
-      var desc = DISH_DESCS[name];
-      if (!desc) return;
-
-      var overlay = document.createElement('div');
-      overlay.className = 'dish-hover-overlay';
-
-      if (desc[0]) {
-        var ing = document.createElement('div');
-        ing.className = 'dho-ingredients';
-        ing.textContent = desc[0];
-        overlay.appendChild(ing);
-      }
-      if (desc[1]) {
-        var taste = document.createElement('div');
-        taste.className = 'dho-taste';
-        taste.textContent = desc[1];
-        overlay.appendChild(taste);
-      }
-
-      card.appendChild(overlay);
-
-      // Авто-подгонка шрифта: уменьшаем пока контент не влезет в квадрат
-      requestAnimationFrame(function() {
-        var maxSize = 15; // px
-        var minSize = 8;
-        var cur = maxSize;
-        overlay.style.fontSize = cur + 'px';
-        while (overlay.scrollHeight > overlay.clientHeight + 2 && cur > minSize) {
-          cur -= 0.5;
-          overlay.style.fontSize = cur + 'px';
-        }
-      });
-
-      // Кнопка «ℹ» — рядом с названием блюда (только на мобиле)
-      var infoBtn = document.createElement('button');
-      infoBtn.className = 'dish-info-btn';
-      infoBtn.setAttribute('aria-label', 'Состав блюда');
-      infoBtn.textContent = 'ℹ';
-      infoBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var isOpen = card.classList.contains('desc-open');
-        document.querySelectorAll('.dish-card.desc-open').forEach(function(c) {
-          c.classList.remove('desc-open');
-        });
-        if (!isOpen) card.classList.add('desc-open');
-      });
-
-      // Оборачиваем dish-name + infoBtn в .dish-name-row
-      var nameEl = card.querySelector('.dish-name');
-      if (nameEl) {
-        var nameRow = document.createElement('div');
-        nameRow.className = 'dish-name-row';
-        nameEl.parentNode.insertBefore(nameRow, nameEl);
-        nameRow.appendChild(nameEl);
-        nameRow.appendChild(infoBtn);
-      }
-
-      // Перемещаем dish-meta в dish-footer (перед кнопкой)
-      var meta = card.querySelector('.dish-meta');
-      var footer = card.querySelector('.dish-footer');
-      if (meta && footer) {
-        footer.appendChild(meta);
-      }
-    });
+    // Инициализируем оверлеи для статичных карточек (у которых нет data-desc — только DISH_DESCS)
+    initDishOverlays(document);
 
     // Тап вне карточки — закрывает overlay
     document.addEventListener('click', function() {

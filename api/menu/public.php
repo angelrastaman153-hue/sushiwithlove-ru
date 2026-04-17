@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../db.php';
 header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: public, max-age=60');
+header('Cache-Control: public, max-age=300'); // 5 минут
 
 $pdo = db();
 $cats = $pdo->query(

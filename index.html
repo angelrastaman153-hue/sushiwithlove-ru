@@ -5495,11 +5495,24 @@
     }
   }
 
+  var MENU_CACHE_KEY = 'swl_menu_v2';
+  var MENU_CACHE_TTL = 5 * 60 * 1000; // 5 минут
+
   function loadMenuFromDB() {
+    // Мгновенно рендерим из кэша если он свежий
+    try {
+      var cached = JSON.parse(localStorage.getItem(MENU_CACHE_KEY) || 'null');
+      if (cached && cached.ts && (Date.now() - cached.ts) < MENU_CACHE_TTL && cached.data && cached.data.ok) {
+        renderDbMenu(cached.data);
+      }
+    } catch(e) {}
+
+    // Всегда грузим свежие данные в фоне
     fetch('/api/menu/public.php')
       .then(function(r){ return r.json(); })
       .then(function(data){
         if (!data.ok) { console.error('Menu API error'); return; }
+        try { localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({ts: Date.now(), data: data})); } catch(e) {}
         renderDbMenu(data);
       })
       .catch(function(e){ console.error('Menu load error', e); });

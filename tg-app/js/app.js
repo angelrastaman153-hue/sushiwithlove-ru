@@ -246,7 +246,7 @@ function renderCard(item) {
       <div class="card-img">
         ${imgHtml}
         ${placeholderHtml}
-        ${badgeHtml}
+        ${stopBadge}
       </div>
       <div class="card-body">
         <div class="card-name">${item.name}</div>

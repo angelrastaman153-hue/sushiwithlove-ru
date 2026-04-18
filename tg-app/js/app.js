@@ -51,19 +51,39 @@ async function init() {
     tg.onEvent('themeChanged', applyTelegramTheme);
   }
 
-  // Загружаем сохранённую корзину
-  await Cart.load();
+  // Параллельно: загружаем корзину и меню из API (как на сайте)
+  const menuReady = loadMenuFromApi(({ fromCache }) => {
+    // Вызывается дважды: сразу из кэша и после свежего ответа сети.
+    // Если пользователь уже на экране меню — просто перерисовываем.
+    renderCategories();
+    renderMenu();
+    // Пересчитываем бейдж/кнопку — состав корзины мог содержать товары,
+    // которых больше нет в актуальном меню.
+    if (App.currentScreen !== 'loading') {
+      updateCartBadge();
+      updateMainButton();
+    }
+  });
 
-  // Рендерим меню заранее
-  renderCategories();
-  renderMenu();
+  try {
+    await Promise.all([ Cart.load(), menuReady ]);
+  } catch (err) {
+    console.error('[Mini App] Init failed:', err);
+    showToast('Не удалось загрузить меню. Проверьте соединение.');
+    return;
+  }
 
-  // Небольшая задержка для красоты лоадера
+  // На случай если onUpdate не вызвался (например, только сеть, без кэша)
+  if (!document.querySelector('#menu-content .menu-section')) {
+    renderCategories();
+    renderMenu();
+  }
+
   setTimeout(() => {
     navigateTo('menu');
     updateCartBadge();
     updateMainButton();
-  }, 1200);
+  }, 300);
 }
 
 function applyTelegramTheme() {
@@ -203,19 +223,23 @@ function renderMenu() {
 
 function renderCard(item) {
   const q = Cart.qty(item.id);
-  const badgeHtml = item.badge ? `<span class="badge badge-${item.badge}">${badgeText(item.badge)}</span>` : '';
+  const stopBadge = item.stop
+    ? `<span class="badge badge-stop" style="background:#e05a5a;color:#fff">Стоп</span>`
+    : (item.badge ? `<span class="badge badge-${item.badge}">${badgeText(item.badge)}</span>` : '');
   const imgHtml = item.img
     ? `<img src="${item.img}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
   const placeholderHtml = `<div class="card-img-placeholder" style="${item.img ? 'display:none' : ''}">${categoryEmoji(item.category)}</div>`;
 
-  const btnHtml = q > 0
-    ? `<div class="card-counter">
-         <button class="counter-btn minus" onclick="event.stopPropagation();decreaseItem(${item.id})">−</button>
-         <span class="counter-qty">${q}</span>
-         <button class="counter-btn plus" onclick="event.stopPropagation();increaseItem(${item.id})">+</button>
-       </div>`
-    : `<button class="card-add-btn" onclick="event.stopPropagation();increaseItem(${item.id})" aria-label="Добавить">+</button>`;
+  const btnHtml = item.stop
+    ? `<button class="card-add-btn" style="opacity:.4;cursor:not-allowed" disabled aria-label="Стоп">✕</button>`
+    : (q > 0
+      ? `<div class="card-counter">
+           <button class="counter-btn minus" onclick="event.stopPropagation();decreaseItem(${item.id})">−</button>
+           <span class="counter-qty">${q}</span>
+           <button class="counter-btn plus" onclick="event.stopPropagation();increaseItem(${item.id})">+</button>
+         </div>`
+      : `<button class="card-add-btn" onclick="event.stopPropagation();increaseItem(${item.id})" aria-label="Добавить">+</button>`);
 
   return `
     <div class="card" data-id="${item.id}" onclick="openProductSheet(${item.id})">
@@ -290,13 +314,15 @@ function refreshCard(id) {
   const q = Cart.qty(id);
   const footer = card.querySelector('.card-footer');
   const oldBtn = footer.querySelector('.card-add-btn, .card-counter');
-  const newBtnHtml = q > 0
-    ? `<div class="card-counter">
-         <button class="counter-btn minus" onclick="event.stopPropagation();decreaseItem(${id})">−</button>
-         <span class="counter-qty">${q}</span>
-         <button class="counter-btn plus" onclick="event.stopPropagation();increaseItem(${id})">+</button>
-       </div>`
-    : `<button class="card-add-btn" onclick="event.stopPropagation();increaseItem(${id})" aria-label="Добавить">+</button>`;
+  const newBtnHtml = item.stop
+    ? `<button class="card-add-btn" style="opacity:.4;cursor:not-allowed" disabled aria-label="Стоп">✕</button>`
+    : (q > 0
+      ? `<div class="card-counter">
+           <button class="counter-btn minus" onclick="event.stopPropagation();decreaseItem(${id})">−</button>
+           <span class="counter-qty">${q}</span>
+           <button class="counter-btn plus" onclick="event.stopPropagation();increaseItem(${id})">+</button>
+         </div>`
+      : `<button class="card-add-btn" onclick="event.stopPropagation();increaseItem(${id})" aria-label="Добавить">+</button>`);
   if (oldBtn) oldBtn.outerHTML = newBtnHtml;
 }
 
@@ -338,15 +364,17 @@ function openProductSheet(itemId) {
       </div>
     </div>` : '';
 
-  const btnHtml = q > 0
-    ? `<div class="sheet-counter-row">
-         <button class="counter-btn minus lg" onclick="decreaseItem(${item.id});updateSheetProductBtn(${item.id})">−</button>
-         <span class="counter-qty lg" id="sheet-qty-${item.id}">${q}</span>
-         <button class="counter-btn plus lg" onclick="increaseItem(${item.id});updateSheetProductBtn(${item.id})">+</button>
-       </div>`
-    : `<button class="sheet-add-btn" id="sheet-add-${item.id}" onclick="increaseItem(${item.id});updateSheetProductBtn(${item.id})">
-         В корзину · ${formatPrice(item.price)}
-       </button>`;
+  const btnHtml = item.stop
+    ? `<button class="sheet-add-btn" style="opacity:.5;cursor:not-allowed" disabled>Нет в наличии</button>`
+    : (q > 0
+      ? `<div class="sheet-counter-row">
+           <button class="counter-btn minus lg" onclick="decreaseItem(${item.id});updateSheetProductBtn(${item.id})">−</button>
+           <span class="counter-qty lg" id="sheet-qty-${item.id}">${q}</span>
+           <button class="counter-btn plus lg" onclick="increaseItem(${item.id});updateSheetProductBtn(${item.id})">+</button>
+         </div>`
+      : `<button class="sheet-add-btn" id="sheet-add-${item.id}" onclick="increaseItem(${item.id});updateSheetProductBtn(${item.id})">
+           В корзину · ${formatPrice(item.price)}
+         </button>`);
 
   document.getElementById('sheet-product-content').innerHTML = `
     <div class="sheet-img-wrap">

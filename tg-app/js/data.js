@@ -11,7 +11,7 @@
 
 // ─── Настройки доставки ───────────────────────────────────────────────────────
 const CONFIG = {
-  shopName:     'Sushi with Love',
+  shopName:     'Суши с Любовью',
   phone:        '+7 (352) 266-20-70',
   phone2:       '+7 (922) 578-20-70',
   pickupAddress:'г. Курган, ул. Гоголя, 7',
@@ -27,7 +27,7 @@ const CONFIG = {
   // Путь до API меню на сервере (относительно корня сайта)
   menuApiUrl:   '/api/menu/public.php',
   // Кэш меню в localStorage (тот же ключ что и на сайте — чтобы не тянуть дважды)
-  menuCacheKey: 'swl_menu_v2',
+  menuCacheKey: 'swl_menu_v3',
   menuCacheTtl: 5 * 60 * 1000, // 5 минут
 };
 

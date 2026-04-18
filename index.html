@@ -6065,7 +6065,12 @@
     if (oldEl)  oldEl.textContent  = deal.oldPrice + ' ₽';
     if (newEl)  newEl.textContent  = deal.price + ' ₽';
     if (btn) btn.onclick = function() {
-      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
+      var active = (typeof getPromoMs === 'function') && (function(){ var m = getPromoMs(); return m !== null && m > 0; })();
+      if (active) {
+        addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
+      } else {
+        addToCart({ id: deal.id, name: deal.name, price: deal.oldPrice, emoji: deal.emoji });
+      }
     };
 
     // Заполняем попап
@@ -6093,7 +6098,12 @@
     if (popupOld) popupOld.textContent = deal.oldPrice + ' ₽';
     if (popupNew) popupNew.textContent = deal.price + ' ₽';
     if (popupBtn) popupBtn.onclick = function() {
-      addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
+      var active = (typeof getPromoMs === 'function') && (function(){ var m = getPromoMs(); return m !== null && m > 0; })();
+      if (active) {
+        addToCart({ id: deal.id, name: deal.name + ' (акция −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
+      } else {
+        addToCart({ id: deal.id, name: deal.name, price: deal.oldPrice, emoji: deal.emoji });
+      }
       closeHeroDealPopup();
     };
   })();
@@ -6118,7 +6128,12 @@
       var btn = card.querySelector('.add-btn');
       if (btn) {
         btn.onclick = function() {
-          addToCart({ id: deal.id, name: deal.name + ' (акция дня −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
+          var active = (typeof getPromoMs === 'function') && (function(){ var m = getPromoMs(); return m !== null && m > 0; })();
+          if (active) {
+            addToCart({ id: deal.id, name: deal.name + ' (акция дня −10%)', price: deal.price, originalPrice: deal.oldPrice, emoji: deal.emoji, isDeal: true });
+          } else {
+            addToCart({ id: deal.id, name: deal.name, price: deal.oldPrice, emoji: deal.emoji });
+          }
         };
       }
     });
@@ -7096,7 +7111,7 @@
     ov.scrollTop = 0;
     document.getElementById('coLayout').style.display = '';
     document.getElementById('coSuccessScreen').style.display = 'none';
-    coChopsticks = 0; // По умолчанию — без приборов
+    coChopsticks = null; // Обязательный выбор клиента (0 = без приборов, 1+ = с приборами)
 
     coNoCash = false;
     coPromoDiscount = 0;
@@ -7810,6 +7825,12 @@
     if (phone.length < 11) { coShowErr('Введите корректный номер телефона');          document.getElementById('coPhone').focus(); return; }
     if (!consent)          { coShowErr('Необходимо согласие на обработку данных');                                                return; }
     if (!cart.length)      { coShowErr('Корзина пуста');                                                                         return; }
+    if (coChopsticks === null) {
+      coShowErr('Укажите количество приборов (0 = без приборов)');
+      var chopGrid = document.getElementById('coAddonsGrid');
+      if (chopGrid) chopGrid.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
     if (coIsClosed() && coTimeMode !== 'scheduled') {
       coShowErr('Сейчас мы не работаем — укажите время получения предзаказа');
       var soonBtn = document.getElementById('coTimeSoon');
@@ -7903,6 +7924,17 @@
     .then(function(r){ return r.json(); })
     .then(function(saveRes) {
       var ourOrderId = (saveRes && saveRes.order_id) ? saveRes.order_id : null;
+      // Обновляем кэш профиля — чтобы телефон автоматически подставлялся в следующие заказы
+      try {
+        var _auth = JSON.parse(localStorage.getItem(AUTH_KEY));
+        if (_auth && _auth.user) {
+          if (!_auth.user.phone) _auth.user.phone = phone;
+          if (!_auth.user.name)  _auth.user.name  = name;
+          localStorage.setItem(AUTH_KEY, JSON.stringify(_auth));
+        }
+      } catch(e) {}
+      localStorage.setItem('swl_saved_phone', document.getElementById('coPhone').value.trim());
+      localStorage.setItem('swl_saved_name',  name);
       // ШАГ 2: Отправляем в FrontPad (необязательно — если упадёт, заказ уже сохранён)
       fetch('order.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
       .then(function(r){ return r.json(); })
@@ -8505,13 +8537,16 @@
     if (dateInp) { dateInp.value = yyyy + '-' + mm + '-' + dd; coGenerateTimeSlots(); }
   }
 
-  var OWNER_PHONE = '89091472211';
+  var OWNER_PHONE  = '89091472211';
+  var OWNER_TG_IDS = ['696556996']; // Telegram ID владельцев — для них доступна кнопка ТЕСТ
 
   function coIsOwner() {
     var user  = lkGet();
+    // 1) Проверка по Telegram ID (надёжнее — не зависит от введённого телефона)
+    if (user && user.tg_id && OWNER_TG_IDS.indexOf(String(user.tg_id)) !== -1) return true;
+    // 2) Проверка по телефону из профиля
     var phone = user ? String(user.phone || '').replace(/\D/g,'') : '';
     if (!phone) phone = String(localStorage.getItem('swl_saved_phone') || '').replace(/\D/g,'');
-    // Нормализуем: 7XXXXXXXXXX → 8XXXXXXXXXX
     if (phone.length === 11 && phone[0] === '7') phone = '8' + phone.slice(1);
     return phone === OWNER_PHONE;
   }

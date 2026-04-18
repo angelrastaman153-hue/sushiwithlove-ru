@@ -112,12 +112,13 @@ foreach (array_values($items) as $i => $item) {
     if ($art <= 0) continue;
     $post['product[' . $i . ']']     = $art;
     $post['product_kol[' . $i . ']'] = $qty;
-    if (!$isGift && $price !== null && $price !== '' && (float)$price > 0) {
-        $post['product_price[' . $i . ']'] = (float) $price;
-    }
     if ($isGift) {
+        // Подарок — принудительно 0 ₽ (иначе FrontPad применит цену из каталога)
+        $post['product_price[' . $i . ']'] = 0;
         $giftName = isset($item['name']) ? $item['name'] : ('арт.' . $art);
         $giftNotes[] = '🎁 ПОДАРОК (бесплатно): ' . $giftName . ' × ' . $qty;
+    } elseif ($price !== null && $price !== '' && (float)$price > 0) {
+        $post['product_price[' . $i . ']'] = (float) $price;
     }
 }
 if (!empty($giftNotes)) {
@@ -152,7 +153,13 @@ if ($response === false) {
 $fp = json_decode($response, true);
 
 if (isset($fp['result']) && $fp['result'] === 'success') {
-    send_json(array('ok' => true, 'order_id' => isset($fp['id']) ? $fp['id'] : null));
+    // FrontPad в разное время отдаёт id в разных полях
+    $fpOrderId = null;
+    if (isset($fp['order_id']))        $fpOrderId = $fp['order_id'];
+    elseif (isset($fp['order_number'])) $fpOrderId = $fp['order_number'];
+    elseif (isset($fp['id']))           $fpOrderId = $fp['id'];
+    elseif (isset($fp['number']))       $fpOrderId = $fp['number'];
+    send_json(array('ok' => true, 'order_id' => $fpOrderId, 'fp_raw' => $fp));
 } else {
     send_json(array('ok' => false, 'fp_response' => $fp, 'raw' => $response));
 }

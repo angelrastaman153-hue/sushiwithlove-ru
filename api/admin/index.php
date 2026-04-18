@@ -1,20 +1,67 @@
 <?php
 require_once __DIR__ . '/../config.php';
 
-// Пароль администратора
-define('ADMIN_PASS', 'swlAdmin2026');
+// Безопасные cookie для сессии (PHP 5.6-совместимо)
+$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+// Хак для SameSite в PHP 5.6: передаём его через параметр path
+session_set_cookie_params(0, '/; SameSite=Strict', '', $https, true);
 session_start();
+
+// CSRF-токен
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(openssl_random_pseudo_bytes(16));
+}
+
+// Rate limit на вход — 5 попыток / 10 минут / IP
+function admin_rl_file($ip) {
+    $dir = sys_get_temp_dir() . '/swl_admin_rl';
+    if (!is_dir($dir)) @mkdir($dir, 0700, true);
+    return $dir . '/' . md5($ip) . '.json';
+}
+function admin_rl_check($ip) {
+    $f = admin_rl_file($ip);
+    $now = time();
+    $d = (file_exists($f) ? json_decode(file_get_contents($f), true) : null);
+    if (!is_array($d)) $d = array('attempts' => array(), 'locked_until' => 0);
+    $lock = isset($d['locked_until']) ? $d['locked_until'] : 0;
+    if ($now < $lock) return array('ok' => false, 'wait' => $lock - $now);
+    return array('ok' => true);
+}
+function admin_rl_fail($ip) {
+    $f = admin_rl_file($ip);
+    $now = time();
+    $d = (file_exists($f) ? json_decode(file_get_contents($f), true) : null);
+    if (!is_array($d)) $d = array('attempts' => array(), 'locked_until' => 0);
+    $attempts = isset($d['attempts']) && is_array($d['attempts']) ? $d['attempts'] : array();
+    $attempts = array_values(array_filter($attempts, function($t) use ($now) { return $t > $now - 600; }));
+    $attempts[] = $now;
+    $d['attempts'] = $attempts;
+    if (count($attempts) >= 5) { $d['locked_until'] = $now + 600; $d['attempts'] = array(); }
+    @file_put_contents($f, json_encode($d));
+}
+function admin_rl_reset($ip) { @unlink(admin_rl_file($ip)); }
+
+$client_ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
 
 // Выход
 if (isset($_GET['logout'])) { session_destroy(); header('Location: ?'); exit; }
 
 // Вход
+$login_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pass'])) {
-    if ($_POST['pass'] === ADMIN_PASS) {
+    $rl = admin_rl_check($client_ip);
+    if (!$rl['ok']) {
+        $login_error = 'Слишком много попыток. Попробуйте через ' . ceil($rl['wait']/60) . ' мин.';
+    } elseif (hash_equals(ADMIN_PASS, (string)$_POST['pass'])) {
+        session_regenerate_id(true);
         $_SESSION['admin'] = true;
+        $_SESSION['csrf'] = bin2hex(openssl_random_pseudo_bytes(16));
+        admin_rl_reset($client_ip);
         header('Location: ?tab=users'); exit;
+    } else {
+        admin_rl_fail($client_ip);
+        $login_error = 'Неверный пароль';
     }
-    $login_error = 'Неверный пароль';
 }
 
 // Проверка сессии
@@ -46,12 +93,22 @@ if (empty($_SESSION['admin'])) {
 // === AJAX-запросы ===
 require_once __DIR__ . '/../db.php';
 
+// Проверка CSRF для POST-действий
+function admin_csrf_check($data) {
+    $token = (is_array($data) && isset($data['_csrf'])) ? $data['_csrf'] : '';
+    $sess  = isset($_SESSION['csrf']) ? $_SESSION['csrf'] : '';
+    if (!$token || !$sess || !hash_equals($sess, $token)) {
+        json_out(array('ok' => false, 'error' => 'CSRF token invalid'));
+    }
+}
+
 if (isset($_GET['action'])) {
     $action = $_GET['action'];
 
     // Начислить/списать баллы вручную
     if ($action === 'points' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
+        admin_csrf_check($data);
         $uid  = intval($data['user_id']);
         $delta = intval($data['delta']);
         $reason = isset($data['reason']) ? trim($data['reason']) : 'admin';
@@ -64,6 +121,7 @@ if (isset($_GET['action'])) {
     // Изменить статус заказа
     if ($action === 'order_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
+        admin_csrf_check($data);
         $oid  = intval($data['order_id']);
         $status = $data['status'];
         $allowed = array('new','cooking','delivering','done','cancelled');
@@ -88,6 +146,7 @@ if (isset($_GET['action'])) {
     // Обновить настройки лояльности
     if ($action === 'loyalty_config' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
+        admin_csrf_check($data);
         $allowed_keys = array('earn_pct','spend_max_pct','min_order_spend','welcome_bonus','expire_days');
         foreach ($data as $k => $v) {
             if (in_array($k, $allowed_keys)) {
@@ -103,10 +162,10 @@ if (isset($_GET['action'])) {
         $today = date('Y-m-d');
         $stats = array(
             'users_total'   => $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn(),
-            'orders_today'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE DATE(created_at)='$today'")->fetchColumn(),
-            'revenue_today' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE DATE(created_at)='$today' AND status!='cancelled'")->fetchColumn(),
-            'orders_month'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01')")->fetchColumn(),
-            'revenue_month' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND status!='cancelled'")->fetchColumn(),
+            'orders_today'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE DATE(created_at)='$today' AND is_test=0")->fetchColumn(),
+            'revenue_today' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE DATE(created_at)='$today' AND status!='cancelled' AND is_test=0")->fetchColumn(),
+            'orders_month'  => $pdo->query("SELECT COUNT(*) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND is_test=0")->fetchColumn(),
+            'revenue_month' => $pdo->query("SELECT COALESCE(SUM(total_paid),0) FROM orders WHERE created_at >= DATE_FORMAT(NOW(),'%Y-%m-01') AND status!='cancelled' AND is_test=0")->fetchColumn(),
         );
         json_out(array('ok'=>true,'stats'=>$stats));
     }
@@ -189,6 +248,7 @@ if (isset($_GET['action'])) {
 <meta charset="utf-8">
 <title>Суши с Любовью — Панель управления</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="csrf" content="<?php echo htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8'); ?>">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,sans-serif;background:#111;color:#eee;min-height:100vh}
@@ -340,8 +400,8 @@ if (isset($_GET['action'])) {
     </div>
     <div class="section">
       <table>
-        <thead><tr><th>ID</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Доставка</th><th>Баллы</th><th>Статус</th><th>Действия</th></tr></thead>
-        <tbody id="ordersTable"><tr><td colspan="8" style="color:#555">Загрузка…</td></tr></tbody>
+        <thead><tr><th>№ / FP</th><th>Время</th><th>Клиент</th><th>Телефон</th><th>Адрес</th><th>Позиции</th><th>Сумма</th><th>Оплата</th><th>Статус</th><th>Действия</th></tr></thead>
+        <tbody id="ordersTable"><tr><td colspan="10" style="color:#555">Загрузка…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -429,10 +489,15 @@ function showTab(name) {
   if (name === 'analytics')  loadAnalytics();
 }
 
+var CSRF = document.querySelector('meta[name="csrf"]').content;
 function api(action, method, body, cb) {
   var url = '?action=' + action;
   var opts = { method: method || 'GET' };
-  if (body) { opts.headers = {'Content-Type':'application/json'}; opts.body = JSON.stringify(body); }
+  if (body) {
+    body._csrf = CSRF;
+    opts.headers = {'Content-Type':'application/json'};
+    opts.body = JSON.stringify(body);
+  }
   fetch(url, opts).then(function(r){ return r.json(); }).then(cb).catch(function(e){ showAlert(e.message, true); });
 }
 
@@ -468,7 +533,8 @@ function loadDashOrders() {
     if (!r.ok) return;
     var html = '<table><thead><tr><th>ID</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>';
     r.orders.forEach(function(o){
-      html += '<tr><td>#'+o.id+'</td><td>'+fmtDate(o.created_at)+'</td><td>'+(o.user_name||'—')+'</td><td>'+fmt(o.total_paid)+'</td><td>'+statusBadge(o.status)+'</td></tr>';
+      var numLabel = o.is_test == 1 ? '#000 <span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.65rem">ТЕСТ</span>' : '#'+o.id;
+      html += '<tr><td>'+numLabel+'</td><td>'+fmtDate(o.created_at)+'</td><td>'+(o.user_name||o.client_name||'—')+'</td><td>'+fmt(o.total_paid)+'</td><td>'+statusBadge(o.status)+'</td></tr>';
     });
     html += '</tbody></table>';
     document.getElementById('dash-orders').innerHTML = html;
@@ -539,22 +605,84 @@ function loadOrders() {
     if (!r.ok) return;
     var html = '';
     r.orders.forEach(function(o){
+      var testBadge = o.is_test == 1 ? '<span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.7rem;margin-left:4px">ТЕСТ</span>' : '';
+      var fpLine = o.fp_order_id
+        ? '<small style="color:#4ade80">FP: '+o.fp_order_id+'</small>'
+        : '<small style="color:#f97316">⚠ Нет в FP</small>';
+      var phone = o.client_phone ? formatPhone(o.client_phone) : '—';
+      var addr = o.delivery_type === 'self' ? '🏃 Самовывоз' : (o.address || '—');
+      var itemsCount = 0;
+      if (o.items_json) {
+        try { var arr = JSON.parse(o.items_json); arr.forEach(function(i){ itemsCount += (i.qty||1); }); } catch(e) {}
+      }
+      var itemsBtn = o.items_json
+        ? '<button class="btn-sm" onclick="showOrderItems('+o.id+')" style="background:#333;border:1px solid #555;color:#eee;border-radius:6px;padding:3px 8px;cursor:pointer">📋 '+itemsCount+' поз.</button>'
+        : '<span style="color:#666">—</span>';
+      var payIcon = o.pay_type === 'cash' ? '💵 Наличные' : (o.pay_type === 'qr' ? '📱 QR' : '—');
+      var numLabel = o.is_test == 1 ? '#000' : '#'+o.id;
       html += '<tr>'
-        +'<td>#'+o.id+(o.fp_order_id?'<br><small style="color:#555">FP:'+o.fp_order_id+'</small>':'<br><small style="color:#f97316">⚠️ Нет в FP</small>')+'</td>'
+        +'<td><b>'+numLabel+'</b>'+testBadge+'<br>'+fpLine+'</td>'
         +'<td>'+fmtDate(o.created_at)+'</td>'
-        +'<td>'+(o.user_name||'—')+'</td>'
-        +'<td>'+fmt(o.total_paid)+'</td>'
-        +'<td>'+(o.delivery_cost>0?fmt(o.delivery_cost):'Бесплатно')+'</td>'
-        +'<td>'+(o.points_spent>0?'<span class="pts-minus">-'+o.points_spent+'</span>':'')
-               +(o.points_earned>0?'<span class="pts-plus">+'+o.points_earned+'</span>':'—')+'</td>'
+        +'<td>'+(o.user_name||o.client_name||'—')+'</td>'
+        +'<td>'+phone+'</td>'
+        +'<td style="max-width:220px;font-size:0.85rem">'+addr+'</td>'
+        +'<td>'+itemsBtn+'</td>'
+        +'<td><b>'+fmt(o.total_paid)+'</b>'
+          +(o.delivery_cost>0?'<br><small style="color:#888">дост: '+fmt(o.delivery_cost)+'</small>':'')
+          +(o.promo_discount>0?'<br><small style="color:#4ade80">−'+fmt(o.promo_discount)+' '+(o.promo_code||'')+'</small>':'')
+          +(o.points_spent>0?'<br><small class="pts-minus">−'+o.points_spent+' б.</small>':'')
+          +(o.points_earned>0?'<br><small class="pts-plus">+'+o.points_earned+' б.</small>':'')
+          +'</td>'
+        +'<td style="font-size:0.85rem">'+payIcon+'</td>'
         +'<td>'+statusBadge(o.status)+'</td>'
         +'<td><select class="btn-sm" onchange="changeOrderStatus('+o.id+',this.value)" style="background:#222;border:1px solid #333;color:#eee;border-radius:6px;padding:4px">'
-        +['new','cooking','delivering','done','cancelled'].map(function(s){return '<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+s+'</option>';}).join('')
+        +['new','cooking','delivering','done','cancelled'].map(function(s){return '<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+({new:'Новый',cooking:'Готовится',delivering:'Доставляется',done:'Выполнен',cancelled:'Отменён'}[s])+'</option>';}).join('')
         +'</select></td>'
         +'</tr>';
     });
-    document.getElementById('ordersTable').innerHTML = html || '<tr><td colspan="8" style="color:#555">Нет заказов</td></tr>';
+    window._ordersCache = r.orders;
+    document.getElementById('ordersTable').innerHTML = html || '<tr><td colspan="10" style="color:#555">Нет заказов</td></tr>';
   });
+}
+function showOrderItems(oid) {
+  var orders = window._ordersCache || [];
+  var o = null;
+  for (var i=0;i<orders.length;i++) if (orders[i].id == oid) { o = orders[i]; break; }
+  if (!o) return;
+  var items = [];
+  try { items = JSON.parse(o.items_json || '[]'); } catch(e) {}
+  var html = '<h3 style="margin:0 0 12px 0;color:#e8a847">Заказ #'+o.id+(o.fp_order_id?' (FP: '+o.fp_order_id+')':'')+'</h3>';
+  html += '<div style="font-size:0.85rem;color:#888;margin-bottom:12px">'+fmtDate(o.created_at)+' · '+(o.client_name||'—')+' · '+(o.client_phone||'')+'</div>';
+  if (o.address) html += '<div style="margin-bottom:8px">📍 '+o.address+'</div>';
+  if (o.comment) html += '<div style="margin-bottom:12px;color:#ccc;font-style:italic">💬 '+o.comment+'</div>';
+  html += '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid #333">Позиция</th><th style="text-align:right;padding:6px;border-bottom:1px solid #333">Кол-во</th><th style="text-align:right;padding:6px;border-bottom:1px solid #333">Цена</th><th style="text-align:right;padding:6px;border-bottom:1px solid #333">Сумма</th></tr></thead><tbody>';
+  items.forEach(function(it){
+    var giftMark = it.isGift ? ' 🎁' : '';
+    var sum = it.isGift ? 0 : (it.price*it.qty);
+    html += '<tr><td style="padding:6px;border-bottom:1px solid #222">'+it.name+giftMark+'<br><small style="color:#666">арт. '+it.id+'</small></td>'
+         +'<td style="text-align:right;padding:6px;border-bottom:1px solid #222">'+it.qty+'</td>'
+         +'<td style="text-align:right;padding:6px;border-bottom:1px solid #222">'+(it.isGift?'<span style="color:#4ade80">Подарок</span>':fmt(it.price))+'</td>'
+         +'<td style="text-align:right;padding:6px;border-bottom:1px solid #222">'+fmt(sum)+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div style="margin-top:12px;text-align:right;font-size:0.9rem">'
+       + 'Товары: <b>'+fmt(o.items_total)+'</b><br>'
+       + (o.delivery_cost>0?'Доставка: <b>'+fmt(o.delivery_cost)+'</b><br>':'')
+       + (o.promo_discount>0?'Скидка '+(o.promo_code||'')+': <b style="color:#4ade80">−'+fmt(o.promo_discount)+'</b><br>':'')
+       + (o.points_spent>0?'Баллами: <b style="color:#f97316">−'+o.points_spent+'</b><br>':'')
+       + '<span style="font-size:1.1rem">К оплате: <b>'+fmt(o.total_paid)+'</b></span></div>';
+  var modal = document.getElementById('orderItemsModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'orderItemsModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = function(e){ if (e.target === modal) modal.style.display='none'; };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '<div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:24px;max-width:700px;width:100%;max-height:85vh;overflow-y:auto;position:relative">'
+    +'<button onclick="document.getElementById(\'orderItemsModal\').style.display=\'none\'" style="position:absolute;top:12px;right:12px;background:none;border:none;color:#888;font-size:1.4rem;cursor:pointer">✕</button>'
+    + html + '</div>';
+  modal.style.display = 'flex';
 }
 function changeOrderStatus(oid, status) {
   api('order_status','POST',{order_id:oid,status:status},function(r){

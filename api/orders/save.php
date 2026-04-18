@@ -38,6 +38,39 @@ $points_spent  = isset($data['points_spent'])  ? intval($data['points_spent'])  
 $total_paid    = isset($data['total_paid'])    ? intval($data['total_paid'])    : 0;
 $is_test       = isset($data['is_test'])       ? (int)$data['is_test']          : 0;
 
+// Дополнительные поля для отображения в админке (FP-стиль)
+$delivery_type = isset($data['delivery_type']) ? (string)$data['delivery_type'] : null; // 'delivery' / 'self'
+$address = null;
+if ($delivery_type === 'self') {
+    $address = 'Самовывоз';
+} else {
+    $street = isset($data['street']) ? trim($data['street']) : '';
+    $home   = isset($data['home'])   ? trim($data['home'])   : '';
+    if ($street || $home) $address = trim($street . ' ' . $home);
+}
+$pay_type = null;
+if (isset($data['pay'])) {
+    $pay_type = ((int)$data['pay'] === 2) ? 'cash' : 'qr';
+}
+$comment_txt = isset($data['comment']) ? trim((string)$data['comment']) : null;
+if ($comment_txt === '') $comment_txt = null;
+
+// Позиции заказа (минимальный набор полей — что нужно для просмотра в админке)
+$items_json = null;
+if (isset($data['items']) && is_array($data['items'])) {
+    $slim = array();
+    foreach ($data['items'] as $it) {
+        $slim[] = array(
+            'id'     => isset($it['id'])     ? (int)$it['id']     : 0,
+            'name'   => isset($it['name'])   ? (string)$it['name']: '',
+            'qty'    => isset($it['qty'])    ? (int)$it['qty']    : 1,
+            'price'  => isset($it['price'])  ? (float)$it['price']: 0,
+            'isGift' => !empty($it['isGift']) ? 1 : 0
+        );
+    }
+    $items_json = json_encode($slim, JSON_UNESCAPED_UNICODE);
+}
+
 $pdo = db();
 
 // Списываем баллы сразу (если были использованы)
@@ -53,18 +86,28 @@ $status = $fp_order_id ? 'new' : 'pending';
 $pdo->prepare('
     INSERT INTO orders
       (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
-       points_spent, total_paid, status, is_test, client_phone, client_name, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+       points_spent, total_paid, items_json, delivery_type, address, pay_type, comment,
+       status, is_test, client_phone, client_name, created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
 ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
-                  $promo_code, $promo_discount, $points_spent, $total_paid, $status,
-                  $is_test, $client_phone, $client_name));
+                  $promo_code, $promo_discount, $points_spent, $total_paid, $items_json,
+                  $delivery_type, $address, $pay_type, $comment_txt,
+                  $status, $is_test, $client_phone, $client_name));
 
 $order_id = $pdo->lastInsertId();
 
-// Обновляем last_order_at
+// Обновляем last_order_at + сохраняем телефон/имя в профиль (если раньше не было)
 if ($user_id) {
     $pdo->prepare('UPDATE users SET last_order_at = NOW() WHERE id = ?')
         ->execute(array($user_id));
+    if ($client_phone && strlen($client_phone) >= 10) {
+        $pdo->prepare('UPDATE users SET phone = ? WHERE id = ? AND (phone IS NULL OR phone = "")')
+            ->execute(array($client_phone, $user_id));
+    }
+    if ($client_name) {
+        $pdo->prepare('UPDATE users SET name = ? WHERE id = ? AND (name IS NULL OR name = "")')
+            ->execute(array($client_name, $user_id));
+    }
 }
 
 // Уведомление в ВК

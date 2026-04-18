@@ -147,8 +147,19 @@ selectRole('<?php echo htmlspecialchars($chosen_role); ?>');
 }
 
 $sid   = intval($_SESSION['staff_id']);
-$srole = $_SESSION['staff_role'];
+$srole_actual = $_SESSION['staff_role']; // реальная роль сотрудника (для проверки прав)
+$srole = $srole_actual;                    // эффективная роль (может быть переопределена)
 $sname = $_SESSION['staff_name'];
+
+// "Смотреть как" — владелец может временно переключаться на любую роль
+$view_as = '';
+if ($srole_actual === 'owner' && isset($_GET['view'])) {
+    $v = $_GET['view'];
+    if (in_array($v, array('admin', 'operator', 'courier'), true)) {
+        $srole = $v;
+        $view_as = $v; // для отображения индикатора
+    }
+}
 
 // === AJAX ===
 if (isset($_GET['action'])) {
@@ -623,15 +634,35 @@ if (isset($_GET['action'])) {
     <div class="header-user"><?php echo htmlspecialchars($sname); ?> · <?php
       $roleLabels = array('owner'=>'Управляющий','admin'=>'Администратор','operator'=>'Оператор','courier'=>'Курьер');
       echo isset($roleLabels[$srole]) ? $roleLabels[$srole] : $srole;
+      if ($view_as) echo ' <span style="color:#e8a847;font-weight:700">· 👁️ режим просмотра</span>';
     ?></div>
   </div>
   <div class="header-right">
     <?php if ($srole !== 'courier'): ?>
     <span class="refresh-info" id="refreshInfo"></span>
     <?php endif; ?>
+    <?php if ($srole_actual === 'owner'): ?>
+    <div class="view-as-wrap" style="position:relative;display:inline-block;margin-right:10px">
+      <button onclick="toggleViewAs()" style="background:#222;border:1px solid #333;color:#e8a847;border-radius:8px;padding:6px 12px;font-size:0.82rem;cursor:pointer;font-weight:600">👁️ Смотреть как ▾</button>
+      <div id="viewAsMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:6px;min-width:220px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.6)">
+        <a href="?" target="_blank" class="va-item">🍱 Управляющий <span style="color:#555;font-size:0.72rem">(я)</span></a>
+        <a href="?view=admin" target="_blank" class="va-item">👔 Администратор</a>
+        <a href="?view=operator" target="_blank" class="va-item">📦 Оператор</a>
+        <a href="?view=courier" target="_blank" class="va-item">🛵 Курьер</a>
+      </div>
+    </div>
+    <?php endif; ?>
+    <?php if ($view_as): ?>
+    <a class="logout-btn" href="?" style="background:#2a1a1a;color:#e8a847;border-color:#3a2a1a">← В режим владельца</a>
+    <?php else: ?>
     <a class="logout-btn" href="?logout=1">Выйти</a>
+    <?php endif; ?>
   </div>
 </div>
+<style>
+  .va-item{display:block;padding:9px 12px;color:#ccc;text-decoration:none;border-radius:6px;font-size:0.88rem;transition:all 0.12s}
+  .va-item:hover{background:#222;color:#e8a847}
+</style>
 
 <!-- Табы навигации -->
 <div class="tabs">
@@ -846,11 +877,39 @@ if (isset($_GET['action'])) {
 
 <script>
 var ROLE          = '<?php echo $srole; ?>';
+var VIEW_AS       = '<?php echo $view_as; ?>';
 var currentPage   = 'orders';
 var statusFilter  = '';
 var refreshTimer  = null;
 var REFRESH_SEC   = 30;
 var countdown     = REFRESH_SEC;
+
+// Все AJAX-запросы должны сохранять ?view=X, чтобы бэкенд знал эффективную роль вкладки
+(function() {
+  if (!VIEW_AS) return;
+  var _origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.charAt(0) === '?') {
+      url = url + (url.indexOf('?') === url.length - 1 ? '' : '&') + 'view=' + VIEW_AS;
+    }
+    return _origFetch.call(this, url, opts);
+  };
+})();
+
+// --- Дропдаун "Смотреть как" ---
+function toggleViewAs() {
+  var m = document.getElementById('viewAsMenu');
+  if (!m) return;
+  m.style.display = (m.style.display === 'none' || !m.style.display) ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.view-as-wrap');
+  if (!wrap) return;
+  if (!wrap.contains(e.target)) {
+    var m = document.getElementById('viewAsMenu');
+    if (m) m.style.display = 'none';
+  }
+});
 
 // --- Навигация по страницам ---
 function showPage(name) {

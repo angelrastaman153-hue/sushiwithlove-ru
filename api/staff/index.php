@@ -641,28 +641,13 @@ if (isset($_GET['action'])) {
     <?php if ($srole !== 'courier'): ?>
     <span class="refresh-info" id="refreshInfo"></span>
     <?php endif; ?>
-    <?php if ($srole_actual === 'owner'): ?>
-    <div class="view-as-wrap" style="position:relative;display:inline-block;margin-right:10px">
-      <button onclick="toggleViewAs()" style="background:#222;border:1px solid #333;color:#e8a847;border-radius:8px;padding:6px 12px;font-size:0.82rem;cursor:pointer;font-weight:600">👁️ Смотреть как ▾</button>
-      <div id="viewAsMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:6px;min-width:220px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.6)">
-        <a href="?" target="_blank" class="va-item">🍱 Управляющий <span style="color:#555;font-size:0.72rem">(я)</span></a>
-        <a href="?view=admin" target="_blank" class="va-item">👔 Администратор</a>
-        <a href="?view=operator" target="_blank" class="va-item">📦 Оператор</a>
-        <a href="?view=courier" target="_blank" class="va-item">🛵 Курьер</a>
-      </div>
-    </div>
-    <?php endif; ?>
     <?php if ($view_as): ?>
-    <a class="logout-btn" href="?" style="background:#2a1a1a;color:#e8a847;border-color:#3a2a1a">← В режим владельца</a>
+    <a class="logout-btn" href="/api/admin/" style="background:#2a1a1a;color:#e8a847;border-color:#3a2a1a">← Вернуться в БОСС-панель</a>
     <?php else: ?>
     <a class="logout-btn" href="?logout=1">Выйти</a>
     <?php endif; ?>
   </div>
 </div>
-<style>
-  .va-item{display:block;padding:9px 12px;color:#ccc;text-decoration:none;border-radius:6px;font-size:0.88rem;transition:all 0.12s}
-  .va-item:hover{background:#222;color:#e8a847}
-</style>
 
 <!-- Табы навигации -->
 <div class="tabs">

@@ -335,6 +335,11 @@ if (isset($_GET['action'])) {
   <div class="nav-section">Настройки</div>
   <a class="nav-link" href="#" onclick="showTab('loyalty')">⚙️ Лояльность</a>
   <a class="nav-link" href="#" onclick="showTab('analytics')">📈 Аналитика</a>
+  <div class="nav-section">Смотреть как</div>
+  <a class="nav-link" href="open_staff.php?to=owner" target="_blank">🍱 Управляющий</a>
+  <a class="nav-link" href="open_staff.php?to=admin" target="_blank">👔 Администратор</a>
+  <a class="nav-link" href="open_staff.php?to=operator" target="_blank">📦 Оператор</a>
+  <a class="nav-link" href="open_staff.php?to=courier" target="_blank">🛵 Курьер</a>
   <a class="logout-link" href="?logout=1">🚪 Выйти</a>
 </aside>
 

@@ -716,7 +716,9 @@ async function handleSubmitOrder() {
   } catch (err) {
     if (tg) { tg.MainButton.hideProgress(); tg.MainButton.enable(); }
     haptic('error');
-    showToast('Ошибка отправки заказа. Позвоните нам: ' + CONFIG.phone);
+    console.error('[submitOrder]', err);
+    const detail = err && err.message ? ' (' + err.message + ')' : '';
+    showToast('Ошибка отправки заказа' + detail + '. Позвоните нам: ' + CONFIG.phone);
   }
 }
 

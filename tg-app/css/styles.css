@@ -451,6 +451,21 @@ input, textarea { font-family: var(--font); }
 }
 .sheet-add-btn:active { background: var(--accent-dark); transform: scale(.98); }
 
+/* DOM-фоллбэк внутри форм (address/details) — виден всегда, дублирует Telegram MainButton */
+.form-submit-btn {
+  width: 100%; height: 54px;
+  margin-top: 16px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 0;
+  transition: background .15s, transform .1s;
+}
+.form-submit-btn:active { background: var(--accent-dark); transform: scale(.98); }
+.form-submit-btn:disabled { opacity: .5; cursor: default; }
+
 .sheet-counter-row {
   display: flex;
   align-items: center;

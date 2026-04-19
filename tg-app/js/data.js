@@ -27,7 +27,7 @@ const CONFIG = {
   // Путь до API меню на сервере (относительно корня сайта)
   menuApiUrl:   '/api/menu/public.php',
   // Кэш меню в localStorage (тот же ключ что и на сайте — чтобы не тянуть дважды)
-  menuCacheKey: 'swl_menu_v3',
+  menuCacheKey: 'swl_menu_v4',
   menuCacheTtl: 5 * 60 * 1000, // 5 минут
 };
 
@@ -125,7 +125,7 @@ function _adaptMenu(apiData) {
     }
 
     return {
-      id:        it.id,                              // DB id — стабильный
+      id:        parseInt(it.id, 10) || String(it.id), // число для стабильного сравнения (bug: onclick приводит к number)
       fpArticle: parseInt(it.fp_article_id) || 0,
       category:  String(it.category_id),
       name,

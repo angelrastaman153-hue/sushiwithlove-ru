@@ -146,6 +146,16 @@ $ctx = stream_context_create(array(
 
 $response = @file_get_contents(FP_API, false, $ctx);
 
+// Лог всех обращений к FrontPad (чтобы ловить молчаливые фейлы)
+$logFile = __DIR__ . '/api/orders/fp_log.txt';
+@file_put_contents(
+    $logFile,
+    '['.date('Y-m-d H:i:s')."] phone={$phone} name={$name} items=".count($items).
+    " req=".json_encode($post, JSON_UNESCAPED_UNICODE).
+    " resp=".($response === false ? 'NETWORK_ERROR' : $response)."\n",
+    FILE_APPEND
+);
+
 if ($response === false) {
     send_json(array('ok' => false, 'error' => 'network_error'));
 }

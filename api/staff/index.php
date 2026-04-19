@@ -431,13 +431,15 @@ if (isset($_GET['action'])) {
         $d = json_decode(file_get_contents('php://input'), true);
         $id = intval($d['id']);
         if (!$id) json_out(array('ok'=>false,'error'=>'no id'));
-        $pdo->prepare('UPDATE menu_items SET fp_article_id=?, description=?, flavor_description=?, image_url=?, price=?, is_stop=?, updated_at=NOW() WHERE id=?')
+        $pdo->prepare('UPDATE menu_items SET fp_article_id=?, description=?, flavor_description=?, image_url=?, price=?, weight_grams=?, pieces_count=?, is_stop=?, updated_at=NOW() WHERE id=?')
            ->execute(array(
                isset($d['fp_article_id']) && $d['fp_article_id'] !== '' ? intval($d['fp_article_id']) : null,
                isset($d['description'])        ? trim($d['description'])        : null,
                isset($d['flavor_description']) ? trim($d['flavor_description']) : null,
                isset($d['image_url'])     ? trim($d['image_url'])     : null,
                isset($d['price'])         ? floatval($d['price'])     : 0,
+               isset($d['weight_grams']) && $d['weight_grams'] !== null && $d['weight_grams'] !== '' ? intval($d['weight_grams']) : null,
+               isset($d['pieces_count']) && $d['pieces_count'] !== null && $d['pieces_count'] !== '' ? intval($d['pieces_count']) : null,
                isset($d['is_stop'])       ? intval($d['is_stop'])     : 0,
                $id
            ));
@@ -770,6 +772,16 @@ if (isset($_GET['action'])) {
     <input type="number" id="menuEditFp" placeholder="Например: 101" class="inp">
     <label>Цена (₽)</label>
     <input type="number" id="menuEditPrice" class="inp">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label>Вес (г)</label>
+        <input type="number" id="menuEditWeight" placeholder="280" class="inp">
+      </div>
+      <div style="flex:1">
+        <label>Количество (шт)</label>
+        <input type="number" id="menuEditPieces" placeholder="8" class="inp">
+      </div>
+    </div>
     <label>Фото URL</label>
     <input type="text" id="menuEditImg" placeholder="https://..." class="inp">
     <div id="menuEditImgPreview" style="margin:8px 0;min-height:80px"></div>
@@ -1293,6 +1305,8 @@ function openMenuEdit(id) {
   document.getElementById('menuEditTitle').textContent = esc(item.name);
   document.getElementById('menuEditFp').value   = item.fp_article_id || '';
   document.getElementById('menuEditPrice').value = item.price || '';
+  document.getElementById('menuEditWeight').value = item.weight_grams || '';
+  document.getElementById('menuEditPieces').value = item.pieces_count || '';
   document.getElementById('menuEditImg').value   = item.image_url || '';
   document.getElementById('menuEditDesc').value   = item.description || '';
   document.getElementById('menuEditFlavor').value = item.flavor_description || '';
@@ -1324,6 +1338,8 @@ function menuSave() {
       id:            id,
       fp_article_id: fpRaw !== '' ? parseInt(fpRaw) : null,
       price:         parseFloat(document.getElementById('menuEditPrice').value) || 0,
+      weight_grams:  (function(v){ v = parseInt(document.getElementById('menuEditWeight').value); return v > 0 ? v : null; })(),
+      pieces_count:  (function(v){ v = parseInt(document.getElementById('menuEditPieces').value); return v > 0 ? v : null; })(),
       image_url:     document.getElementById('menuEditImg').value.trim() || null,
       description:        document.getElementById('menuEditDesc').value.trim()   || null,
       flavor_description: document.getElementById('menuEditFlavor').value.trim() || null,

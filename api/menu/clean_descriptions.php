@@ -13,14 +13,17 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db.php';
 
+header('Content-Type: text/html; charset=utf-8');
+
 session_start();
 if (empty($_SESSION['admin'])) {
     http_response_code(403);
-    echo 'Залогинься в /api/admin/';
+    echo '<html><head><meta charset="utf-8"></head><body style="font-family:system-ui;padding:40px">';
+    echo '<h2>Доступ только для владельца</h2>';
+    echo '<p>Сначала залогинься в БОСС-панель: <a href="/api/admin/">/api/admin/</a> — потом вернись сюда.</p>';
+    echo '</body></html>';
     exit;
 }
-
-header('Content-Type: text/html; charset=utf-8');
 
 function clean_desc($s) {
     $s = (string)$s;

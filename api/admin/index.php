@@ -70,6 +70,7 @@ if (empty($_SESSION['admin'])) {
     ?><!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><title>Админ — вход</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   body{font-family:system-ui,sans-serif;background:#111;color:#eee;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
   .box{background:#1a1a1a;border:1px solid #333;border-radius:14px;padding:40px;max-width:360px;width:100%}
@@ -248,6 +249,7 @@ if (isset($_GET['action'])) {
 <meta charset="utf-8">
 <title>Суши с Любовью — Панель управления</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="csrf" content="<?php echo htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8'); ?>">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}

@@ -5339,7 +5339,10 @@
       : '<button class="add-btn" style="opacity:.4;cursor:not-allowed" disabled>'+(stop?'Стоп':'Скоро')+'</button>';
     var price = Math.round(parseFloat(item.price)||0);
     var priceStr = price.toLocaleString('ru-RU')+' ₽';
-    var wt   = item.weight_grams ? '<div class="dish-weight">'+item.weight_grams+' г</div>' : '';
+    var wtParts = [];
+    if (item.weight_grams && parseInt(item.weight_grams) > 0) wtParts.push(parseInt(item.weight_grams)+' г');
+    if (item.pieces_count && parseInt(item.pieces_count) > 0) wtParts.push(parseInt(item.pieces_count)+' шт');
+    var wt   = wtParts.length ? '<div class="dish-weight">'+wtParts.join(' · ')+'</div>' : '';
     var desc = item.description  ? '<div class="dish-composition">'+_escH(item.description)+'</div>' : '';
     var descAttr   = item.description        ? ' data-desc="'+_escH(item.description)+'"' : '';
     var flavorAttr = item.flavor_description ? ' data-flavor="'+_escH(item.flavor_description)+'"' : '';

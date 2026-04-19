@@ -86,6 +86,23 @@ function _formatWeight(grams) {
   return n > 0 ? n + ' г' : '';
 }
 
+// Формат количества: "8 шт" или пусто
+function _formatPieces(count) {
+  const n = parseInt(count);
+  return n > 0 ? n + ' шт' : '';
+}
+
+// Комбинирует вес, штуки и variant_label в одну строку "280 г · 8 шт · 0,3 л"
+function _buildMeta(it) {
+  const parts = [];
+  const w = _formatWeight(it.weight_grams);
+  const p = _formatPieces(it.pieces_count);
+  if (w) parts.push(w);
+  if (p) parts.push(p);
+  if (!parts.length && it.variant_label) parts.push(it.variant_label);
+  return parts.join(' · ');
+}
+
 /**
  * Преобразует ответ /api/menu/public.php в формат, ожидаемый app.js.
  *
@@ -132,7 +149,7 @@ function _adaptMenu(apiData) {
       category:  String(it.category_id),
       name,
       desc:      it.description || '',
-      weight:    _formatWeight(it.weight_grams) || (it.variant_label || ''),
+      weight:    _buildMeta(it),
       price,
       badge:     null,                               // в БД бейджа нет
       img:       _normalizeImage(it.image_url),

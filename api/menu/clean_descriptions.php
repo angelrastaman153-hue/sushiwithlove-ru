@@ -25,13 +25,19 @@ if (empty($_SESSION['admin'])) {
     exit;
 }
 
-function clean_desc($s) {
+function clean_desc($s, $itemName = '') {
     $s = (string)$s;
     // нормализуем пробелы и неразрывные
     $s = preg_replace('/\x{00A0}/u', ' ', $s);
 
     // снимаем префикс "Состав:" навсегда (не возвращаем)
     $s = preg_replace('/^\s*Состав\s*:\s*/ui', '', $s);
+
+    // нормализация названия блюда для сравнения с токенами
+    $nameNorm = mb_strtolower(trim($itemName), 'UTF-8');
+    // чистим от шума кириллической «.» и лишнего
+    $nameNorm = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $nameNorm);
+    $nameNorm = preg_replace('/\s+/u', ' ', trim($nameNorm));
 
     // режем на токены по запятой
     $tokens = array_map('trim', explode(',', $s));
@@ -45,18 +51,40 @@ function clean_desc($s) {
         // 1) чистые числа: "52", "120"
         if (preg_match('/^\d+$/u', $low)) continue;
 
-        // 2) короткие буквенно-цифровые коды: "ц1", "р1", "о5", "ц25", "о100"
+        // 2) числа с точкой / одиночные точки: "1.", "."
+        if (preg_match('/^\.+$/u', $low)) continue;
+        if (preg_match('/^\d+\s*\.?$/u', $low)) continue;
+
+        // 3) размеры упаковки: "5*7", "5x4", "10х20", "5×4"
+        if (preg_match('/^\d+\s*[*xхX×]\s*\d+\s*\.?$/u', $low)) continue;
+
+        // 4) короткие буквенно-цифровые коды: "ц1", "р1", "о5", "ц25", "о100"
         if (preg_match('/^[а-яёa-z]{1,3}\d+$/u', $low)) continue;
 
-        // 3) служебные упаковки и группы (фастфуд-бокс, контейнер и т.п.)
+        // 5) служебные упаковки и группы (фастфуд-бокс, контейнер и т.п.)
         if (preg_match('/^фаст\s*фуд\s*бокс/ui', $low)) continue;
         if (preg_match('/^бокс\s*фаст\s*фуд/ui', $low)) continue;
 
-        // 4) "слово число" где число явно техническое (рис 120, тортилья 1)
+        // 6) инструкции повару — не ингредиенты
+        //    "+ если куплен сироп то его", "шарики баббл 1 столовая ложка"
+        if (mb_strpos($low, 'если') !== false) continue;
+        if (preg_match('/столов(ая|ых|ой|ые)\s+ложк/ui', $low)) continue;
+        if (preg_match('/чайн(ая|ых|ой|ые)\s+ложк/ui', $low)) continue;
+
+        // 7) "слово число" где число явно техническое (рис 120, тортилья 1)
         //    Удаляем хвостовое число из такого токена, оставляя само слово.
         $t2 = preg_replace('/\s+\d+\s*$/u', '', $t);
         if ($t2 !== $t) {
             $t = trim($t2);
+            $low = mb_strtolower($t, 'UTF-8');
+        }
+
+        // 8) тавтология: токен совпадает с названием блюда
+        //    ("Картофель фри" в составе «Картофель фри»)
+        if ($nameNorm !== '') {
+            $tNorm = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $low);
+            $tNorm = preg_replace('/\s+/u', ' ', trim($tNorm));
+            if ($tNorm === $nameNorm) continue;
         }
 
         if ($t !== '') $kept[] = $t;
@@ -83,7 +111,7 @@ $rows = $pdo->query('SELECT id, name, description FROM menu_items WHERE descript
 
 $changed = array();
 foreach ($rows as $r) {
-    $new = clean_desc($r['description']);
+    $new = clean_desc($r['description'], $r['name']);
     if ($new !== $r['description']) {
         $changed[] = array(
             'id' => (int)$r['id'],

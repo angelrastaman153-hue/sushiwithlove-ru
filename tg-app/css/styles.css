@@ -465,6 +465,12 @@ input, textarea { font-family: var(--font); }
 }
 .form-submit-btn:active { background: var(--accent-dark); transform: scale(.98); }
 .form-submit-btn:disabled { opacity: .5; cursor: default; }
+/* На десктопе Telegram MainButton всегда видна — прячем DOM-дубль */
+body[data-tg-platform="tdesktop"] .form-submit-btn,
+body[data-tg-platform="web"] .form-submit-btn,
+body[data-tg-platform="weba"] .form-submit-btn,
+body[data-tg-platform="webk"] .form-submit-btn,
+body[data-tg-platform="macos"] .form-submit-btn { display: none; }
 
 .sheet-counter-row {
   display: flex;

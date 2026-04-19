@@ -49,6 +49,7 @@ async function init() {
     // Применяем цвета темы Telegram
     applyTelegramTheme();
     tg.onEvent('themeChanged', applyTelegramTheme);
+    if (tg.platform) document.body.dataset.tgPlatform = tg.platform;
   }
 
   // Параллельно: загружаем корзину и меню из API (как на сайте)
@@ -557,7 +558,13 @@ function showFieldError(fieldId, msg) {
   const field = document.getElementById(fieldId);
   field.classList.add('error');
   field.placeholder = msg;
-  setTimeout(() => { field.classList.remove('error'); field.placeholder = field.dataset.placeholder || ''; }, 2000);
+  const clear = () => {
+    field.classList.remove('error');
+    field.placeholder = field.dataset.placeholder || '';
+    field.removeEventListener('input', clear);
+  };
+  field.addEventListener('input', clear);
+  setTimeout(clear, 2000);
 }
 
 // DaData подсказки адресов
@@ -662,7 +669,32 @@ function showPhoneInput() {
   const btn = document.getElementById('contact-btn');
   const manual = document.getElementById('det-phone-manual');
   if (btn)    btn.style.display = 'none';
-  if (manual) { manual.style.display = 'block'; manual.focus(); }
+  if (manual) {
+    manual.style.display = 'block';
+    if (!manual.dataset.maskBound) {
+      manual.dataset.maskBound = '1';
+      manual.addEventListener('input', onPhoneInputMask);
+      manual.addEventListener('focus', onPhoneInputMask);
+    }
+    if (!manual.value) manual.value = '+7 ';
+    manual.focus();
+  }
+}
+
+// Маска телефона: +7 (XXX) XXX-XX-XX
+function onPhoneInputMask(e) {
+  const input = e.target;
+  let digits = input.value.replace(/\D/g, '');
+  if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+  if (!digits.startsWith('7')) digits = '7' + digits;
+  digits = digits.slice(0, 11);
+  let out = '+7';
+  if (digits.length > 1)  out += ' (' + digits.slice(1, 4);
+  if (digits.length >= 4) out += ')';
+  if (digits.length >= 5) out += ' ' + digits.slice(4, 7);
+  if (digits.length >= 8) out += '-' + digits.slice(7, 9);
+  if (digits.length >= 10) out += '-' + digits.slice(9, 11);
+  input.value = out;
 }
 
 function getPhone() {
@@ -815,26 +847,26 @@ async function submitOrder(orderData) {
     items:         orderData.items.map(i => ({ id: i.fpArticle || i.id, qty: i.qty, price: i.price })),
   };
 
-  const fpRes = await fetch('../order.php', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(fpPayload),
-  });
-
-  const fpText = await fpRes.text();
-  let fpResult;
-  try { fpResult = JSON.parse(fpText); } catch(e) {
-    console.error('order.php вернул не JSON:', fpText);
-    throw new Error('Ошибка сервера');
-  }
-
-  if (!fpResult.ok) {
-    console.error('Ошибка Frontpad:', fpResult);
-    throw new Error(fpResult.error || 'Ошибка оформления заказа');
+  // Шаг 2 — не блокирующий: если FP отказал (закрыта касса, сеть и т.п.),
+  // заказ всё равно считается принятым — он уже в БД и оператор видит его в ВК.
+  let fpOrderId = null;
+  try {
+    const fpRes = await fetch('../order.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(fpPayload),
+    });
+    const fpResult = JSON.parse(await fpRes.text());
+    if (fpResult.ok) {
+      fpOrderId = fpResult.order_id;
+    } else {
+      console.error('Frontpad отклонил заказ:', fpResult);
+    }
+  } catch (e) {
+    console.error('Не удалось связаться с Frontpad:', e);
   }
 
   // ── Шаг 3: привязываем fp_order_id к записи в БД (fire & forget) ─────────────
-  const fpOrderId = fpResult.order_id;
   if (fpOrderId) {
     fetch('../api/orders/link_fp.php', {
       method:  'POST',

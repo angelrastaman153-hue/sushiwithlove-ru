@@ -17,6 +17,8 @@ const CONFIG = {
   pickupAddress:'г. Курган, ул. Гоголя, 7',
   pickupTime:   '~30 минут',
   workHours:    '10:00–22:00',
+  workStart:    10, // час начала работы
+  workEnd:      22, // час окончания работы
   freeDeliveryFrom: 900,
   minOrderDelivery: 600,
   minOrderPickup:   300,

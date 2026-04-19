@@ -891,11 +891,27 @@ async function submitOrder(orderData) {
 function showSuccessScreen(orderData, orderId) {
   const num = orderId || (Math.floor(Math.random() * 9000) + 1000);
   const now = new Date();
-  now.setMinutes(now.getMinutes() + CONFIG.defaultDeliveryTime);
-  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  const eta = new Date(now.getTime() + CONFIG.defaultDeliveryTime * 60000);
+
+  // Если время доставки вне рабочих часов — переносим на ближайшие 10:00+30 мин
+  const etaHour = eta.getHours();
+  let timeLabel;
+  if (etaHour >= CONFIG.workEnd || etaHour < CONFIG.workStart) {
+    const nextWork = new Date(now);
+    if (etaHour >= CONFIG.workEnd) nextWork.setDate(nextWork.getDate() + 1);
+    nextWork.setHours(CONFIG.workStart, 30, 0, 0);
+    const hh = nextWork.getHours().toString().padStart(2,'0');
+    const mm = nextWork.getMinutes().toString().padStart(2,'0');
+    const dayLabel = (etaHour >= CONFIG.workEnd) ? 'завтра' : 'сегодня';
+    timeLabel = `${dayLabel} к ~${hh}:${mm}`;
+  } else {
+    const hh = eta.getHours().toString().padStart(2,'0');
+    const mm = eta.getMinutes().toString().padStart(2,'0');
+    timeLabel = `к ~${hh}:${mm}`;
+  }
 
   document.getElementById('success-order-num').textContent = orderId ? '№' + num : '#' + num;
-  document.getElementById('success-time').textContent = `Доставим к ~${timeStr}. Позвоним для подтверждения.`;
+  document.getElementById('success-time').textContent = `Доставим ${timeLabel}. Позвоним для подтверждения.`;
   document.getElementById('success-summary').innerHTML = `${orderData.items.length} поз. · ${formatPrice(orderData.total)}`;
 
   navigateTo('success');

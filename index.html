@@ -1042,25 +1042,30 @@
       border-color: var(--accent);
     }
 
-    /* Кнопка «Фильтры» на мобиле */
+    /* Кнопка «Фильтры» — слева от категорий, закреплена при горизонтальном скролле */
     #filterToggleBtn {
-      display: none; /* скрыт по умолчанию; JS показывает на мобиле */
-      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       flex-shrink: 0;
-      padding: 5px 12px;
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      padding: 8px 14px;
       border-radius: 8px;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #C0A880;
       border: 1px solid rgba(192,168,128,0.3);
-      background: transparent;
+      background: #0F0B08;
       white-space: nowrap;
       cursor: pointer;
       transition: var(--transition);
+      box-shadow: 6px 0 8px -4px rgba(15,11,8,0.9);
     }
-    #filterToggleBtn.active { color: #0F0B08; background: var(--accent); border-color: var(--accent); }
+    #filterToggleBtn.active { color: #0F0B08; background: var(--accent); border-color: var(--accent); box-shadow: 6px 0 8px -4px rgba(15,11,8,0.9); }
     @media (max-width: 768px) {
-      #filterToggleBtn { display: flex; align-items: center; gap: 4px; }
+      #filterToggleBtn { padding: 6px 10px; font-size: 0.76rem; }
       .cat-btn { padding: 6px 12px; font-size: 0.78rem; }
       .category-nav .container { padding: 8px 12px; gap: 6px; }
     }
@@ -3565,8 +3570,8 @@
 
   <div class="category-nav">
     <div class="container">
-      <div id="catNavContainer"><button class="cat-btn active" style="opacity:.5;pointer-events:none">Загрузка…</button></div>
       <button id="filterToggleBtn" onclick="toggleFilterBar()">⚡ Фильтры ▾</button>
+      <div id="catNavContainer"><button class="cat-btn active" style="opacity:.5;pointer-events:none">Загрузка…</button></div>
     </div>
     <div class="filter-bar collapsed" id="filterBar">
       <!-- Группа 1: по ингредиенту -->

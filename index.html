@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Доставка суши в Кургане — Суши с Любовью</title>
-  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="/logo.png">
   <link rel="apple-touch-icon" href="/logo.png">
   <!-- v2026-04-12-BDAY-GIFTS -->
   <meta name="description" content="Суши с Любовью — доставка роллов и суши по Кургану с 2015 года. Бесплатная доставка от 900 ₽. Заказать онлайн или по телефону 66-20-70. Ежедневно 10:00–22:00.">
@@ -5340,8 +5341,9 @@
     var priceStr = price.toLocaleString('ru-RU')+' ₽';
     var wt   = item.weight_grams ? '<div class="dish-weight">'+item.weight_grams+' г</div>' : '';
     var desc = item.description  ? '<div class="dish-composition">'+_escH(item.description)+'</div>' : '';
-    var descAttr = item.description ? ' data-desc="'+_escH(item.description)+'"' : '';
-    return '<div class="dish-card '+rev+'" data-id="'+item.id+'" data-name="'+_escH(item.name)+'" data-price="'+price+'" data-emoji="'+emoji+'"'+descAttr+'>'
+    var descAttr   = item.description        ? ' data-desc="'+_escH(item.description)+'"' : '';
+    var flavorAttr = item.flavor_description ? ' data-flavor="'+_escH(item.flavor_description)+'"' : '';
+    return '<div class="dish-card '+rev+'" data-id="'+item.id+'" data-name="'+_escH(item.name)+'" data-price="'+price+'" data-emoji="'+emoji+'"'+descAttr+flavorAttr+'>'
       +'<div class="dish-img"><div class="dish-img-ph" style="display:flex;align-items:center;justify-content:center;overflow:hidden">'+imgH+'</div>'
       +'<div class="dish-badges">'+stopBadge+'</div></div>'
       +'<div class="dish-body">'
@@ -5355,28 +5357,24 @@
     root = root || document;
     root.querySelectorAll('.dish-card').forEach(function(card) {
       if (card.querySelector('.dish-hover-overlay')) return; // уже инициализирована
-      var descArr = null;
-      if (card.dataset.desc) {
-        descArr = [card.dataset.desc, ''];
-      } else if (typeof DISH_DESCS !== 'undefined' && DISH_DESCS[card.dataset.name]) {
-        descArr = DISH_DESCS[card.dataset.name];
+      // Источник вкусного описания: приоритет — flavor_description из БД,
+      // затем — хардкод DISH_DESCS (старый массив).
+      // Если есть только состав без вкусного описания — оверлей НЕ показываем,
+      // потому что состав уже виден под фото (чтобы не дублировать текст).
+      var taste = '';
+      if (card.dataset.flavor) {
+        taste = card.dataset.flavor;
+      } else if (typeof DISH_DESCS !== 'undefined' && DISH_DESCS[card.dataset.name] && DISH_DESCS[card.dataset.name][1]) {
+        taste = DISH_DESCS[card.dataset.name][1];
       }
-      if (!descArr) return;
+      if (!taste) return;
 
       var overlay = document.createElement('div');
       overlay.className = 'dish-hover-overlay';
-      if (descArr[0]) {
-        var ing = document.createElement('div');
-        ing.className = 'dho-ingredients';
-        ing.textContent = descArr[0];
-        overlay.appendChild(ing);
-      }
-      if (descArr[1]) {
-        var taste = document.createElement('div');
-        taste.className = 'dho-taste';
-        taste.textContent = descArr[1];
-        overlay.appendChild(taste);
-      }
+      var tasteEl = document.createElement('div');
+      tasteEl.className = 'dho-taste';
+      tasteEl.textContent = taste;
+      overlay.appendChild(tasteEl);
       card.appendChild(overlay);
 
       requestAnimationFrame(function() {

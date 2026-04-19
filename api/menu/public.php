@@ -9,7 +9,7 @@ $cats = $pdo->query(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $items = $pdo->query(
-    'SELECT id, category_id, name, price, weight_grams, image_url, description, fp_article_id, is_stop, sort_order, group_key, variant_label
+    'SELECT id, category_id, name, price, weight_grams, image_url, description, flavor_description, fp_article_id, is_stop, sort_order, group_key, variant_label
      FROM menu_items WHERE is_active=1 ORDER BY sort_order, name'
 )->fetchAll(PDO::FETCH_ASSOC);
 

@@ -431,10 +431,11 @@ if (isset($_GET['action'])) {
         $d = json_decode(file_get_contents('php://input'), true);
         $id = intval($d['id']);
         if (!$id) json_out(array('ok'=>false,'error'=>'no id'));
-        $pdo->prepare('UPDATE menu_items SET fp_article_id=?, description=?, image_url=?, price=?, is_stop=?, updated_at=NOW() WHERE id=?')
+        $pdo->prepare('UPDATE menu_items SET fp_article_id=?, description=?, flavor_description=?, image_url=?, price=?, is_stop=?, updated_at=NOW() WHERE id=?')
            ->execute(array(
                isset($d['fp_article_id']) && $d['fp_article_id'] !== '' ? intval($d['fp_article_id']) : null,
-               isset($d['description'])   ? trim($d['description'])   : null,
+               isset($d['description'])        ? trim($d['description'])        : null,
+               isset($d['flavor_description']) ? trim($d['flavor_description']) : null,
                isset($d['image_url'])     ? trim($d['image_url'])     : null,
                isset($d['price'])         ? floatval($d['price'])     : 0,
                isset($d['is_stop'])       ? intval($d['is_stop'])     : 0,
@@ -772,8 +773,10 @@ if (isset($_GET['action'])) {
     <label>Фото URL</label>
     <input type="text" id="menuEditImg" placeholder="https://..." class="inp">
     <div id="menuEditImgPreview" style="margin:8px 0;min-height:80px"></div>
-    <label>Состав / описание</label>
-    <textarea id="menuEditDesc" rows="4" style="width:100%;background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:12px;font-size:0.9rem;font-family:inherit;resize:vertical;outline:none" placeholder="Лосось, сливочный сыр, нори…"></textarea>
+    <label>Состав (ингредиенты — под фото в карточке)</label>
+    <textarea id="menuEditDesc" rows="3" style="width:100%;background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:12px;font-size:0.9rem;font-family:inherit;resize:vertical;outline:none" placeholder="Лосось, сливочный сыр, нори…"></textarea>
+    <label style="margin-top:12px">Вкусное описание (в попапе по клику ℹ)</label>
+    <textarea id="menuEditFlavor" rows="3" style="width:100%;background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:12px;font-size:0.9rem;font-family:inherit;resize:vertical;outline:none" placeholder="Нежный лосось тает во рту, сливочный сыр добавляет мягкости, а хрустящая нори собирает всё вместе…"></textarea>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
       <input type="checkbox" id="menuEditStop"> Стоп-лист (временно недоступно)
     </label>
@@ -1291,7 +1294,8 @@ function openMenuEdit(id) {
   document.getElementById('menuEditFp').value   = item.fp_article_id || '';
   document.getElementById('menuEditPrice').value = item.price || '';
   document.getElementById('menuEditImg').value   = item.image_url || '';
-  document.getElementById('menuEditDesc').value  = item.description || '';
+  document.getElementById('menuEditDesc').value   = item.description || '';
+  document.getElementById('menuEditFlavor').value = item.flavor_description || '';
   document.getElementById('menuEditStop').checked = parseInt(item.is_stop) === 1;
   menuUpdateImgPreview(item.image_url);
   document.getElementById('menuEditModal').style.display = 'flex';
@@ -1321,7 +1325,8 @@ function menuSave() {
       fp_article_id: fpRaw !== '' ? parseInt(fpRaw) : null,
       price:         parseFloat(document.getElementById('menuEditPrice').value) || 0,
       image_url:     document.getElementById('menuEditImg').value.trim() || null,
-      description:   document.getElementById('menuEditDesc').value.trim() || null,
+      description:        document.getElementById('menuEditDesc').value.trim()   || null,
+      flavor_description: document.getElementById('menuEditFlavor').value.trim() || null,
       is_stop:       document.getElementById('menuEditStop').checked ? 1 : 0
     })
   }).then(function(r){ return r.json(); }).then(function(r) {

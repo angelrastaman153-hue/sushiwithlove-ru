@@ -17,13 +17,18 @@ $updates = @json_decode(file_get_contents($url), true);
 
 if (empty($updates['ok']) || empty($updates['result'])) exit;
 
-// Клавиатура с кнопкой Mini App
+// Постоянная reply-клавиатура внизу чата
 function make_keyboard($mini_app_url) {
     return json_encode(array(
-        'inline_keyboard' => array(array(array(
-            'text'    => '🍣 Открыть меню',
-            'web_app' => array('url' => $mini_app_url),
-        )))
+        'keyboard' => array(
+            array(array(
+                'text'    => '🍣 Открыть меню',
+                'web_app' => array('url' => $mini_app_url),
+            )),
+            array(array('text' => '📞 Контакты')),
+        ),
+        'resize_keyboard' => true,
+        'is_persistent'   => true,
     ));
 }
 
@@ -49,7 +54,10 @@ foreach ($updates['result'] as $update) {
     $text    = isset($message['text']) ? trim($message['text']) : '';
     $cmd     = strtolower(explode('@', explode(' ', $text)[0])[0]);
 
-    if ($cmd === '/start' || $cmd === '/menu') {
+    $is_start = ($cmd === '/start' || $cmd === '/menu');
+    $is_help  = ($cmd === '/help'  || $text === '📞 Контакты');
+
+    if ($is_start) {
         $first = isset($message['from']['first_name']) ? $message['from']['first_name'] : '';
         $hello = $first ? "Привет, {$first}! 👋\n\n" : "Привет! 👋\n\n";
         tg_send($chat_id,
@@ -58,18 +66,17 @@ foreach ($updates['result'] as $update) {
             "Нажми кнопку ниже чтобы открыть меню и оформить заказ:",
             make_keyboard($MINI_APP_URL)
         );
-    } elseif ($cmd === '/help') {
+    } elseif ($is_help) {
         tg_send($chat_id,
             "📞 <b>Телефон:</b> +7 (352) 266-20-70\n" .
             "📞 <b>Телефон:</b> +7 (922) 578-20-70\n\n" .
             "⏰ <b>Режим работы:</b> 10:00–22:00\n" .
-            "📍 <b>Самовывоз:</b> г. Курган, ул. Гоголя, 7\n\n" .
-            "Нажми кнопку <b>«Заказать суши»</b> внизу экрана.",
-            null
+            "📍 <b>Самовывоз:</b> г. Курган, ул. Гоголя, 7",
+            make_keyboard($MINI_APP_URL)
         );
     } else {
         tg_send($chat_id,
-            "Нажми кнопку <b>«Заказать суши»</b> внизу экрана — там всё меню 🍣",
+            "Нажми <b>🍣 Открыть меню</b> внизу экрана — там всё меню и заказ 🍣",
             make_keyboard($MINI_APP_URL)
         );
     }

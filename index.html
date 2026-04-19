@@ -1021,6 +1021,9 @@
     }
     .category-nav .container::-webkit-scrollbar { display: none; }
 
+    /* catNavContainer — прозрачная обёртка, чтобы кнопки были прямыми children flex-контейнера .container и скроллились горизонтально */
+    #catNavContainer { display: contents; }
+
     .cat-btn {
       padding: 8px 18px;
       border-radius: 8px;
@@ -1028,6 +1031,7 @@
       font-weight: 600;
       color: #C0A880;
       white-space: nowrap;
+      flex-shrink: 0;
       transition: var(--transition);
       border: 1px solid transparent;
     }

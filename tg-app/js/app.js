@@ -307,6 +307,14 @@ function decreaseItem(id) {
   }
 }
 
+function refreshAllCards() {
+  document.querySelectorAll('.card[data-id]').forEach(c => {
+    const id = parseInt(c.dataset.id, 10);
+    if (!isNaN(id)) refreshCard(id);
+  });
+  updateCartBadge();
+}
+
 function refreshCard(id) {
   const card = document.querySelector(`.card[data-id="${id}"]`);
   if (!card) return;
@@ -743,6 +751,7 @@ async function handleSubmitOrder() {
     const result = await submitOrder(orderData);
     // Успех
     Cart.clear();
+    refreshAllCards();
     if (tg) { tg.MainButton.hideProgress(); tg.MainButton.hide(); }
     showSuccessScreen(orderData, result.order_id);
   } catch (err) {

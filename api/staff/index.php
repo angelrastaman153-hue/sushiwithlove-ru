@@ -426,6 +426,26 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true,'is_active'=>$new));
     }
 
+    // --- Быстрое обновление одного поля (инлайн на карточке) ---
+    if ($action === 'menu_update_field' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $d = json_decode(file_get_contents('php://input'), true);
+        $id = intval(isset($d['id']) ? $d['id'] : 0);
+        $field = isset($d['field']) ? $d['field'] : '';
+        $allowed = array('weight_grams', 'pieces_count', 'price', 'fp_article_id');
+        if (!$id || !in_array($field, $allowed, true)) json_out(array('ok'=>false,'error'=>'bad params'));
+        $raw = isset($d['value']) ? $d['value'] : null;
+        // Нормализация значения по полю
+        if ($field === 'price') {
+            $val = $raw === '' || $raw === null ? 0 : floatval($raw);
+        } else {
+            // weight_grams, pieces_count, fp_article_id — int; 0/пусто → NULL
+            $intVal = intval($raw);
+            $val = ($intVal > 0) ? $intVal : null;
+        }
+        $pdo->prepare('UPDATE menu_items SET `'.$field.'`=?, updated_at=NOW() WHERE id=?')->execute(array($val, $id));
+        json_out(array('ok'=>true, 'value'=>$val));
+    }
+
     // --- Обновить позицию меню ---
     if ($action === 'menu_update' && ($srole === 'owner' || $srole === 'admin') && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $d = json_decode(file_get_contents('php://input'), true);
@@ -1273,16 +1293,36 @@ function renderMenu(r) {
         ? '<span style="background:rgba(68,204,136,0.15);color:#44cc88;border-radius:5px;padding:1px 7px;font-size:0.72rem">FP:'+item.fp_article_id+'</span>'
         : '<span style="background:rgba(249,115,22,0.15);color:#f97316;border-radius:5px;padding:1px 7px;font-size:0.72rem">без артикула</span>';
       var stopBadge = parseInt(item.is_stop) ? '<span style="background:rgba(224,90,90,0.15);color:#e05a5a;border-radius:5px;padding:1px 7px;font-size:0.72rem;margin-left:4px">стоп</span>' : '';
+      var wVal = (item.weight_grams && parseInt(item.weight_grams) > 0) ? parseInt(item.weight_grams) : '';
+      var pVal = (item.pieces_count && parseInt(item.pieces_count) > 0) ? parseInt(item.pieces_count) : '';
+      var inlineFields =
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;font-size:0.72rem;color:#888">'
+        +   '<label style="display:inline-flex;align-items:center;gap:4px">'
+        +     '<span>Вес</span>'
+        +     '<input type="number" min="0" value="'+wVal+'" placeholder="—" '
+        +       'onblur="saveMenuField('+item.id+',\'weight_grams\',this.value,this)" '
+        +       'onkeydown="if(event.key===\'Enter\')this.blur()" '
+        +       'style="width:60px;background:#111;border:1px solid #333;color:#eee;border-radius:5px;padding:3px 6px;font-size:0.75rem"> г'
+        +   '</label>'
+        +   '<label style="display:inline-flex;align-items:center;gap:4px">'
+        +     '<span>Шт</span>'
+        +     '<input type="number" min="0" value="'+pVal+'" placeholder="—" '
+        +       'onblur="saveMenuField('+item.id+',\'pieces_count\',this.value,this)" '
+        +       'onkeydown="if(event.key===\'Enter\')this.blur()" '
+        +       'style="width:46px;background:#111;border:1px solid #333;color:#eee;border-radius:5px;padding:3px 6px;font-size:0.75rem">'
+        +   '</label>'
+        + '</div>';
       html += '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start">'
         + img
         + '<div style="flex:1;min-width:0">'
         +   '<div style="font-size:0.85rem;font-weight:600;color:#eee;margin-bottom:4px;line-height:1.3">'+esc(item.name)+'</div>'
         +   '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">'+fpBadge+stopBadge+'</div>'
-        +   '<div style="font-size:0.8rem;color:#e8a847;margin-bottom:6px">'+item.price+' ₽'+(item.weight_grams?' · '+item.weight_grams+' г':'')+'</div>'
+        +   '<div style="font-size:0.8rem;color:#e8a847;margin-bottom:6px">'+item.price+' ₽</div>'
+        +   inlineFields
         +   (item.description ? '<div style="font-size:0.75rem;color:#666;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(item.description)+'">'+esc(item.description)+'</div>' : '')
         +   '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-        +   '<button onclick="openMenuEdit('+item.id+')" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;border:1px solid #333;background:transparent;color:#aaa;cursor:pointer">✏️ Изменить</button>'
-        +   '<button onclick="toggleActive('+item.id+',this)" style="font-size:0.75rem;padding:4px 10px;border-radius:6px;border:1px solid '+(parseInt(item.is_active)?'rgba(68,204,136,0.3)':'rgba(249,115,22,0.3)')+';background:transparent;color:'+(parseInt(item.is_active)?'#44cc88':'#f97316')+';cursor:pointer">'+(parseInt(item.is_active)?'👁 Активен':'🚫 Скрыт')+'</button>'
+        +   '<button onclick="openMenuEdit('+item.id+')" style="font-size:0.75rem;padding:5px 14px;border-radius:6px;border:1px solid rgba(232,168,71,0.5);background:rgba(232,168,71,0.1);color:#e8a847;cursor:pointer;font-weight:600">✏️ Состав / описание</button>'
+        +   '<button onclick="toggleActive('+item.id+',this)" style="font-size:0.75rem;padding:5px 10px;border-radius:6px;border:1px solid '+(parseInt(item.is_active)?'rgba(68,204,136,0.3)':'rgba(249,115,22,0.3)')+';background:transparent;color:'+(parseInt(item.is_active)?'#44cc88':'#f97316')+';cursor:pointer">'+(parseInt(item.is_active)?'👁 Активен':'🚫 Скрыт')+'</button>'
         +   '</div>'
         + '</div></div>';
     });
@@ -1294,6 +1334,27 @@ function renderMenu(r) {
 
 function menuFilter() {
   if (_menuData) renderMenu(_menuData);
+}
+
+function saveMenuField(id, field, value, inp) {
+  var orig = inp.defaultValue || '';
+  var v = (value === '' || value == null) ? '' : parseInt(value);
+  if (String(v) === String(orig)) return; // нет изменений
+  inp.style.borderColor = '#888';
+  fetch('?action=menu_update_field', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ id:id, field:field, value:v })
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (!r.ok) { inp.style.borderColor = '#e05a5a'; showAlert(r.error||'Ошибка', true); return; }
+    // Успех: поле визуально «зафлэшить» зелёным и обновить defaultValue
+    inp.defaultValue = inp.value;
+    inp.style.borderColor = '#44cc88';
+    setTimeout(function(){ inp.style.borderColor = '#333'; }, 800);
+    // Обновляем _menuData, чтобы повторный рендер сохранил значение
+    if (_menuData && _menuData.items) {
+      _menuData.items.forEach(function(it){ if (parseInt(it.id) === id) it[field] = r.value; });
+    }
+  }).catch(function(){ inp.style.borderColor = '#e05a5a'; showAlert('Ошибка сети', true); });
 }
 
 function openMenuEdit(id) {

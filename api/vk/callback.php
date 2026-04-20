@@ -1,10 +1,6 @@
 <?php
-// VK Callback API — без внешних зависимостей на старте
-define('_VK_CONFIRMATION', '813d4204');
-define('_VK_GROUP_ID',     237666301);
-define('_VK_SECRET',       '');
-define('_GS_SHEET_ID',     '10vZ9_4tPf23o3E3ETdIqHxQmgDc4_hm0Jtrpu4i_PnA');
-define('_VK_TOKEN',        'vk1.a.KAQexgBeEkvKhUwRWmHj8ZSFtXHjeg99gPwpYTjaKS21sJTEZIQozbv4J5OMy1XsQ7T7m8qFjVLQ7EuyEZnpBBw_7adEOYpTcBGZKIOgXGIYyptk2ixJwico1MP3v-WzVLR3-o9dLPfhwmrb_-eNMilpRfi_mR46RS_-IatWRx_EVjzEvTW2ifWcx8lmALrp1n2xVGZC0WrdlyAILq8xbA');
+// VK Callback API — повар-бот (раскладки по артикулу)
+require_once __DIR__ . '/../config.php';
 
 $body = file_get_contents('php://input');
 $data = json_decode($body, true);
@@ -14,13 +10,13 @@ vk_log('IN', $body);
 if (!$data) { echo 'ok'; exit; }
 
 // Подтверждение адреса сервера
-if ($data['type'] === 'confirmation' && $data['group_id'] == _VK_GROUP_ID) {
-    echo _VK_CONFIRMATION;
+if ($data['type'] === 'confirmation' && $data['group_id'] == VK_GROUP_ID) {
+    echo VK_CONFIRMATION;
     exit;
 }
 
 // Проверка секретного ключа (только если задан)
-if (_VK_SECRET !== '' && (!isset($data['secret']) || $data['secret'] !== _VK_SECRET)) {
+if (VK_SECRET !== '' && (!isset($data['secret']) || $data['secret'] !== VK_SECRET)) {
     echo 'ok'; exit;
 }
 
@@ -74,7 +70,7 @@ function gdrive_to_direct($url) {
 function ttk_lookup($query) {
     if (!$query) return null;
 
-    $url = 'https://docs.google.com/spreadsheets/d/' . _GS_SHEET_ID . '/export?format=csv';
+    $url = 'https://docs.google.com/spreadsheets/d/' . GS_SHEET_ID . '/export?format=csv';
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -180,7 +176,7 @@ function vk_send_to($peer_id, $text, $photo_url = null) {
         'peer_id'      => $peer_id,
         'message'      => $text,
         'random_id'    => mt_rand(1, 9999999),
-        'access_token' => _VK_TOKEN,
+        'access_token' => VK_TOKEN,
         'v'            => '5.131'
     );
     if ($attachment) $params['attachment'] = $attachment;
@@ -221,7 +217,7 @@ function vk_upload_photo($peer_id, $photo_url) {
     // 1. Получаем upload server
     $res = json_decode(vk_curl(
         'https://api.vk.com/method/photos.getMessagesUploadServer?peer_id=' . $peer_id
-        . '&access_token=' . _VK_TOKEN . '&v=5.131'
+        . '&access_token=' . VK_TOKEN . '&v=5.131'
     ), true);
     if (empty($res['response']['upload_url'])) return '';
     $upload_url = $res['response']['upload_url'];
@@ -260,7 +256,7 @@ function vk_upload_photo($peer_id, $photo_url) {
         . '?server=' . $upload['server']
         . '&photo=' . urlencode($upload['photo'])
         . '&hash=' . $upload['hash']
-        . '&access_token=' . _VK_TOKEN . '&v=5.131'
+        . '&access_token=' . VK_TOKEN . '&v=5.131'
     ), true);
 
     if (!empty($save['response'][0])) {

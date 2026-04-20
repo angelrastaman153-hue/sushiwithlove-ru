@@ -629,10 +629,34 @@ function closeDadataSuggestions() {
 
 // ─── Экран: детали заказа ─────────────────────────────────────────────────────
 function initDetailsScreen() {
-  // Предзаполняем имя из Telegram
+  const nameEl = document.getElementById('det-name');
+  // Предзаполняем имя из Telegram (first_name → last_name → username)
   const user = tg?.initDataUnsafe?.user;
-  if (user?.first_name && !document.getElementById('det-name').value) {
-    document.getElementById('det-name').value = user.first_name;
+  if (nameEl && !nameEl.value) {
+    const tgName = user?.first_name || user?.last_name || user?.username || '';
+    if (tgName) nameEl.value = tgName;
+  }
+  // Если имени нет в initDataUnsafe — подтянем из CloudStorage (прошлый заказ)
+  if (nameEl && !nameEl.value && tg?.CloudStorage) {
+    try {
+      tg.CloudStorage.getItem('swl_name', (err, val) => {
+        if (!err && val && !nameEl.value) nameEl.value = val;
+      });
+    } catch(e) {}
+  }
+  // Телефон — подтянем сохранённый из CloudStorage (чтобы не вводить каждый раз)
+  if (tg?.CloudStorage && !_savedPhone) {
+    try {
+      tg.CloudStorage.getItem('swl_phone', (err, val) => {
+        if (!err && val) {
+          _savedPhone = val;
+          const manual = document.getElementById('det-phone-manual');
+          const btn = document.getElementById('contact-btn');
+          if (manual) { manual.style.display = 'block'; manual.value = val; }
+          if (btn) { btn.textContent = '✓ Номер сохранён'; btn.disabled = true; }
+        }
+      });
+    } catch(e) {}
   }
   // Показываем сводку заказа
   updateDetailsSummary();
@@ -641,21 +665,19 @@ function initDetailsScreen() {
 function updateDetailsSummary() {
   const totals = Cart.getTotals(App.deliveryCost);
   const address = App.deliveryType === 'pickup' ? CONFIG.pickupAddress : (App.orderAddress || '—');
-  const time = App.deliveryType === 'pickup' ? CONFIG.pickupTime : `~${CONFIG.defaultDeliveryTime} мин`;
   document.getElementById('details-summary').innerHTML = `
     <div class="summary-row"><span>Товары</span><span>${formatPrice(totals.subtotal)}</span></div>
     <div class="summary-row"><span>${App.deliveryType === 'pickup' ? 'Самовывоз' : 'Доставка'}</span><span>${totals.deliveryCost === 0 ? 'Бесплатно' : formatPrice(totals.deliveryCost)}</span></div>
     ${totals.discount > 0 ? `<div class="summary-row discount"><span>Скидка</span><span>−${formatPrice(totals.discount)}</span></div>` : ''}
     <div class="summary-row total"><span>Итого</span><span>${formatPrice(totals.total)}</span></div>
-    <div class="summary-address"><span>📍 ${address}</span></div>
-    <div class="summary-time"><span>⏱ ${time}</span></div>`;
+    <div class="summary-address"><span>📍 ${address}</span></div>`;
 }
 
 // Сохранённый телефон (получен через requestContact или введён вручную)
 let _savedPhone = '';
 
 function requestContactPhone() {
-  if (!tg) { showPhoneInput(); return; }
+  if (!tg || typeof tg.requestContact !== 'function') { showPhoneInput(); return; }
   try {
     tg.requestContact((ok, contact) => {
       if (ok && contact?.phone_number) {
@@ -663,7 +685,12 @@ function requestContactPhone() {
         if (!phone.startsWith('+')) phone = '+' + phone;
         _savedPhone = phone;
         const btn = document.getElementById('contact-btn');
-        if (btn) { btn.textContent = '✓ Номер получен'; btn.disabled = true; }
+        const manual = document.getElementById('det-phone-manual');
+        if (btn) { btn.textContent = '✓ Номер получен: ' + phone; btn.disabled = true; }
+        // Показываем номер в поле (на случай если пользователь хочет его отредактировать)
+        if (manual) { manual.style.display = 'block'; manual.value = phone; }
+        // Сохраняем в CloudStorage чтобы в след. раз не спрашивать
+        try { tg.CloudStorage?.setItem('swl_phone', phone, () => {}); } catch(e) {}
       } else {
         showPhoneInput();
       }
@@ -749,6 +776,11 @@ async function handleSubmitOrder() {
 
   try {
     const result = await submitOrder(orderData);
+    // Сохраняем имя и телефон в CloudStorage — чтобы в след. раз подставить автоматом
+    if (tg?.CloudStorage) {
+      try { tg.CloudStorage.setItem('swl_name',  name,  () => {}); } catch(e) {}
+      try { tg.CloudStorage.setItem('swl_phone', phone, () => {}); } catch(e) {}
+    }
     // Успех
     Cart.clear();
     refreshAllCards();
@@ -898,28 +930,9 @@ async function submitOrder(orderData) {
 // ─── Экран: успех ─────────────────────────────────────────────────────────────
 function showSuccessScreen(orderData, orderId) {
   const num = orderId || (Math.floor(Math.random() * 9000) + 1000);
-  const now = new Date();
-  const eta = new Date(now.getTime() + CONFIG.defaultDeliveryTime * 60000);
-
-  // Если время доставки вне рабочих часов — переносим на ближайшие 10:00+30 мин
-  const etaHour = eta.getHours();
-  let timeLabel;
-  if (etaHour >= CONFIG.workEnd || etaHour < CONFIG.workStart) {
-    const nextWork = new Date(now);
-    if (etaHour >= CONFIG.workEnd) nextWork.setDate(nextWork.getDate() + 1);
-    nextWork.setHours(CONFIG.workStart, 30, 0, 0);
-    const hh = nextWork.getHours().toString().padStart(2,'0');
-    const mm = nextWork.getMinutes().toString().padStart(2,'0');
-    const dayLabel = (etaHour >= CONFIG.workEnd) ? 'завтра' : 'сегодня';
-    timeLabel = `${dayLabel} к ~${hh}:${mm}`;
-  } else {
-    const hh = eta.getHours().toString().padStart(2,'0');
-    const mm = eta.getMinutes().toString().padStart(2,'0');
-    timeLabel = `к ~${hh}:${mm}`;
-  }
 
   document.getElementById('success-order-num').textContent = orderId ? '№' + num : '#' + num;
-  document.getElementById('success-time').textContent = `Доставим ${timeLabel}. Позвоним для подтверждения.`;
+  document.getElementById('success-time').textContent = 'О времени доставки вам сообщит оператор.';
   document.getElementById('success-summary').innerHTML = `${orderData.items.length} поз. · ${formatPrice(orderData.total)}`;
 
   navigateTo('success');

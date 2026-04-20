@@ -125,7 +125,7 @@
       <div class="pickup-block">
         <div class="pickup-address" id="pickup-address-text"></div>
         <div class="pickup-time" id="pickup-time-text"></div>
-        <a class="pickup-map-btn" id="pickup-map-link" target="_blank" rel="noopener">
+        <a class="pickup-map-btn" id="pickup-map-link" href="#" target="_blank" rel="noopener" onclick="openPickupMap(event)">
           🗺 Открыть в картах
         </a>
       </div>
@@ -187,8 +187,8 @@
           <input type="radio" name="payment" value="online">
           <div class="payment-icon">💳</div>
           <div>
-            <div class="payment-label">Онлайн картой</div>
-            <div class="payment-desc">Оплата по ссылке от оператора</div>
+            <div class="payment-label">Оплата переводом</div>
+            <div class="payment-desc">По реквизитам от оператора</div>
           </div>
         </label>
         <label class="payment-option selected" onclick="selectPayment(this,'cash')">
@@ -197,14 +197,6 @@
           <div>
             <div class="payment-label">Наличные курьеру</div>
             <div class="payment-desc">Приготовьте точную сумму</div>
-          </div>
-        </label>
-        <label class="payment-option" onclick="selectPayment(this,'card')">
-          <input type="radio" name="payment" value="card">
-          <div class="payment-icon">🖥️</div>
-          <div>
-            <div class="payment-label">Картой курьеру</div>
-            <div class="payment-desc">Терминал у курьера</div>
           </div>
         </label>
       </div>
@@ -261,7 +253,7 @@
     </div>
 
     <div class="success-title">Заказ принят!</div>
-    <div class="success-subtitle" id="success-time">Доставим к ~14:35. Позвоним для подтверждения.</div>
+    <div class="success-subtitle" id="success-time">О времени доставки вам сообщит оператор.</div>
     <div class="success-order">Заказ <span id="success-order-num">#0000</span></div>
     <div class="success-items" id="success-summary"></div>
 
@@ -303,9 +295,9 @@
 
 <!-- ─── Скрипты ──────────────────────────────────────────────────────────── -->
 <!-- Порядок важен: data → cart → app -->
-<script src="js/data.js?v=10"></script>
-<script src="js/cart.js?v=10"></script>
-<script src="js/app.js?v=10"></script>
+<script src="js/data.js?v=11"></script>
+<script src="js/cart.js?v=11"></script>
+<script src="js/app.js?v=11"></script>
 
 <!-- Вспомогательные функции (не вошедшие в app.js) -->
 <script>
@@ -392,6 +384,18 @@
     if (timeEl) timeEl.textContent = 'Время готовности: ' + CONFIG.pickupTime;
     if (mapEl)  mapEl.href = 'https://yandex.ru/maps/?text=' + encodeURIComponent(CONFIG.pickupAddress);
   });
+
+  /** Открыть адрес самовывоза в картах.
+   *  Telegram WebApp блокирует обычные target="_blank" — используем tg.openLink(). */
+  function openPickupMap(e) {
+    if (e) e.preventDefault();
+    const url = 'https://yandex.ru/maps/?text=' + encodeURIComponent(CONFIG.pickupAddress);
+    if (tg && typeof tg.openLink === 'function') {
+      tg.openLink(url, { try_instant_view: false });
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
+  }
 
   /** Инициализация экрана деталей при переходе */
   document.getElementById('screen-details').addEventListener('animationend', () => {

@@ -536,11 +536,13 @@ function loadStats() {
   });
 }
 function loadDashOrders() {
-  fetch('?action=orders_list&limit=10').then(function(r){return r.json();}).then(function(r){
+  fetch('?action=orders_list&limit=50').then(function(r){return r.json();}).then(function(r){
     if (!r.ok) return;
-    var html = '<table><thead><tr><th>ID</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>';
+    var html = '<table><thead><tr><th>№</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>';
     r.orders.forEach(function(o){
-      var numLabel = o.is_test == 1 ? '#000 <span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.65rem">ТЕСТ</span>' : '#'+o.id;
+      var numLabel = o.is_test == 1
+        ? '#000 <span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.65rem">ТЕСТ</span>'
+        : '#' + (o.display_number || o.id);
       html += '<tr><td>'+numLabel+'</td><td>'+fmtDate(o.created_at)+'</td><td>'+(o.user_name||o.client_name||'—')+'</td><td>'+fmt(o.total_paid)+'</td><td>'+statusBadge(o.status)+'</td></tr>';
     });
     html += '</tbody></table>';
@@ -626,7 +628,7 @@ function loadOrders() {
         ? '<button class="btn-sm" onclick="showOrderItems('+o.id+')" style="background:#333;border:1px solid #555;color:#eee;border-radius:6px;padding:3px 8px;cursor:pointer">📋 '+itemsCount+' поз.</button>'
         : '<span style="color:#666">—</span>';
       var payIcon = o.pay_type === 'cash' ? '💵 Наличные' : (o.pay_type === 'qr' ? '📱 QR' : '—');
-      var numLabel = o.is_test == 1 ? '#000' : '#'+o.id;
+      var numLabel = o.is_test == 1 ? '#000' : '#' + (o.display_number || o.id);
       html += '<tr>'
         +'<td><b>'+numLabel+'</b>'+testBadge+'<br>'+fpLine+'</td>'
         +'<td>'+fmtDate(o.created_at)+'</td>'

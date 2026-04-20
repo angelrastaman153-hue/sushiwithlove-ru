@@ -775,8 +775,15 @@ async function submitOrder(orderData) {
   const localMinutes = (now.getUTCHours() * 60 + now.getUTCMinutes() + 5 * 60) % (24 * 60);
   const isClosed = localMinutes < 10 * 60 || localMinutes >= 22 * 60;
 
+  // Владельцы — их заказы помечаются is_test=1 (как кнопка ТЕСТ на сайте)
+  const OWNER_TG_IDS = ['696556996'];
+  const isOwnerTest = orderData.tgUserId && OWNER_TG_IDS.indexOf(String(orderData.tgUserId)) !== -1;
+
   let comment = orderData.comment || '';
-  if (isClosed) {
+  if (isOwnerTest) {
+    const note = '[ТЕСТ] Тестовый заказ из Telegram Mini App — не исполнять';
+    comment = comment ? note + '. ' + comment : note;
+  } else if (isClosed) {
     const note = '⏰ ПРЕДЗАКАЗ (Mini App) — принято в нерабочее время, перезвонить после 10:00';
     comment = comment ? note + '. ' + comment : note;
   } else {
@@ -823,6 +830,7 @@ async function submitOrder(orderData) {
     promo_discount: orderData.discount,
     total_paid:    orderData.total,
     points_spent:  0,
+    is_test:       isOwnerTest ? 1 : 0,
   };
 
   const saveRes = await fetch('../api/orders/save.php', {

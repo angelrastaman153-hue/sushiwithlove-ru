@@ -1011,7 +1011,7 @@ function renderOrders(orders) {
 
     html += '<div class="order-card s-'+st+(isTest?' order-test':'')+'">'
       + '<div class="order-head">'
-      +   '<div><span class="order-id">'+(isTest?'#000':('#'+o.id))+'</span> '+testBadge+' '+fpInfo+'</div>'
+      +   '<div><span class="order-id">'+(isTest?'#000':('#'+(o.display_number||o.id)))+'</span> '+testBadge+' '+fpInfo+'</div>'
       +   '<div style="display:flex;gap:8px;align-items:center">'
       +     (deleteBtn)
       +     '<span class="badge badge-'+st+'">'+(sLabels[st]||st)+'</span>'

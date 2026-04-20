@@ -83,16 +83,41 @@ if ($user_id && $points_spent > 0) {
 
 // Сохраняем заказ: pending если нет fp_order_id (FrontPad ещё не ответил), new если уже есть
 $status = $fp_order_id ? 'new' : 'pending';
-$pdo->prepare('
-    INSERT INTO orders
-      (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
-       points_spent, total_paid, items_json, delivery_type, address, pay_type, comment,
-       status, is_test, client_phone, client_name, created_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
-')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
-                  $promo_code, $promo_discount, $points_spent, $total_paid, $items_json,
-                  $delivery_type, $address, $pay_type, $comment_txt,
-                  $status, $is_test, $client_phone, $client_name));
+
+// Для боевых заказов — считаем display_number (последовательная нумерация, тесты пропускаются)
+$display_number = null;
+if (!$is_test) {
+    try {
+        $display_number = 1 + (int)$pdo->query("SELECT COALESCE(MAX(display_number),0) FROM orders WHERE (is_test IS NULL OR is_test=0)")->fetchColumn();
+    } catch (Exception $e) {
+        $display_number = null; // колонки может ещё не быть до миграции
+    }
+}
+
+try {
+    $pdo->prepare('
+        INSERT INTO orders
+          (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
+           points_spent, total_paid, items_json, delivery_type, address, pay_type, comment,
+           status, is_test, display_number, client_phone, client_name, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+    ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
+                      $promo_code, $promo_discount, $points_spent, $total_paid, $items_json,
+                      $delivery_type, $address, $pay_type, $comment_txt,
+                      $status, $is_test, $display_number, $client_phone, $client_name));
+} catch (Exception $e) {
+    // Fallback если миграция display_number ещё не применена
+    $pdo->prepare('
+        INSERT INTO orders
+          (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
+           points_spent, total_paid, items_json, delivery_type, address, pay_type, comment,
+           status, is_test, client_phone, client_name, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+    ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
+                      $promo_code, $promo_discount, $points_spent, $total_paid, $items_json,
+                      $delivery_type, $address, $pay_type, $comment_txt,
+                      $status, $is_test, $client_phone, $client_name));
+}
 
 $order_id = $pdo->lastInsertId();
 

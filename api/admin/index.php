@@ -144,6 +144,30 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true));
     }
 
+    // Удаление тестового заказа (с каскадом)
+    if ($action === 'delete_test_order' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        admin_csrf_check($data);
+        $oid = intval(isset($data['order_id']) ? $data['order_id'] : 0);
+        if (!$oid) { json_out(array('ok'=>false,'error'=>'Нет order_id')); }
+        $pdo = db();
+        $row = $pdo->prepare('SELECT id FROM orders WHERE id=? AND is_test=1');
+        $row->execute(array($oid));
+        if (!$row->fetch()) { json_out(array('ok'=>false,'error'=>'Заказ не найден или не тестовый')); }
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('DELETE FROM order_log WHERE order_id=?')->execute(array($oid));
+            try { $pdo->prepare('DELETE FROM reviews WHERE order_id=?')->execute(array($oid)); } catch (Exception $e) {}
+            $pdo->prepare('DELETE FROM points_log WHERE order_id=?')->execute(array($oid));
+            $pdo->prepare('DELETE FROM orders WHERE id=? AND is_test=1')->execute(array($oid));
+            $pdo->commit();
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            json_out(array('ok'=>false,'error'=>$e->getMessage()));
+        }
+        json_out(array('ok'=>true));
+    }
+
     // Обновить настройки лояльности
     if ($action === 'loyalty_config' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents('php://input'), true);
@@ -538,15 +562,26 @@ function loadStats() {
 function loadDashOrders() {
   fetch('?action=orders_list&limit=50').then(function(r){return r.json();}).then(function(r){
     if (!r.ok) return;
-    var html = '<table><thead><tr><th>№</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>';
+    var html = '<table><thead><tr><th>№</th><th>Дата</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th></th></tr></thead><tbody>';
     r.orders.forEach(function(o){
       var numLabel = o.is_test == 1
         ? '#000 <span style="background:#f59e0b;color:#000;padding:1px 6px;border-radius:4px;font-size:0.65rem">ТЕСТ</span>'
         : '#' + (o.display_number || o.id);
-      html += '<tr><td>'+numLabel+'</td><td>'+fmtDate(o.created_at)+'</td><td>'+(o.user_name||o.client_name||'—')+'</td><td>'+fmt(o.total_paid)+'</td><td>'+statusBadge(o.status)+'</td></tr>';
+      var delBtn = o.is_test == 1
+        ? '<button onclick="deleteTestOrder('+o.id+')" title="Удалить тестовый заказ" style="background:transparent;border:none;color:#888;font-size:1rem;cursor:pointer;padding:2px 8px">✕</button>'
+        : '';
+      html += '<tr><td>'+numLabel+'</td><td>'+fmtDate(o.created_at)+'</td><td>'+(o.user_name||o.client_name||'—')+'</td><td>'+fmt(o.total_paid)+'</td><td>'+statusBadge(o.status)+'</td><td>'+delBtn+'</td></tr>';
     });
     html += '</tbody></table>';
     document.getElementById('dash-orders').innerHTML = html;
+  });
+}
+
+function deleteTestOrder(oid) {
+  if (!confirm('Удалить тестовый заказ?')) return;
+  api('delete_test_order','POST',{order_id:oid},function(r){
+    if (r.ok) { showAlert('🗑 Тестовый заказ удалён'); loadDashOrders(); loadOrders(); loadStats(); }
+    else showAlert(r.error||'Ошибка', true);
   });
 }
 
@@ -646,7 +681,9 @@ function loadOrders() {
         +'<td>'+statusBadge(o.status)+'</td>'
         +'<td><select class="btn-sm" onchange="changeOrderStatus('+o.id+',this.value)" style="background:#222;border:1px solid #333;color:#eee;border-radius:6px;padding:4px">'
         +['new','cooking','delivering','done','cancelled'].map(function(s){return '<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+({new:'Новый',cooking:'Готовится',delivering:'Доставляется',done:'Выполнен',cancelled:'Отменён'}[s])+'</option>';}).join('')
-        +'</select></td>'
+        +'</select>'
+        +(o.is_test == 1 ? ' <button onclick="deleteTestOrder('+o.id+')" title="Удалить тестовый заказ" style="background:transparent;border:1px solid #555;color:#888;border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:4px">✕</button>' : '')
+        +'</td>'
         +'</tr>';
     });
     window._ordersCache = r.orders;

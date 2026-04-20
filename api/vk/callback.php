@@ -9,6 +9,8 @@ define('_VK_TOKEN',        'vk1.a.KAQexgBeEkvKhUwRWmHj8ZSFtXHjeg99gPwpYTjaKS21sJ
 $body = file_get_contents('php://input');
 $data = json_decode($body, true);
 
+vk_log('IN', $body);
+
 if (!$data) { echo 'ok'; exit; }
 
 // Подтверждение адреса сервера
@@ -187,8 +189,21 @@ function vk_send_to($peer_id, $text, $photo_url = null) {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-    curl_exec($ch);
+    $resp = curl_exec($ch);
     curl_close($ch);
+    vk_log('SEND peer=' . $peer_id . ' att=' . ($attachment ? 'y' : 'n'), $resp);
+}
+
+function vk_log($tag, $payload) {
+    $path = __DIR__ . '/vk_bot_log.txt';
+    if (file_exists($path) && filesize($path) > 500000) {
+        @file_put_contents($path, '');
+    }
+    @file_put_contents(
+        $path,
+        date('c') . ' [' . $tag . '] ' . (is_string($payload) ? $payload : json_encode($payload)) . "\n",
+        FILE_APPEND
+    );
 }
 
 function vk_curl($url) {

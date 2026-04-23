@@ -8403,12 +8403,29 @@
         err.textContent = 'Нет связи с сервером'; err.style.display = 'block';
       });
     } else {
-      // Локальная авторизация (без Telegram)
-      var existing = JSON.parse(localStorage.getItem(LK_KEY) || '{}');
-      var savedBday = existing.bday || bday;
-      localStorage.setItem(LK_KEY, JSON.stringify({ name: name, phone: phone, bday: savedBday }));
-      lkUpdateHeader();
-      closeLk();
+      // Вход по телефону — создаём сессию на сервере
+      var btn = document.getElementById('lkSubmitBtn');
+      btn.disabled = true; btn.textContent = 'Входим...';
+      fetch('/api/auth/phone.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name, phone: phone, bday: bday})
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(res) {
+        btn.disabled = false; btn.textContent = 'Сохранить';
+        if (!res.ok) { err.textContent = res.error || 'Ошибка'; err.style.display = 'block'; return; }
+        localStorage.setItem(AUTH_KEY, JSON.stringify({token: res.token, user: res.user}));
+        // Также сохраняем в LK_KEY для совместимости
+        localStorage.setItem(LK_KEY, JSON.stringify({name: res.user.name, phone: res.user.phone, bday: res.user.birth_date||bday}));
+        lkUpdateHeader();
+        closeLk();
+        showToast('✅ Вы вошли', 'Заказы и баллы доступны в личном кабинете', 'added');
+      })
+      .catch(function(){
+        btn.disabled = false; btn.textContent = 'Сохранить';
+        err.textContent = 'Нет связи с сервером'; err.style.display = 'block';
+      });
     }
   }
 

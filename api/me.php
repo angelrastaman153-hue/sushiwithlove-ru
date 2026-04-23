@@ -8,7 +8,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit;
 
 $user = auth_required();
 
-// Последние 10 заказов
+// Привязываем «сиротские» заказы по телефону к аккаунту (если телефон известен)
+if ($user['phone']) {
+    $phone_clean = preg_replace('/\D/', '', $user['phone']);
+    db()->prepare('UPDATE orders SET user_id = ? WHERE user_id IS NULL AND client_phone = ?')
+       ->execute(array($user['id'], $phone_clean));
+}
+
+// Последние 10 заказов (по user_id — после привязки выше все нужные уже там)
 $stmt = db()->prepare('
     SELECT id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
            points_spent, points_earned, total_paid, status, created_at

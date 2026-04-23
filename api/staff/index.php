@@ -166,6 +166,7 @@ if (isset($_GET['action'])) {
     header('Content-Type: application/json');
     $action = $_GET['action'];
     $pdo = db();
+    try { $pdo->exec('ALTER TABLE orders ADD COLUMN courier_id INT NULL'); } catch(Exception $e){}
 
     // --- Список заказов ---
     if ($action === 'orders_list') {
@@ -180,13 +181,18 @@ if (isset($_GET['action'])) {
         }
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
         $stmt = $pdo->prepare(
-            'SELECT o.*, u.name as user_name, u.phone as user_phone
-             FROM orders o LEFT JOIN users u ON u.id=o.user_id
+            'SELECT o.*, u.name as user_name, u.phone as user_phone,
+                    s.name as courier_name
+             FROM orders o
+             LEFT JOIN users u ON u.id=o.user_id
+             LEFT JOIN staff s ON s.id=o.courier_id
              WHERE '.implode(' AND ',$where).'
              ORDER BY o.created_at DESC LIMIT '.$limit
         );
         $stmt->execute($params);
-        json_out(array('ok'=>true,'orders'=>$stmt->fetchAll()));
+        $couriers_q = $pdo->query("SELECT id, name FROM staff WHERE active=1 AND (role='courier' OR role LIKE '%,courier%' OR role LIKE 'courier,%' OR role LIKE '%courier%') ORDER BY name");
+        $couriers_list = $couriers_q->fetchAll(PDO::FETCH_ASSOC);
+        json_out(array('ok'=>true,'orders'=>$stmt->fetchAll(),'couriers'=>$couriers_list));
     }
 
     // --- Смена статуса ---
@@ -301,6 +307,16 @@ if (isset($_GET['action'])) {
         $pdo->prepare('INSERT INTO order_log (order_id, staff_id, staff_name, from_status, to_status, created_at) VALUES (?,?,?,?,?,NOW())')
             ->execute(array($oid, $sid, $sname, 'edit', 'edit'));
 
+        json_out(array('ok'=>true));
+    }
+
+    // --- Назначить курьера на заказ ---
+    if ($action === 'set_courier' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $oid  = intval($data['order_id']);
+        $cid  = isset($data['courier_id']) && $data['courier_id'] !== '' ? intval($data['courier_id']) : null;
+        if (!$oid) { json_out(array('ok'=>false,'error'=>'Bad order')); }
+        $pdo->prepare('UPDATE orders SET courier_id=? WHERE id=?')->execute(array($cid, $oid));
         json_out(array('ok'=>true));
     }
 
@@ -587,20 +603,20 @@ if (isset($_GET['action'])) {
 <title>Суши с Любовью — <?php echo htmlspecialchars($sname); ?></title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  /* === ПАЛИТРА (FrontPad-style purple) === */
+  /* === ПАЛИТРА (FrontPad light) === */
   :root{
-    --bg:          #1e1a2e;
-    --bg-header:   #231e35;
-    --bg-panel:    #2a2440;
-    --bg-row:      #312a4a;
-    --bg-row-alt:  #2c2644;
-    --bg-row-hover:#3a3258;
-    --bg-input:    #1f1b30;
-    --border:      #3d3456;
-    --border-soft: #342c4c;
-    --text:        #e8e4f5;
-    --text-dim:    #8a84a3;
-    --text-mute:   #554e73;
+    --bg:          #f0f0f5;
+    --bg-header:   #ffffff;
+    --bg-panel:    #ffffff;
+    --bg-row:      #ffffff;
+    --bg-row-alt:  #f8f8fc;
+    --bg-row-hover:#eeeef8;
+    --bg-input:    #f5f5fa;
+    --border:      #dcdce8;
+    --border-soft: #e8e8f0;
+    --text:        #2c2c3e;
+    --text-dim:    #6c6c88;
+    --text-mute:   #aaaabc;
     --accent:      #e8a847;
     --accent-dim:  rgba(232,168,71,0.12);
   }
@@ -638,17 +654,16 @@ if (isset($_GET['action'])) {
   .page.active{display:block}
   /* Orders — FP-style rows */
   .orders-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
-  .order-row{background:var(--bg-row);border:1px solid var(--border-soft);border-radius:8px;padding:12px 14px;transition:background 0.15s}
-  .order-row:nth-child(even){background:var(--bg-row-alt)}
-  .order-row:hover{background:var(--bg-row-hover)}
-  .order-row.s-new{border-left:3px solid #6ab0ff}
-  .order-row.s-pending{border-left:3px solid #f97316}
-  .order-row.s-cooking{border-left:3px solid #ffaa44}
-  .order-row.s-delivering{border-left:3px solid #44cc88}
-  .order-row.s-done{border-left:3px solid #555;opacity:.7}
-  .order-row.s-cancelled{border-left:3px solid #c66;opacity:.55}
+  .order-row{background:var(--bg-row);border:1px solid var(--border-soft);border-radius:8px;padding:10px 14px;transition:background 0.15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .order-row:hover{filter:brightness(0.97)}
+  .order-row.s-new{background:#ffffff;border-color:#d8d8e8}
+  .order-row.s-pending{background:#fff5eb;border-color:#f5d4b0}
+  .order-row.s-cooking{background:#e0f9f6;border-color:#9de6de}
+  .order-row.s-delivering{background:#fffbe6;border-color:#f0e08a}
+  .order-row.s-done{background:#f3f6f3;border-color:#c8d8c8;opacity:.85}
+  .order-row.s-cancelled{background:#fdf0f0;border-color:#e8c0c0;opacity:.7}
   .order-row.order-test{border-style:dashed;opacity:.8}
-  .order-grid{display:grid;grid-template-columns:130px 1fr 110px 150px 170px;gap:14px;align-items:center}
+  .order-grid{display:grid;grid-template-columns:130px 1fr 100px 160px 130px 170px;gap:12px;align-items:center}
   /* TIME column */
   .ord-time{color:var(--text);font-size:0.88rem}
   .ord-time .t-main{font-weight:700;font-size:1.05rem;color:var(--text)}
@@ -672,14 +687,19 @@ if (isset($_GET['action'])) {
   .ord-meta .mm-comment{color:#b8a8f0;font-size:0.75rem;margin-top:2px;font-style:italic}
   .ord-meta .mm-delivery-date{color:var(--accent);font-size:0.75rem;margin-top:3px;font-weight:600}
   .ord-meta .mm-promo{display:inline-block;padding:1px 7px;background:var(--accent-dim);border:1px solid rgba(232,168,71,0.35);border-radius:5px;font-size:0.7rem;color:var(--accent);margin-top:3px}
+  /* COURIER column */
+  .ord-courier{display:flex;flex-direction:column;gap:4px;align-items:stretch}
   /* STATUS column */
   .ord-status{display:flex;flex-direction:column;gap:6px;align-items:stretch}
   .status-select{background:var(--bg-input);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:0.82rem;font-weight:600;cursor:pointer;width:100%}
-  .status-select.s-new        {background:rgba(106,176,255,0.15);color:#6ab0ff;border-color:rgba(106,176,255,0.4)}
-  .status-select.s-cooking    {background:rgba(255,170,68,0.15);color:#ffaa44;border-color:rgba(255,170,68,0.4)}
-  .status-select.s-delivering {background:rgba(68,204,136,0.15);color:#44cc88;border-color:rgba(68,204,136,0.4)}
-  .status-select.s-done       {background:rgba(102,187,102,0.15);color:#66bb66;border-color:rgba(102,187,102,0.4)}
-  .status-select.s-cancelled  {background:rgba(204,102,102,0.15);color:#cc6666;border-color:rgba(204,102,102,0.4)}
+  .status-select.s-new        {background:#e8f0ff;color:#3366cc;border-color:#a8c0ee}
+  .status-select.s-cooking    {background:#e0f9f6;color:#0e9488;border-color:#9de6de}
+  .status-select.s-delivering {background:#fffbe6;color:#b07800;border-color:#f0e08a}
+  .status-select.s-done       {background:#eaf5ea;color:#2e7d32;border-color:#b0d4b0}
+  .status-select.s-cancelled  {background:#fdf0f0;color:#c62828;border-color:#e8c0c0}
+  /* Courier select */
+  .courier-select{background:var(--bg-input);border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:5px 8px;font-size:0.8rem;cursor:pointer;width:100%}
+  .courier-select.assigned{color:var(--text);font-weight:600;border-color:#a8c0ee;background:#e8f0ff}
   .row-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
   .row-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-panel);color:var(--text-dim);font-size:0.75rem;cursor:pointer}
   .row-btn:hover{border-color:var(--accent);color:var(--accent)}
@@ -745,8 +765,8 @@ if (isset($_GET['action'])) {
   .stat-lbl{font-size:0.78rem;color:var(--text-mute);margin-top:2px}
   /* Alert */
   .alert{position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:0.88rem;font-weight:600;z-index:100;display:none}
-  .alert-ok{background:rgba(68,204,136,0.18);border:1px solid rgba(68,204,136,0.4);color:#66bb66}
-  .alert-err{background:rgba(204,102,102,0.18);border:1px solid rgba(204,102,102,0.4);color:#cc6666}
+  .alert-ok{background:#eaf7ee;border:1px solid #a0d8b0;color:#1e7e34}
+  .alert-err{background:#fdecea;border:1px solid #e8a0a0;color:#c0392b}
   /* Empty */
   .empty{text-align:center;padding:50px 20px;color:var(--text-mute);font-size:0.9rem}
   /* Modal */
@@ -1090,6 +1110,7 @@ function loadOrders() {
   }
   fetch(url).then(function(r){ return r.json(); }).then(function(r) {
     if (!r.ok) return;
+    if (r.couriers) COURIERS = r.couriers;
     renderOrders(r.orders);
     updateStatusCounts(r.orders);
   });
@@ -1124,6 +1145,7 @@ var ALL_ST = [
   {s:'done',       l:'✅ Выполнен'},
   {s:'cancelled',  l:'❌ Отменён'}
 ];
+var COURIERS = [];
 var sLabels = {new:'Новый',pending:'⚠️ Без FP',cooking:'Готовится',delivering:'Доставляется',done:'Выполнен',cancelled:'Отменён'};
 var courierBtns = {delivering:[{s:'done',l:'✅ Выполнен'}]};
 
@@ -1283,6 +1305,9 @@ function renderOrders(orders) {
       +     (o.delivery_date ? '<div class="mm-delivery-date">📅 '+fmtDate(o.delivery_date)+'</div>' : '')
       +     (o.comment ? '<div class="mm-comment">💬 '+esc(o.comment)+'</div>' : '')
       +   '</div>'
+      +   '<div class="ord-courier">'
+      +     buildCourierSelect(o)
+      +   '</div>'
       +   '<div class="ord-status">'
       +     statusHtml
       +     (rowActions ? '<div class="row-actions">'+rowActions+'</div>' : '')
@@ -1358,11 +1383,37 @@ function eSave(oid) {
   });
 }
 
+function buildCourierSelect(o) {
+  if (!COURIERS || !COURIERS.length) return '';
+  var cid = o.courier_id ? parseInt(o.courier_id) : 0;
+  var cls = cid ? 'courier-select assigned' : 'courier-select';
+  var html = '<select class="'+cls+'" onchange="setCourier('+o.id+',this)">'
+    + '<option value="">— курьер —</option>';
+  COURIERS.forEach(function(c){
+    html += '<option value="'+c.id+'"'+(parseInt(c.id)===cid?' selected':'')+'>'+esc(c.name)+'</option>';
+  });
+  html += '</select>';
+  return html;
+}
+
+function setCourier(oid, sel) {
+  var cid = sel.value;
+  sel.className = cid ? 'courier-select assigned' : 'courier-select';
+  fetch('?action=set_courier', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({order_id:oid, courier_id:cid})
+  });
+}
+
 function changeStatus(oid, status) {
-  // Оптимистично перекрашиваем дропдаун сразу
+  // Оптимистично перекрашиваем дропдаун и строку
   var sel = document.querySelector('.order-row [onchange*="changeStatus('+oid+',"]');
   if (sel) {
     sel.className = 'status-select s-' + status;
+    var row = sel.closest('.order-row');
+    if (row) {
+      row.className = row.className.replace(/\bs-\w+/, 's-' + status);
+    }
   }
   fetch('?action=order_status', {
     method:'POST', headers:{'Content-Type':'application/json'},
@@ -1390,11 +1441,11 @@ function loadReviews(onlyNegative) {
   var negBtn = document.getElementById('revFilterNeg');
   if (allBtn && negBtn) {
     if (onlyNegative) {
-      allBtn.style.borderColor='#333'; allBtn.style.color='#888'; allBtn.style.background='#1a1a1a';
+      allBtn.style.borderColor='#ccc'; allBtn.style.color='#999'; allBtn.style.background='#f5f5f5';
       negBtn.style.borderColor='#e8a847'; negBtn.style.color='#e8a847'; negBtn.style.background='rgba(232,168,71,0.12)';
     } else {
       allBtn.style.borderColor='#e8a847'; allBtn.style.color='#e8a847'; allBtn.style.background='rgba(232,168,71,0.12)';
-      negBtn.style.borderColor='#333'; negBtn.style.color='#888'; negBtn.style.background='#1a1a1a';
+      negBtn.style.borderColor='#ccc'; negBtn.style.color='#999'; negBtn.style.background='#f5f5f5';
     }
   }
   var url = '?action=reviews_list' + (onlyNegative ? '&only_negative=1' : '');

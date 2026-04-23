@@ -8482,19 +8482,21 @@
       var itemsHtml = '';
       var items = null;
       try { items = o.items_json ? JSON.parse(o.items_json) : null; } catch(e) {}
+      itemsHtml += '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">';
       if (items && items.length) {
-        itemsHtml += '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">';
         items.forEach(function(it) {
           itemsHtml += '<div style="display:flex;justify-content:space-between;font-size:0.82rem;padding:2px 0">'
             + '<span style="color:var(--text-1)">' + (it.isGift ? '🎁 ' : '') + escHtml(it.name) + (it.qty > 1 ? ' × ' + it.qty : '') + '</span>'
             + '<span style="color:var(--text-2);white-space:nowrap;margin-left:8px">' + (it.isGift ? 'подарок' : (it.price * it.qty) + ' ₽') + '</span>'
             + '</div>';
         });
-        if (o.address)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2);margin-top:6px">📍 ' + escHtml(o.address) + '</div>';
-        if (o.pay_type) itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💳 ' + (o.pay_type === 'cash' ? 'Наличными' : 'QR / карта') + '</div>';
-        if (o.comment)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💬 ' + escHtml(o.comment) + '</div>';
-        itemsHtml += '</div>';
+      } else {
+        itemsHtml += '<div style="font-size:0.82rem;color:var(--text-2)">Состав не сохранён</div>';
       }
+      if (o.address)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2);margin-top:6px">📍 ' + escHtml(o.address) + '</div>';
+      if (o.pay_type) itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💳 ' + (o.pay_type === 'cash' ? 'Наличными' : 'QR / карта') + '</div>';
+      if (o.comment)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💬 ' + escHtml(o.comment) + '</div>';
+      itemsHtml += '</div>';
 
       html += '<div style="background:var(--surface-2,#1a1a1a);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer" onclick="lkToggleOrder(\'' + detailId + '\',this)">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'

@@ -7386,7 +7386,8 @@
 
   function coUpdateSummary() {
     var sub   = cart.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
-    var delivCost = (typeof coGetDeliveryCostFromZone === 'function') ? coGetDeliveryCostFromZone() : DELIVERY_COST;
+    var zoneKnown = (coDeliveryType === 'self') || (savedAddress && savedAddress.zone);
+    var delivCost = zoneKnown ? ((typeof coGetDeliveryCostFromZone === 'function') ? coGetDeliveryCostFromZone() : DELIVERY_COST) : 0;
     var total = Math.max(0, sub - coPromoDiscount) + delivCost;
     var count = cart.reduce(function(s,i){ return s + i.qty; }, 0);
     var subEl = document.getElementById('coSumSubtotal');
@@ -7898,7 +7899,7 @@
     if (mBtn) { mBtn.disabled = true; mBtn.textContent = 'Отправляем...'; }
     // ШАГ 1: Сохраняем заказ в нашу БД сразу (fp_order_id = null, статус pending)
     var token = lkGetToken();
-    var swlDeliveryCost = (coDeliveryType === 'delivery' && typeof coGetDeliveryCostFromZone === 'function')
+    var swlDeliveryCost = (coDeliveryType === 'delivery' && savedAddress && savedAddress.zone && typeof coGetDeliveryCostFromZone === 'function')
         ? coGetDeliveryCostFromZone() : 0;
     var swlPayload = {
       fp_order_id:   null,
@@ -8617,7 +8618,7 @@
     var preTime = coTimeMode === 'scheduled' ? (coSelectedSlot || '') : '';
     var sub     = cart.reduce(function(s,i){ return s+i.price*i.qty; }, 0);
     var total   = Math.max(0, sub - (coPromoDiscount||0));
-    var swlDeliveryCost = (coDeliveryType === 'delivery' && typeof coGetDeliveryCostFromZone === 'function')
+    var swlDeliveryCost = (coDeliveryType === 'delivery' && savedAddress && savedAddress.zone && typeof coGetDeliveryCostFromZone === 'function')
         ? coGetDeliveryCostFromZone() : 0;
 
     // Payload для FrontPad (такой же как в coSubmitOrder)

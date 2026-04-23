@@ -8500,6 +8500,7 @@
       } else {
         itemsHtml += '<div style="font-size:0.82rem;color:var(--text-2)">Состав не сохранён</div>';
       }
+      if (o.delivery_date) itemsHtml += '<div style="font-size:0.8rem;color:#e8a847;font-weight:700;margin-top:6px">📅 Доставить: ' + o.delivery_date.replace('T',' ').slice(0,16) + '</div>';
       if (o.address)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2);margin-top:6px">📍 ' + escHtml(o.address) + '</div>';
       if (o.pay_type) itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💳 ' + (o.pay_type === 'cash' ? 'Наличными' : 'QR / карта') + '</div>';
       if (o.comment)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💬 ' + escHtml(o.comment) + '</div>';

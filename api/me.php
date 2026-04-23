@@ -19,7 +19,7 @@ if ($user['phone']) {
 $stmt = db()->prepare('
     SELECT id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
            points_spent, points_earned, total_paid, status, created_at,
-           items_json, address, pay_type, comment
+           items_json, address, pay_type, comment, delivery_date
     FROM orders
     WHERE user_id = ?
     ORDER BY created_at DESC

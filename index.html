@@ -8471,15 +8471,38 @@
       + '<div style="text-align:right"><div style="font-size:1.3rem;font-weight:700;color:var(--accent)">' + (user.points||0) + '</div><div style="font-size:0.75rem;color:var(--text-2)">баллов</div></div>'
       + '</div>';
 
-    orders.forEach(function(o) {
+    orders.forEach(function(o, idx) {
       var status = o.status || 'new';
       var color  = LK_STATUS_COLORS[status] || '#aaa';
       var label  = LK_STATUS_LABELS[status]  || status;
       var date   = o.created_at ? o.created_at.slice(0,10).split('-').reverse().join('.') : '';
-      html += '<div style="background:var(--surface-2,#1a1a1a);border:1px solid var(--border);border-radius:12px;padding:14px 16px">'
+      var detailId = 'lk-order-detail-' + idx;
+
+      // Состав заказа
+      var itemsHtml = '';
+      var items = null;
+      try { items = o.items_json ? JSON.parse(o.items_json) : null; } catch(e) {}
+      if (items && items.length) {
+        itemsHtml += '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">';
+        items.forEach(function(it) {
+          itemsHtml += '<div style="display:flex;justify-content:space-between;font-size:0.82rem;padding:2px 0">'
+            + '<span style="color:var(--text-1)">' + (it.isGift ? '🎁 ' : '') + escHtml(it.name) + (it.qty > 1 ? ' × ' + it.qty : '') + '</span>'
+            + '<span style="color:var(--text-2);white-space:nowrap;margin-left:8px">' + (it.isGift ? 'подарок' : (it.price * it.qty) + ' ₽') + '</span>'
+            + '</div>';
+        });
+        if (o.address)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2);margin-top:6px">📍 ' + escHtml(o.address) + '</div>';
+        if (o.pay_type) itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💳 ' + (o.pay_type === 'cash' ? 'Наличными' : 'QR / карта') + '</div>';
+        if (o.comment)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💬 ' + escHtml(o.comment) + '</div>';
+        itemsHtml += '</div>';
+      }
+
+      html += '<div style="background:var(--surface-2,#1a1a1a);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer" onclick="lkToggleOrder(\'' + detailId + '\',this)">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<div style="font-size:0.85rem;color:var(--text-2)">' + date + (o.fp_order_id ? ' · №' + o.fp_order_id : '') + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
         + '<div style="font-size:0.8rem;font-weight:600;color:' + color + '">' + label + '</div>'
+        + (itemsHtml ? '<div style="font-size:0.8rem;color:var(--text-2)" class="lk-order-arrow">▼</div>' : '')
+        + '</div>'
         + '</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
         + '<div style="font-size:0.85rem;color:var(--text-2)">'
@@ -8490,9 +8513,23 @@
         + '</div>'
         + (o.points_earned > 0 ? '<div style="font-size:0.78rem;color:#66bb66;margin-top:6px">+' + o.points_earned + ' баллов начислено</div>' : '')
         + (o.points_spent  > 0 ? '<div style="font-size:0.78rem;color:#e05a5a;margin-top:6px">−' + o.points_spent  + ' баллов списано</div>'  : '')
+        + (itemsHtml ? '<div id="' + detailId + '" style="display:none">' + itemsHtml + '</div>' : '')
         + '</div>';
     });
     el.innerHTML = html;
+  }
+
+  function lkToggleOrder(detailId, card) {
+    var el = document.getElementById(detailId);
+    if (!el) return;
+    var open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : '';
+    var arrow = card.querySelector('.lk-order-arrow');
+    if (arrow) arrow.textContent = open ? '▼' : '▲';
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function lkInitMask() {

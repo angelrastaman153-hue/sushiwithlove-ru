@@ -66,10 +66,9 @@ if (isset($_GET['action'])) {
         $data = json_decode(file_get_contents('php://input'), true);
         $oid    = intval($data['order_id']);
         $status = $data['status'];
-        $allowed = array('new','cooking','delivering','done','cancelled');
+        $allowed = array('new','pending','cooking','delivering','done','cancelled');
         if (!in_array($status, $allowed)) { json_out(array('ok'=>false,'error'=>'Bad status')); }
         db()->prepare('UPDATE orders SET status=? WHERE id=?')->execute(array($status, $oid));
-        // При выполнении — начислить баллы (если ещё не начислены)
         if ($status === 'done') {
             $order = db()->query('SELECT * FROM orders WHERE id='.$oid)->fetch();
             if ($order && !$order['points_earned'] && !$order['points_spent'] && $order['user_id']) {
@@ -83,6 +82,45 @@ if (isset($_GET['action'])) {
             }
         }
         json_out(array('ok'=>true));
+    }
+
+    if ($action === 'order_edit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data          = json_decode(file_get_contents('php://input'), true);
+        $oid           = intval($data['order_id']);
+        $address       = isset($data['address'])       ? trim($data['address'])       : null;
+        $pay_type      = isset($data['pay_type'])      ? $data['pay_type']            : null;
+        $delivery_cost = isset($data['delivery_cost']) ? intval($data['delivery_cost']): 0;
+        $total_paid    = isset($data['total_paid'])    ? intval($data['total_paid'])  : 0;
+        $comment       = isset($data['comment'])       ? trim($data['comment'])       : null;
+        if ($comment === '') $comment = null;
+
+        $items_json = null;
+        $items_total = 0;
+        if (isset($data['items']) && is_array($data['items'])) {
+            $slim = array();
+            foreach ($data['items'] as $it) {
+                $qty   = max(1, intval($it['qty']));
+                $price = max(0, floatval($it['price']));
+                $slim[] = array(
+                    'id'     => isset($it['id'])   ? (int)$it['id'] : 0,
+                    'name'   => isset($it['name']) ? (string)$it['name'] : '',
+                    'qty'    => $qty,
+                    'price'  => $price,
+                    'isGift' => !empty($it['isGift']) ? 1 : 0,
+                );
+                if (empty($it['isGift'])) $items_total += $qty * $price;
+            }
+            $items_json = json_encode($slim, JSON_UNESCAPED_UNICODE);
+        }
+
+        db()->prepare('
+            UPDATE orders SET address=?, pay_type=?, delivery_cost=?, total_paid=?,
+                              items_json=?, items_total=?, comment=?
+            WHERE id=?
+        ')->execute(array($address, $pay_type, $delivery_cost, $total_paid,
+                          $items_json, $items_total, $comment, $oid));
+
+        json_out(array('ok'=>true, 'items_total'=>$items_total));
     }
 
     if ($action === 'counts') {
@@ -166,6 +204,34 @@ if (isset($_GET['action'])) {
   .date-filter input{background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:6px 10px;font-size:0.85rem}
   .logout-btn{font-size:0.8rem;color:#555;text-decoration:none}
   .logout-btn:hover{color:#e05a5a}
+  /* Edit form */
+  .edit-panel{display:none;border-top:1px solid #2a2a2a;margin-top:12px;padding-top:12px}
+  .edit-panel.open{display:block}
+  .edit-row{display:flex;gap:10px;margin-bottom:10px;align-items:flex-end;flex-wrap:wrap}
+  .edit-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px}
+  .edit-field label{font-size:0.72rem;color:#555;text-transform:uppercase;letter-spacing:.04em}
+  .edit-field input,.edit-field select{background:#222;border:1px solid #333;color:#eee;border-radius:8px;padding:8px 10px;font-size:0.88rem;width:100%}
+  .items-table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:0.85rem}
+  .items-table th{text-align:left;color:#555;font-size:0.72rem;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid #2a2a2a}
+  .items-table td{padding:4px 6px;vertical-align:middle}
+  .items-table input{background:#222;border:1px solid #333;color:#eee;border-radius:6px;padding:5px 8px;font-size:0.85rem;width:100%}
+  .items-table input.inp-qty{width:54px}
+  .items-table input.inp-price{width:80px}
+  .btn-del-row{background:none;border:none;color:#cc6666;cursor:pointer;font-size:1rem;padding:0 4px}
+  .btn-add-row{background:#1a2a1a;border:1px solid #2a4a2a;color:#44cc88;border-radius:7px;padding:5px 12px;font-size:0.82rem;cursor:pointer;margin-bottom:10px}
+  .btn-save-edit{background:#e8a847;border:none;color:#000;border-radius:8px;padding:9px 20px;font-weight:700;cursor:pointer;font-size:0.88rem}
+  .btn-save-edit:hover{opacity:0.85}
+  .items-total-line{font-size:0.82rem;color:#aaa;margin-bottom:8px}
+  /* All status buttons */
+  .all-statuses{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .stt-btn{padding:6px 13px;border-radius:7px;border:1px solid #333;background:#1a1a1a;color:#aaa;font-size:0.8rem;cursor:pointer;font-weight:500;transition:all 0.15s}
+  .stt-btn:hover{opacity:0.8}
+  .stt-btn.cur{opacity:0.3;cursor:default;pointer-events:none}
+  .stt-btn.s-new{color:#6ab0ff;border-color:#1a3a5a}
+  .stt-btn.s-cooking{color:#ffaa44;border-color:#5a3a1a}
+  .stt-btn.s-delivering{color:#44cc88;border-color:#1a5a3a}
+  .stt-btn.s-done{color:#66bb66;border-color:#2a4a2a}
+  .stt-btn.s-cancelled{color:#cc6666;border-color:#4a2a2a}
   @media(max-width:600px){.orders{padding:12px}}
 </style>
 </head>
@@ -207,6 +273,7 @@ var currentFilter = '';
 var refreshTimer  = null;
 var REFRESH_SEC   = 30;
 var countdown     = REFRESH_SEC;
+var ordersData    = {};  // id -> order object
 
 function setFilter(status) {
   currentFilter = status;
@@ -224,6 +291,8 @@ function loadOrders() {
   var url    = '?action=orders_list' + (status?'&status='+status:'') + (from?'&from='+from:'') + (to?'&to='+to:'');
   fetch(url).then(function(r){ return r.json(); }).then(function(r) {
     if (!r.ok) return;
+    ordersData = {};
+    r.orders.forEach(function(o){ ordersData[o.id] = o; });
     renderOrders(r.orders);
     updateCounts(r.orders);
   });
@@ -247,31 +316,30 @@ function updateCounts(orders) {
   });
 }
 
+var STATUS_LABELS = {new:'Новый', cooking:'Готовится', delivering:'Доставляется', done:'Выполнен', cancelled:'Отменён', pending:'⚠️ Без FP'};
+var ALL_STATUSES  = [
+  {s:'new',        label:'🆕 Новый'},
+  {s:'cooking',    label:'👨‍🍳 Готовится'},
+  {s:'delivering', label:'🛵 Доставляется'},
+  {s:'done',       label:'✅ Выполнен'},
+  {s:'cancelled',  label:'❌ Отменён'}
+];
+
 function renderOrders(orders) {
   if (!orders || !orders.length) {
     document.getElementById('ordersList').innerHTML = '<div class="empty">Нет заказов</div>';
     return;
   }
 
-  var statusLabels = {new:'Новый', cooking:'Готовится', delivering:'Доставляется', done:'Выполнен', cancelled:'Отменён', pending:'⚠️ Без FP'};
-  var nextBtns = {
-    new:       [{s:'cooking',    label:'👨‍🍳 Готовится'},  {s:'cancelled', label:'❌ Отмена'}],
-    pending:   [{s:'cooking',    label:'👨‍🍳 Готовится'},  {s:'cancelled', label:'❌ Отмена'}],
-    cooking:   [{s:'delivering', label:'🛵 Доставляется'},{s:'done',      label:'✅ Выполнен'},{s:'cancelled',label:'❌ Отмена'}],
-    delivering:[{s:'done',       label:'✅ Выполнен'},    {s:'cancelled', label:'❌ Отмена'}],
-    done:      [],
-    cancelled: []
-  };
-
   var html = '';
   orders.forEach(function(o) {
-    var status  = o.status || 'new';
-    var badgeCls= 'badge-' + status;
-    var cardCls = 'status-' + status;
-    var label   = statusLabels[status] || status;
-
-    var client  = o.user_name || '—';
-    var phone   = o.user_phone ? formatPhone(o.user_phone) : '';
+    var status   = o.status || 'new';
+    var badgeCls = 'badge-' + status;
+    var cardCls  = 'status-' + status;
+    var label    = STATUS_LABELS[status] || status;
+    var client   = o.user_name || (o.client_name || '—');
+    var phone    = o.user_phone || o.client_phone || '';
+    if (phone && phone.length === 11) phone = formatPhone(phone);
     var clientStr = client + (phone ? ' · ' + phone : '');
 
     var fpBadge = o.fp_order_id
@@ -282,13 +350,62 @@ function renderOrders(orders) {
       ? '<span class="promo-tag">🏷 ' + escHtml(o.promo_code) + (o.promo_discount ? ' −' + fmt(o.promo_discount) : '') + '</span> '
       : '';
 
-    var btns = (nextBtns[status] || []).map(function(b) {
-      return '<button class="status-btn ' + b.s + '" onclick="changeStatus(' + o.id + ',\'' + b.s + '\')">' + b.label + '</button>';
+    // Состав
+    var items = null;
+    try { items = o.items_json ? JSON.parse(o.items_json) : null; } catch(e){}
+    var itemsHtml = '';
+    if (items && items.length) {
+      itemsHtml = '<div style="margin:10px 0 4px;font-size:0.75rem;color:#555;text-transform:uppercase;letter-spacing:.04em">Состав</div>'
+        + '<div style="font-size:0.85rem;margin-bottom:8px">';
+      items.forEach(function(it) {
+        itemsHtml += '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #1f1f1f">'
+          + '<span style="color:#ccc">' + (it.isGift ? '🎁 ' : '') + escHtml(it.name) + (it.qty > 1 ? ' × ' + it.qty : '') + '</span>'
+          + '<span style="color:#888;white-space:nowrap;margin-left:10px">' + (it.isGift ? 'подарок' : (it.price * it.qty) + ' ₽') + '</span>'
+          + '</div>';
+      });
+      itemsHtml += '</div>';
+    }
+
+    // Все кнопки статуса
+    var sttBtns = ALL_STATUSES.map(function(b) {
+      var isCur = (b.s === status);
+      return '<button class="stt-btn s-' + b.s + (isCur ? ' cur' : '') + '" onclick="changeStatus(' + o.id + ',\'' + b.s + '\')">' + b.label + '</button>';
     }).join('');
+
+    // Форма редактирования
+    var editItems = items || [];
+    var itemRows = editItems.map(function(it, i) {
+      return '<tr>'
+        + '<td><input type="text" value="' + escHtml(it.name) + '" placeholder="Название" data-field="name" data-i="' + i + '"></td>'
+        + '<td><input type="number" class="inp-qty" value="' + it.qty + '" min="1" data-field="qty" data-i="' + i + '"></td>'
+        + '<td><input type="number" class="inp-price" value="' + it.price + '" min="0" data-field="price" data-i="' + i + '"></td>'
+        + '<td><button class="btn-del-row" onclick="editDelRow(this)">✕</button></td>'
+        + '</tr>';
+    }).join('');
+
+    var editForm = '<div class="edit-panel" id="edit-' + o.id + '">'
+      + '<table class="items-table"><thead><tr><th>Название</th><th>Кол-во</th><th>Цена</th><th></th></tr></thead>'
+      + '<tbody id="items-body-' + o.id + '">' + itemRows + '</tbody></table>'
+      + '<button class="btn-add-row" onclick="editAddRow(' + o.id + ')">+ Добавить позицию</button>'
+      + '<div class="items-total-line">Сумма товаров: <b id="calc-total-' + o.id + '">' + parseInt(o.items_total) + ' ₽</b></div>'
+      + '<div class="edit-row">'
+      +   '<div class="edit-field"><label>Адрес</label><input type="text" id="ef-address-' + o.id + '" value="' + escHtml(o.address||'') + '"></div>'
+      +   '<div class="edit-field"><label>Оплата</label><select id="ef-pay-' + o.id + '">'
+      +     '<option value="qr"' + (o.pay_type==='qr'?' selected':'') + '>QR / карта</option>'
+      +     '<option value="cash"' + (o.pay_type==='cash'?' selected':'') + '>Наличными</option>'
+      +   '</select></div>'
+      + '</div>'
+      + '<div class="edit-row">'
+      +   '<div class="edit-field"><label>Доставка, ₽</label><input type="number" id="ef-delivery-' + o.id + '" value="' + parseInt(o.delivery_cost||0) + '" min="0" oninput="editRecalc(' + o.id + ')"></div>'
+      +   '<div class="edit-field"><label>Итого, ₽</label><input type="number" id="ef-total-' + o.id + '" value="' + parseInt(o.total_paid||0) + '" min="0"></div>'
+      + '</div>'
+      + '<div class="edit-field" style="margin-bottom:10px"><label>Комментарий</label><input type="text" id="ef-comment-' + o.id + '" value="' + escHtml(o.comment||'') + '"></div>'
+      + '<button class="btn-save-edit" onclick="saveEdit(' + o.id + ')">💾 Сохранить изменения</button>'
+      + '</div>';
 
     html += '<div class="order-card ' + cardCls + '" id="card-' + o.id + '">'
       + '<div class="order-head">'
-      +   '<div><span class="order-id">#' + o.id + '</span> ' + fpBadge + '</div>'
+      +   '<div><span class="order-id">#' + (o.display_number || o.id) + '</span> ' + fpBadge + '</div>'
       +   '<div style="display:flex;align-items:center;gap:8px">'
       +     '<span class="badge ' + badgeCls + '">' + label + '</span>'
       +     '<span class="order-date">' + fmtDate(o.created_at) + '</span>'
@@ -296,25 +413,104 @@ function renderOrders(orders) {
       + '</div>'
       + '<div class="order-meta">'
       +   '<div class="order-meta-item"><div class="order-meta-label">Клиент</div><div class="order-meta-value">' + escHtml(clientStr) + '</div></div>'
-      +   '<div class="order-meta-item"><div class="order-meta-label">Сумма товаров</div><div class="order-meta-value accent">' + fmt(o.items_total) + '</div></div>'
+      +   '<div class="order-meta-item"><div class="order-meta-label">Товары</div><div class="order-meta-value accent">' + fmt(o.items_total) + '</div></div>'
       + (o.delivery_cost > 0
           ? '<div class="order-meta-item"><div class="order-meta-label">Доставка</div><div class="order-meta-value">' + fmt(o.delivery_cost) + '</div></div>'
           : '<div class="order-meta-item"><div class="order-meta-label">Доставка</div><div class="order-meta-value" style="color:#44cc88">Бесплатно</div></div>'
         )
       +   '<div class="order-meta-item"><div class="order-meta-label">Итого</div><div class="order-meta-value accent">' + fmt(o.total_paid) + '</div></div>'
-      + (o.points_spent > 0
-          ? '<div class="order-meta-item"><div class="order-meta-label">Баллы списано</div><div class="order-meta-value" style="color:#e05a5a">−' + o.points_spent + '</div></div>'
-          : '')
-      + (o.points_earned > 0
-          ? '<div class="order-meta-item"><div class="order-meta-label">Баллы начислено</div><div class="order-meta-value" style="color:#44cc88">+' + o.points_earned + '</div></div>'
-          : '')
+      + (o.points_spent  > 0 ? '<div class="order-meta-item"><div class="order-meta-label">Списано</div><div class="order-meta-value" style="color:#e05a5a">−' + o.points_spent  + ' б</div></div>' : '')
+      + (o.points_earned > 0 ? '<div class="order-meta-item"><div class="order-meta-label">Начислено</div><div class="order-meta-value" style="color:#44cc88">+' + o.points_earned + ' б</div></div>' : '')
       + '</div>'
-      + (promoHtml ? '<div style="margin-bottom:6px">' + promoHtml + '</div>' : '')
-      + (btns ? '<div class="status-btns">' + btns + '</div>' : '')
+      + (o.address ? '<div style="font-size:0.82rem;color:#777;margin-bottom:4px">📍 ' + escHtml(o.address) + '</div>' : '')
+      + (o.comment ? '<div style="font-size:0.82rem;color:#777;margin-bottom:4px">💬 ' + escHtml(o.comment) + '</div>' : '')
+      + (promoHtml ? '<div style="margin-bottom:8px">' + promoHtml + '</div>' : '')
+      + itemsHtml
+      + '<div class="all-statuses">' + sttBtns + '</div>'
+      + '<div style="margin-top:6px">'
+      +   '<button onclick="toggleEdit(' + o.id + ')" style="background:none;border:1px solid #333;color:#888;border-radius:7px;padding:5px 13px;font-size:0.8rem;cursor:pointer">✏️ Редактировать</button>'
+      + '</div>'
+      + editForm
       + '</div>';
   });
 
   document.getElementById('ordersList').innerHTML = html;
+}
+
+function toggleEdit(oid) {
+  var panel = document.getElementById('edit-' + oid);
+  if (!panel) return;
+  panel.classList.toggle('open');
+}
+
+function editAddRow(oid) {
+  var tbody = document.getElementById('items-body-' + oid);
+  if (!tbody) return;
+  var i = tbody.rows.length;
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="text" value="" placeholder="Название" data-field="name" data-i="' + i + '"></td>'
+    + '<td><input type="number" class="inp-qty" value="1" min="1" data-field="qty" data-i="' + i + '"></td>'
+    + '<td><input type="number" class="inp-price" value="0" min="0" data-field="price" data-i="' + i + '"></td>'
+    + '<td><button class="btn-del-row" onclick="editDelRow(this)">✕</button></td>';
+  tbody.appendChild(tr);
+}
+
+function editDelRow(btn) {
+  var tr = btn.closest('tr');
+  var tbody = tr.parentNode;
+  var oid = tbody.id.replace('items-body-', '');
+  tr.remove();
+  editRecalc(oid);
+}
+
+function editRecalc(oid) {
+  var tbody = document.getElementById('items-body-' + oid);
+  if (!tbody) return;
+  var total = 0;
+  Array.from(tbody.rows).forEach(function(tr) {
+    var qty   = parseFloat(tr.querySelector('[data-field="qty"]').value)   || 0;
+    var price = parseFloat(tr.querySelector('[data-field="price"]').value) || 0;
+    total += qty * price;
+  });
+  var delivery = parseFloat(document.getElementById('ef-delivery-' + oid).value) || 0;
+  var calcEl = document.getElementById('calc-total-' + oid);
+  if (calcEl) calcEl.textContent = Math.round(total) + ' ₽';
+  var totalEl = document.getElementById('ef-total-' + oid);
+  if (totalEl) totalEl.value = Math.round(total + delivery);
+}
+
+function saveEdit(oid) {
+  var tbody = document.getElementById('items-body-' + oid);
+  var items = [];
+  if (tbody) {
+    Array.from(tbody.rows).forEach(function(tr) {
+      var name  = tr.querySelector('[data-field="name"]').value.trim();
+      var qty   = parseInt(tr.querySelector('[data-field="qty"]').value)   || 1;
+      var price = parseFloat(tr.querySelector('[data-field="price"]').value) || 0;
+      if (name) items.push({name:name, qty:qty, price:price, id:0, isGift:0});
+    });
+  }
+  var payload = {
+    order_id:      oid,
+    items:         items,
+    address:       document.getElementById('ef-address-'  + oid).value.trim(),
+    pay_type:      document.getElementById('ef-pay-'      + oid).value,
+    delivery_cost: parseInt(document.getElementById('ef-delivery-' + oid).value) || 0,
+    total_paid:    parseInt(document.getElementById('ef-total-'    + oid).value) || 0,
+    comment:       document.getElementById('ef-comment-'  + oid).value.trim()
+  };
+  fetch('?action=order_edit', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(r) {
+    if (r.ok) {
+      showAlert('✅ Заказ сохранён', false);
+      loadOrders();
+    } else {
+      showAlert('Ошибка: ' + (r.error || '?'), true);
+    }
+  });
 }
 
 function changeStatus(oid, status) {

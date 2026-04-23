@@ -272,6 +272,7 @@ if (isset($_GET['action'])) {
         $total_paid    = isset($data['total_paid'])    ? intval($data['total_paid'])   : 0;
         $comment       = isset($data['comment'])       ? trim($data['comment'])        : null;
         if ($comment === '') $comment = null;
+        $delivery_date = isset($data['delivery_date']) && $data['delivery_date'] !== '' ? $data['delivery_date'] : null;
 
         $items_json  = null;
         $items_total = 0;
@@ -293,9 +294,9 @@ if (isset($_GET['action'])) {
         }
 
         $pdo->prepare('UPDATE orders SET address=?, pay_type=?, delivery_cost=?, total_paid=?,
-                        items_json=?, items_total=?, comment=? WHERE id=?')
+                        items_json=?, items_total=?, comment=?, delivery_date=? WHERE id=?')
             ->execute(array($address, $pay_type, $delivery_cost, $total_paid,
-                            $items_json, $items_total, $comment, $oid));
+                            $items_json, $items_total, $comment, $delivery_date, $oid));
 
         $pdo->prepare('INSERT INTO order_log (order_id, staff_id, staff_name, from_status, to_status, created_at) VALUES (?,?,?,?,?,NOW())')
             ->execute(array($oid, $sid, $sname, 'edit', 'edit'));
@@ -1142,7 +1143,10 @@ function renderOrders(orders) {
         +   '<div class="edit-field"><label>Доставка ₽</label><input type="number" id="ed-'+o.id+'" value="'+parseInt(o.delivery_cost||0)+'" min="0" oninput="eRecalc('+o.id+')"></div>'
         +   '<div class="edit-field"><label>Итого ₽</label><input type="number" id="et-'+o.id+'" value="'+parseInt(o.total_paid||0)+'" min="0"></div>'
         + '</div>'
-        + '<div class="edit-field" style="margin-bottom:10px"><label>Комментарий</label><input type="text" id="ecm-'+o.id+'" value="'+esc(o.comment||'')+'"></div>'
+        + '<div class="edit-row">'
+        +   '<div class="edit-field"><label>Дата доставки</label><input type="datetime-local" id="edd-'+o.id+'" value="'+(o.delivery_date ? o.delivery_date.replace(' ','T').slice(0,16) : '')+'"></div>'
+        +   '<div class="edit-field"><label>Комментарий</label><input type="text" id="ecm-'+o.id+'" value="'+esc(o.comment||'')+'"></div>'
+        + '</div>'
         + '<button class="btn-save-edit" onclick="eSave('+o.id+')">💾 Сохранить</button>'
         + '</div>';
     }
@@ -1163,6 +1167,7 @@ function renderOrders(orders) {
       +   '<div><div class="m-label">Итого</div><div class="m-val accent">'+fmt(o.total_paid)+'</div></div>'
       + (o.promo_code?'<div><div class="m-label">Промокод</div><div class="m-val"><span class="promo-tag">'+esc(o.promo_code)+'</span></div></div>':'')
       + '</div>'
+      + (o.delivery_date ? '<div style="font-size:0.8rem;color:#e8a847;font-weight:700;margin-bottom:4px">📅 Доставить: '+fmtDate(o.delivery_date)+'</div>' : '')
       + (o.address ? '<div style="font-size:0.8rem;color:#666;margin-bottom:4px">📍 '+esc(o.address)+'</div>' : '')
       + (o.comment ? '<div style="font-size:0.8rem;color:#666;margin-bottom:4px">💬 '+esc(o.comment)+'</div>' : '')
       + itemsHtml
@@ -1227,9 +1232,10 @@ function eSave(oid) {
       items:         items,
       address:       document.getElementById('ea-'+oid).value.trim(),
       pay_type:      document.getElementById('ep2-'+oid).value,
-      delivery_cost: parseInt(document.getElementById('ed-'+oid).value)||0,
-      total_paid:    parseInt(document.getElementById('et-'+oid).value)||0,
-      comment:       document.getElementById('ecm-'+oid).value.trim()
+      delivery_cost:  parseInt(document.getElementById('ed-'+oid).value)||0,
+      total_paid:     parseInt(document.getElementById('et-'+oid).value)||0,
+      delivery_date:  (document.getElementById('edd-'+oid)||{}).value||'',
+      comment:        document.getElementById('ecm-'+oid).value.trim()
     })
   }).then(function(r){ return r.json(); }).then(function(r){
     if (r.ok) { showAlert('✅ Сохранено', false); loadOrders(); }

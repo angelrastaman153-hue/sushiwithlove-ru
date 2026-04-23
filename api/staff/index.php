@@ -262,6 +262,47 @@ if (isset($_GET['action'])) {
         json_out(array('ok'=>true));
     }
 
+    // --- Редактирование заказа ---
+    if ($action === 'order_edit' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data          = json_decode(file_get_contents('php://input'), true);
+        $oid           = intval($data['order_id']);
+        $address       = isset($data['address'])       ? trim($data['address'])        : null;
+        $pay_type      = isset($data['pay_type'])      ? $data['pay_type']             : null;
+        $delivery_cost = isset($data['delivery_cost']) ? intval($data['delivery_cost']) : 0;
+        $total_paid    = isset($data['total_paid'])    ? intval($data['total_paid'])   : 0;
+        $comment       = isset($data['comment'])       ? trim($data['comment'])        : null;
+        if ($comment === '') $comment = null;
+
+        $items_json  = null;
+        $items_total = 0;
+        if (isset($data['items']) && is_array($data['items'])) {
+            $slim = array();
+            foreach ($data['items'] as $it) {
+                $qty   = max(1, intval($it['qty']));
+                $price = max(0, floatval($it['price']));
+                $slim[] = array(
+                    'id'     => isset($it['id'])   ? (int)$it['id'] : 0,
+                    'name'   => isset($it['name']) ? (string)$it['name'] : '',
+                    'qty'    => $qty,
+                    'price'  => $price,
+                    'isGift' => !empty($it['isGift']) ? 1 : 0,
+                );
+                if (empty($it['isGift'])) $items_total += $qty * $price;
+            }
+            $items_json = json_encode($slim, JSON_UNESCAPED_UNICODE);
+        }
+
+        $pdo->prepare('UPDATE orders SET address=?, pay_type=?, delivery_cost=?, total_paid=?,
+                        items_json=?, items_total=?, comment=? WHERE id=?')
+            ->execute(array($address, $pay_type, $delivery_cost, $total_paid,
+                            $items_json, $items_total, $comment, $oid));
+
+        $pdo->prepare('INSERT INTO order_log (order_id, staff_id, staff_name, from_status, to_status, created_at) VALUES (?,?,?,?,?,NOW())')
+            ->execute(array($oid, $sid, $sname, 'edit', 'edit'));
+
+        json_out(array('ok'=>true));
+    }
+
     // --- Список сотрудников (только owner) ---
     if ($action === 'staff_list' && ($srole === 'owner' || $srole === 'admin')) {
         $stmt = $pdo->query('SELECT id,name,login,role,active,created_at FROM staff ORDER BY id');
@@ -596,6 +637,24 @@ if (isset($_GET['action'])) {
   .s-btn.done{background:#1a2a1a;color:#66bb66;border:1px solid #2a4a2a}
   .s-btn.cancelled{background:#2a1a1a;color:#cc6666;border:1px solid #4a2a2a}
   .s-btn.new{background:#1a2a3a;color:#6ab0ff;border:1px solid #1a3a5a}
+  .s-btn.cur{opacity:0.3;cursor:default;pointer-events:none}
+  /* Edit panel */
+  .edit-panel{display:none;border-top:1px solid #252525;margin-top:12px;padding-top:12px}
+  .edit-panel.open{display:block}
+  .edit-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .edit-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+  .edit-field label{font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:.04em}
+  .edit-field input,.edit-field select{background:#222;border:1px solid #333;color:#eee;border-radius:7px;padding:7px 10px;font-size:0.85rem;width:100%}
+  .items-tbl{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:0.83rem}
+  .items-tbl th{text-align:left;color:#555;font-size:0.7rem;text-transform:uppercase;padding:3px 5px;border-bottom:1px solid #252525}
+  .items-tbl td{padding:3px 5px;vertical-align:middle}
+  .items-tbl input{background:#222;border:1px solid #333;color:#eee;border-radius:6px;padding:4px 7px;font-size:0.83rem;width:100%}
+  .items-tbl .inp-qty{width:50px}
+  .items-tbl .inp-price{width:75px}
+  .btn-del-row{background:none;border:none;color:#cc6666;cursor:pointer;font-size:0.95rem;padding:0 4px}
+  .btn-add-row{background:#1a2a1a;border:1px solid #2a4a2a;color:#44cc88;border-radius:7px;padding:5px 12px;font-size:0.8rem;cursor:pointer;margin-bottom:8px}
+  .btn-save-edit{background:#e8a847;border:none;color:#000;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:0.85rem}
+  .edit-toggle-btn{background:none;border:1px solid #333;color:#777;border-radius:7px;padding:4px 12px;font-size:0.78rem;cursor:pointer;margin-top:8px}
   /* Badge */
   .badge{display:inline-block;padding:3px 10px;border-radius:16px;font-size:0.72rem;font-weight:600}
   .badge-new{background:#2a3a5a;color:#6ab0ff}
@@ -996,32 +1055,30 @@ function updateStatusCounts(orders) {
   });
 }
 
+var ALL_ST = [
+  {s:'new',        l:'🆕 Новый'},
+  {s:'cooking',    l:'👨‍🍳 Готовится'},
+  {s:'delivering', l:'🛵 Доставляется'},
+  {s:'done',       l:'✅ Выполнен'},
+  {s:'cancelled',  l:'❌ Отменён'}
+];
+var sLabels = {new:'Новый',pending:'⚠️ Без FP',cooking:'Готовится',delivering:'Доставляется',done:'Выполнен',cancelled:'Отменён'};
+var courierBtns = {delivering:[{s:'done',l:'✅ Выполнен'}]};
+
 function renderOrders(orders) {
   if (!orders || !orders.length) {
     document.getElementById('ordersList').innerHTML = '<div class="empty">Нет заказов</div>';
     return;
   }
-  var sLabels = {new:'Новый',pending:'⚠️ Без FP',cooking:'Готовится',delivering:'Доставляется',done:'Выполнен',cancelled:'Отменён'};
-  var nextMap = {
-    new:       [{s:'cooking',    l:'👨‍🍳 Готовится'},{s:'cancelled',l:'❌ Отмена'}],
-    pending:   [{s:'cooking',    l:'👨‍🍳 Готовится'},{s:'cancelled',l:'❌ Отмена'}],
-    cooking:   [{s:'delivering', l:'🛵 Доставляется'},{s:'done',l:'✅ Выполнен'},{s:'cancelled',l:'❌ Отмена'}],
-    delivering:[{s:'done',       l:'✅ Выполнен'},{s:'cancelled',l:'❌ Отмена'}],
-    done:      [{s:'delivering',l:'↩️ Вернуть в работу'},{s:'cancelled',l:'❌ Отмена'}],
-    cancelled: [{s:'new',l:'↩️ Восстановить заказ'}]
-  };
-  var courierBtns = {delivering:[{s:'done',l:'✅ Выполнен'}]};
 
   var html = '<div class="orders-list">';
   orders.forEach(function(o) {
-    var st   = o.status || 'new';
-    var btns = (ROLE === 'courier' ? (courierBtns[st] || []) : (nextMap[st] || []))
-      .map(function(b){ return '<button class="s-btn '+b.s+'" onclick="changeStatus('+o.id+',\''+b.s+'\')">'+b.l+'</button>'; }).join('');
-
-    var client = o.user_name ? esc(o.user_name) : '—';
-    var phone  = o.user_phone ? fmt_phone(o.user_phone) : '';
+    var st     = o.status || 'new';
     var isTest = parseInt(o.is_test) === 1;
-    var fpInfo = o.fp_order_id
+    var client = o.user_name || o.client_name || '—';
+    var phone  = o.user_phone || o.client_phone || '';
+    if (phone && phone.length === 11) phone = fmt_phone(phone);
+    var fpInfo    = o.fp_order_id
       ? '<small style="color:#555;font-size:0.72rem">FP:'+o.fp_order_id+'</small>'
       : '<small style="color:#f97316;font-size:0.72rem">⚠️ Нет в FP</small>';
     var testBadge = isTest ? ' <span style="background:rgba(232,168,71,0.15);color:#e8a847;border:1px solid rgba(232,168,71,0.3);border-radius:6px;font-size:0.7rem;padding:1px 7px;font-weight:700">🧪 ТЕСТ</span>' : '';
@@ -1029,27 +1086,155 @@ function renderOrders(orders) {
       ? '<button onclick="deleteAnyOrder('+o.id+')" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid #555;background:transparent;color:#888;font-size:0.75rem;cursor:pointer">🗑</button>'
       : (isTest ? '<button onclick="deleteTestOrder('+o.id+')" style="margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid #e8a847;background:transparent;color:#e8a847;font-size:0.75rem;cursor:pointer">Удалить</button>' : '');
 
+    // Кнопки статуса: для курьера — только вперёд, для остальных — все
+    var btns;
+    if (ROLE === 'courier') {
+      btns = (courierBtns[st] || []).map(function(b){
+        return '<button class="s-btn '+b.s+'" onclick="changeStatus('+o.id+',\''+b.s+'\')">'+b.l+'</button>';
+      }).join('');
+    } else {
+      btns = ALL_ST.map(function(b){
+        return '<button class="s-btn '+b.s+(b.s===st?' cur':'')+'" onclick="changeStatus('+o.id+',\''+b.s+'\')">'+b.l+'</button>';
+      }).join('');
+    }
+
+    // Состав
+    var items = null;
+    try { items = o.items_json ? JSON.parse(o.items_json) : null; } catch(e){}
+    var itemsHtml = '';
+    if (items && items.length) {
+      itemsHtml = '<div style="margin:8px 0 4px;font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:.04em">Состав</div>'
+        + '<div style="font-size:0.82rem;margin-bottom:6px">';
+      items.forEach(function(it){
+        itemsHtml += '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #1f1f1f">'
+          + '<span style="color:#bbb">'+(it.isGift?'🎁 ':'')+esc(it.name)+(it.qty>1?' × '+it.qty:'')+'</span>'
+          + '<span style="color:#666;white-space:nowrap;margin-left:8px">'+(it.isGift?'подарок':(it.price*it.qty)+' ₽')+'</span>'
+          + '</div>';
+      });
+      itemsHtml += '</div>';
+    }
+
+    // Форма редактирования (только не для курьера)
+    var editHtml = '';
+    if (ROLE !== 'courier') {
+      var editItems = items || [];
+      var rows = editItems.map(function(it, i){
+        return '<tr>'
+          + '<td><input type="text" value="'+esc(it.name)+'" data-field="name" data-i="'+i+'"></td>'
+          + '<td><input type="number" class="inp-qty" value="'+it.qty+'" min="1" data-field="qty" data-i="'+i+'"></td>'
+          + '<td><input type="number" class="inp-price" value="'+it.price+'" min="0" data-field="price" data-i="'+i+'"></td>'
+          + '<td><button class="btn-del-row" onclick="eDelRow(this,'+o.id+')">✕</button></td>'
+          + '</tr>';
+      }).join('');
+      editHtml = '<div class="edit-panel" id="ep-'+o.id+'">'
+        + '<table class="items-tbl"><thead><tr><th>Название</th><th>Кол-во</th><th>Цена</th><th></th></tr></thead>'
+        + '<tbody id="eb-'+o.id+'">' + rows + '</tbody></table>'
+        + '<button class="btn-add-row" onclick="eAddRow('+o.id+')">+ Добавить</button>'
+        + '<div style="font-size:0.8rem;color:#777;margin-bottom:8px">Товары: <b id="ec-'+o.id+'">'+parseInt(o.items_total)+' ₽</b></div>'
+        + '<div class="edit-row">'
+        +   '<div class="edit-field"><label>Адрес</label><input type="text" id="ea-'+o.id+'" value="'+esc(o.address||'')+'"></div>'
+        +   '<div class="edit-field"><label>Оплата</label><select id="ep2-'+o.id+'">'
+        +     '<option value="qr"'+(o.pay_type==='qr'?' selected':'')+'>QR / карта</option>'
+        +     '<option value="cash"'+(o.pay_type==='cash'?' selected':'')+'>Наличными</option>'
+        +   '</select></div>'
+        + '</div>'
+        + '<div class="edit-row">'
+        +   '<div class="edit-field"><label>Доставка ₽</label><input type="number" id="ed-'+o.id+'" value="'+parseInt(o.delivery_cost||0)+'" min="0" oninput="eRecalc('+o.id+')"></div>'
+        +   '<div class="edit-field"><label>Итого ₽</label><input type="number" id="et-'+o.id+'" value="'+parseInt(o.total_paid||0)+'" min="0"></div>'
+        + '</div>'
+        + '<div class="edit-field" style="margin-bottom:10px"><label>Комментарий</label><input type="text" id="ecm-'+o.id+'" value="'+esc(o.comment||'')+'"></div>'
+        + '<button class="btn-save-edit" onclick="eSave('+o.id+')">💾 Сохранить</button>'
+        + '</div>';
+    }
+
     html += '<div class="order-card s-'+st+(isTest?' order-test':'')+'">'
       + '<div class="order-head">'
-      +   '<div><span class="order-id">'+(isTest?'#000':('#'+(o.display_number||o.id)))+'</span> '+testBadge+' '+fpInfo+'</div>'
+      +   '<div><span class="order-id">'+(isTest?'#000':('#'+(o.display_number||o.id)))+'</span>'+testBadge+' '+fpInfo+'</div>'
       +   '<div style="display:flex;gap:8px;align-items:center">'
-      +     (deleteBtn)
+      +     deleteBtn
       +     '<span class="badge badge-'+st+'">'+(sLabels[st]||st)+'</span>'
       +     '<span style="font-size:0.78rem;color:#555">'+fmtDate(o.created_at)+'</span>'
       +   '</div>'
       + '</div>'
       + '<div class="order-meta">'
-      +   '<div><div class="m-label">Клиент</div><div class="m-val">'+client+(phone?' · '+phone:'')+'</div></div>'
+      +   '<div><div class="m-label">Клиент</div><div class="m-val">'+esc(client)+(phone?' · '+phone:'')+'</div></div>'
       +   '<div><div class="m-label">Сумма</div><div class="m-val accent">'+fmt(o.items_total)+'</div></div>'
       +   '<div><div class="m-label">Доставка</div><div class="m-val">'+(o.delivery_cost>0?fmt(o.delivery_cost):'<span style="color:#44cc88">Бесплатно</span>')+'</div></div>'
       +   '<div><div class="m-label">Итого</div><div class="m-val accent">'+fmt(o.total_paid)+'</div></div>'
-      + (o.promo_code ? '<div><div class="m-label">Промокод</div><div class="m-val"><span class="promo-tag">'+esc(o.promo_code)+'</span></div></div>' : '')
+      + (o.promo_code?'<div><div class="m-label">Промокод</div><div class="m-val"><span class="promo-tag">'+esc(o.promo_code)+'</span></div></div>':'')
       + '</div>'
-      + (btns ? '<div class="status-btns">'+btns+'</div>' : '')
+      + (o.address ? '<div style="font-size:0.8rem;color:#666;margin-bottom:4px">📍 '+esc(o.address)+'</div>' : '')
+      + (o.comment ? '<div style="font-size:0.8rem;color:#666;margin-bottom:4px">💬 '+esc(o.comment)+'</div>' : '')
+      + itemsHtml
+      + '<div class="status-btns">'+btns+'</div>'
+      + (ROLE !== 'courier' ? '<button class="edit-toggle-btn" onclick="eToggle('+o.id+')">✏️ Редактировать</button>' : '')
+      + editHtml
       + '</div>';
   });
   html += '</div>';
   document.getElementById('ordersList').innerHTML = html;
+}
+
+function eToggle(oid) {
+  var p = document.getElementById('ep-'+oid);
+  if (p) p.classList.toggle('open');
+}
+function eAddRow(oid) {
+  var tb = document.getElementById('eb-'+oid);
+  if (!tb) return;
+  var i = tb.rows.length;
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="text" value="" placeholder="Название" data-field="name" data-i="'+i+'"></td>'
+    + '<td><input type="number" class="inp-qty" value="1" min="1" data-field="qty" data-i="'+i+'"></td>'
+    + '<td><input type="number" class="inp-price" value="0" min="0" data-field="price" data-i="'+i+'"></td>'
+    + '<td><button class="btn-del-row" onclick="eDelRow(this,'+oid+')">✕</button></td>';
+  tb.appendChild(tr);
+}
+function eDelRow(btn, oid) {
+  btn.closest('tr').remove();
+  eRecalc(oid);
+}
+function eRecalc(oid) {
+  var tb = document.getElementById('eb-'+oid);
+  if (!tb) return;
+  var total = 0;
+  Array.from(tb.rows).forEach(function(tr){
+    total += (parseFloat(tr.querySelector('[data-field="qty"]').value)||0)
+           * (parseFloat(tr.querySelector('[data-field="price"]').value)||0);
+  });
+  var delivery = parseFloat(document.getElementById('ed-'+oid).value)||0;
+  var ec = document.getElementById('ec-'+oid);
+  if (ec) ec.textContent = Math.round(total)+' ₽';
+  var et = document.getElementById('et-'+oid);
+  if (et) et.value = Math.round(total + delivery);
+}
+function eSave(oid) {
+  var tb = document.getElementById('eb-'+oid);
+  var items = [];
+  if (tb) Array.from(tb.rows).forEach(function(tr){
+    var name = tr.querySelector('[data-field="name"]').value.trim();
+    if (name) items.push({
+      name:  name,
+      qty:   parseInt(tr.querySelector('[data-field="qty"]').value)||1,
+      price: parseFloat(tr.querySelector('[data-field="price"]').value)||0,
+      id:0, isGift:0
+    });
+  });
+  fetch('?action=order_edit', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      order_id:      oid,
+      items:         items,
+      address:       document.getElementById('ea-'+oid).value.trim(),
+      pay_type:      document.getElementById('ep2-'+oid).value,
+      delivery_cost: parseInt(document.getElementById('ed-'+oid).value)||0,
+      total_paid:    parseInt(document.getElementById('et-'+oid).value)||0,
+      comment:       document.getElementById('ecm-'+oid).value.trim()
+    })
+  }).then(function(r){ return r.json(); }).then(function(r){
+    if (r.ok) { showAlert('✅ Сохранено', false); loadOrders(); }
+    else showAlert(r.error||'Ошибка', true);
+  });
 }
 
 function changeStatus(oid, status) {

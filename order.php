@@ -123,6 +123,7 @@ foreach (array_values($items) as $i => $item) {
 }
 if (!empty($giftNotes)) {
     $descr = implode(' | ', array_filter(array_merge(array($descr), $giftNotes)));
+    $post['descr'] = $descr; // обновляем после добавления gift notes
 }
 
 // Вебхук при смене статуса на «Выполнен» (код API = 10)

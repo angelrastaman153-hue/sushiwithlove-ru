@@ -55,6 +55,13 @@ if (isset($data['pay'])) {
 $comment_txt = isset($data['comment']) ? trim((string)$data['comment']) : null;
 if ($comment_txt === '') $comment_txt = null;
 
+$delivery_date = null;
+$pre_d = isset($data['preorder_date']) ? trim($data['preorder_date']) : '';
+$pre_t = isset($data['preorder_time']) ? trim($data['preorder_time']) : '';
+if ($pre_d && preg_match('/^\d{4}-\d{2}-\d{2}$/', $pre_d)) {
+    $delivery_date = $pre_d . ' ' . ($pre_t ?: '00:00') . ':00';
+}
+
 // Позиции заказа (минимальный набор полей — что нужно для просмотра в админке)
 $items_json = null;
 if (isset($data['items']) && is_array($data['items'])) {
@@ -99,24 +106,24 @@ try {
         INSERT INTO orders
           (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
            points_spent, total_paid, items_json, delivery_type, address, pay_type, comment,
-           status, is_test, display_number, client_phone, client_name, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+           status, is_test, display_number, client_phone, client_name, delivery_date, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
     ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
                       $promo_code, $promo_discount, $points_spent, $total_paid, $items_json,
                       $delivery_type, $address, $pay_type, $comment_txt,
-                      $status, $is_test, $display_number, $client_phone, $client_name));
+                      $status, $is_test, $display_number, $client_phone, $client_name, $delivery_date));
 } catch (Exception $e) {
     // Fallback если миграция display_number ещё не применена
     $pdo->prepare('
         INSERT INTO orders
           (user_id, fp_order_id, items_total, delivery_cost, promo_code, promo_discount,
            points_spent, total_paid, items_json, delivery_type, address, pay_type, comment,
-           status, is_test, client_phone, client_name, created_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+           status, is_test, client_phone, client_name, delivery_date, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
     ')->execute(array($user_id, $fp_order_id, $items_total, $delivery_cost,
                       $promo_code, $promo_discount, $points_spent, $total_paid, $items_json,
                       $delivery_type, $address, $pay_type, $comment_txt,
-                      $status, $is_test, $client_phone, $client_name));
+                      $status, $is_test, $client_phone, $client_name, $delivery_date));
 }
 
 $order_id = $pdo->lastInsertId();

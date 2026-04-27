@@ -8523,6 +8523,25 @@
       if (o.comment)  itemsHtml += '<div style="font-size:0.8rem;color:var(--text-2)">💬 ' + escHtml(o.comment) + '</div>';
       itemsHtml += '</div>';
 
+      // Кнопка отмены: только статус 'new' + до доставки > 30 минут
+      var canCancel = false, cancelBlocked = false;
+      if (o.status === 'new') {
+        canCancel = true;
+        if (o.delivery_date) {
+          var dts = new Date(o.delivery_date.replace(' ', 'T')).getTime();
+          if (dts && (dts - Date.now()) < 30 * 60 * 1000) { canCancel = false; cancelBlocked = true; }
+        }
+      }
+      var cancelHtml = canCancel
+        ? '<div style="margin-top:10px;text-align:right">'
+          + '<button onclick="event.stopPropagation();lkCancelOrder(' + o.id + ',this)" '
+          + 'style="background:none;border:1px solid #e05a5a;color:#e05a5a;border-radius:8px;'
+          + 'padding:5px 14px;font-size:0.8rem;cursor:pointer">Отменить заказ</button></div>'
+        : (cancelBlocked
+          ? '<div style="margin-top:8px;font-size:0.78rem;color:#e05a5a">'
+            + 'Отмена невозможна — заказ уже в работе. Позвоните нам: 8-922-578-2070</div>'
+          : '');
+
       html += '<div style="background:var(--surface-2,#1a1a1a);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer" onclick="lkToggleOrder(\'' + detailId + '\',this)">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<div style="font-size:0.85rem;color:var(--text-2)">' + date + (o.fp_order_id ? ' · №' + o.fp_order_id : '') + '</div>'
@@ -8541,6 +8560,7 @@
         + (o.points_earned > 0 ? '<div style="font-size:0.78rem;color:#66bb66;margin-top:6px">+' + o.points_earned + ' баллов начислено</div>' : '')
         + (o.points_spent  > 0 ? '<div style="font-size:0.78rem;color:#e05a5a;margin-top:6px">−' + o.points_spent  + ' баллов списано</div>'  : '')
         + (itemsHtml ? '<div id="' + detailId + '" style="display:none">' + itemsHtml + '</div>' : '')
+        + cancelHtml
         + '</div>';
     });
     el.innerHTML = html;
@@ -8553,6 +8573,35 @@
     el.style.display = open ? 'none' : '';
     var arrow = card.querySelector('.lk-order-arrow');
     if (arrow) arrow.textContent = open ? '▼' : '▲';
+  }
+
+  function lkCancelOrder(orderId, btn) {
+    if (!confirm('Вы уверены, что хотите отменить заказ?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Отменяем...';
+    fetch('/api/orders/cancel.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Token': lkGetToken() || ''},
+      body: JSON.stringify({order_id: orderId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.ok) {
+        lkLoadOrders();
+      } else if (res.error === 'already_in_work' || res.error === 'too_late') {
+        alert('Отмена невозможна — заказ уже в работе. Позвоните нам: 8-922-578-2070');
+        lkLoadOrders();
+      } else {
+        alert('Ошибка. Попробуйте ещё раз.');
+        btn.disabled = false;
+        btn.textContent = 'Отменить заказ';
+      }
+    })
+    .catch(function() {
+      alert('Нет связи. Попробуйте ещё раз.');
+      btn.disabled = false;
+      btn.textContent = 'Отменить заказ';
+    });
   }
 
   function escHtml(s) {
